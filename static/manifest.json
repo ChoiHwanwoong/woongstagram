@@ -1,7 +1,7 @@
 {
   "name": "Woongstagram",
   "short_name": "웅스타그램",
-  "description": "웅쓰 인스타그램 웹앱",
+  "description": "Woongstagram Web App",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",

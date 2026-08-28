@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, jsonify, session, send_from_directory # send_from_directory 추가
+from flask import Flask, render_template, request, jsonify, session, send_from_directory
 import psycopg2
 import psycopg2.extras
 import os
@@ -10,7 +10,7 @@ import cloudinary
 import cloudinary.uploader
 
 app = Flask(__name__)
-app.secret_key = 'super_secret_key_for_woongstagram_app'
+app.secret_key = os.environ.get('SECRET_KEY', 'super_secret_key_for_woongstagram_app')
 
 DEFAULT_DB_URL = "postgresql://neondb_owner:YOUR_PASSWORD@ep-xyz.region.aws.neon.tech/neondb?sslmode=require"
 DATABASE_URL = os.environ.get('DATABASE_URL', DEFAULT_DB_URL)
@@ -30,102 +30,107 @@ def get_db_connection():
     return conn
 
 def init_db():
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS users (
-            id SERIAL PRIMARY KEY,
-            username VARCHAR(100) UNIQUE NOT NULL,
-            name VARCHAR(100),
-            email VARCHAR(255),
-            password VARCHAR(255) NOT NULL,
-            profile_img TEXT DEFAULT '',
-            bio VARCHAR(30) DEFAULT '',
-            username_updated_at TIMESTAMP
-        );
-    ''')
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS users (
+                id SERIAL PRIMARY KEY,
+                username VARCHAR(100) UNIQUE NOT NULL,
+                name VARCHAR(100),
+                email VARCHAR(255),
+                password VARCHAR(255) NOT NULL,
+                profile_img TEXT DEFAULT '',
+                bio VARCHAR(30) DEFAULT '',
+                username_updated_at TIMESTAMP
+            );
+        ''')
 
-    cursor.execute('''
-        ALTER TABLE users ADD COLUMN IF NOT EXISTS bio VARCHAR(30) DEFAULT '';
-        ALTER TABLE users ADD COLUMN IF NOT EXISTS username_updated_at TIMESTAMP;
-    ''')
+        cursor.execute('''
+            ALTER TABLE users ADD COLUMN IF NOT EXISTS bio VARCHAR(30) DEFAULT '';
+        ''')
+        cursor.execute('''
+            ALTER TABLE users ADD COLUMN IF NOT EXISTS username_updated_at TIMESTAMP;
+        ''')
 
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS posts (
-            id SERIAL PRIMARY KEY,
-            username VARCHAR(100) NOT NULL,
-            title VARCHAR(255) DEFAULT '',
-            content TEXT NOT NULL,
-            image_url TEXT,
-            likes INT DEFAULT 0,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        );
-    ''')
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS posts (
+                id SERIAL PRIMARY KEY,
+                username VARCHAR(100) NOT NULL,
+                title VARCHAR(255) DEFAULT '',
+                content TEXT NOT NULL,
+                image_url TEXT,
+                likes INT DEFAULT 0,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+        ''')
 
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS comments (
-            id SERIAL PRIMARY KEY,
-            post_id INT NOT NULL,
-            username VARCHAR(100) NOT NULL,
-            content TEXT NOT NULL,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        );
-    ''')
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS comments (
+                id SERIAL PRIMARY KEY,
+                post_id INT NOT NULL,
+                username VARCHAR(100) NOT NULL,
+                content TEXT NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+        ''')
 
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS post_likes (
-            id SERIAL PRIMARY KEY,
-            post_id INT NOT NULL,
-            username VARCHAR(100) NOT NULL,
-            UNIQUE(post_id, username)
-        );
-    ''')
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS post_likes (
+                id SERIAL PRIMARY KEY,
+                post_id INT NOT NULL,
+                username VARCHAR(100) NOT NULL,
+                UNIQUE(post_id, username)
+            );
+        ''')
 
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS stories (
-            id SERIAL PRIMARY KEY,
-            username VARCHAR(100) NOT NULL,
-            title VARCHAR(255) DEFAULT '',
-            desc_text TEXT NOT NULL,
-            image_url TEXT,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        );
-    ''')
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS stories (
+                id SERIAL PRIMARY KEY,
+                username VARCHAR(100) NOT NULL,
+                title VARCHAR(255) DEFAULT '',
+                desc_text TEXT NOT NULL,
+                image_url TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+        ''')
 
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS story_views (
-            id SERIAL PRIMARY KEY,
-            story_id INT NOT NULL,
-            username VARCHAR(100) NOT NULL,
-            UNIQUE(story_id, username)
-        );
-    ''')
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS story_views (
+                id SERIAL PRIMARY KEY,
+                story_id INT NOT NULL,
+                username VARCHAR(100) NOT NULL,
+                UNIQUE(story_id, username)
+            );
+        ''')
 
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS follows (
-            id SERIAL PRIMARY KEY,
-            follower VARCHAR(100) NOT NULL,
-            following VARCHAR(100) NOT NULL,
-            UNIQUE(follower, following)
-        );
-    ''')
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS follows (
+                id SERIAL PRIMARY KEY,
+                follower VARCHAR(100) NOT NULL,
+                following VARCHAR(100) NOT NULL,
+                UNIQUE(follower, following)
+            );
+        ''')
 
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS notifications (
-            id SERIAL PRIMARY KEY,
-            recipient VARCHAR(100) NOT NULL,
-            actor VARCHAR(100) NOT NULL,
-            type VARCHAR(20) NOT NULL,
-            post_id INT,
-            is_read BOOLEAN DEFAULT FALSE,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        );
-    ''')
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS notifications (
+                id SERIAL PRIMARY KEY,
+                recipient VARCHAR(100) NOT NULL,
+                actor VARCHAR(100) NOT NULL,
+                type VARCHAR(20) NOT NULL,
+                post_id INT,
+                is_read BOOLEAN DEFAULT FALSE,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+        ''')
 
-    conn.commit()
-    cursor.close()
-    conn.close()
+        conn.commit()
+        cursor.close()
+        conn.close()
+    except Exception as e:
+        print("DB Init Error:", e)
 
 init_db()
 
@@ -133,27 +138,31 @@ def create_notification(cursor, recipient, actor, notif_type, post_id=None):
     if recipient == actor:
         return
     now_kst = get_kst_now()
-    cursor.execute('''
-        INSERT INTO notifications (recipient, actor, type, post_id, created_at)
-        VALUES (%s, %s, %s, %s, %s);
-    ''', (recipient, actor, notif_type, post_id, now_kst))
+    try:
+        cursor.execute('''
+            INSERT INTO notifications (recipient, actor, type, post_id, created_at)
+            VALUES (%s, %s, %s, %s, %s);
+        ''', (recipient, actor, notif_type, post_id, now_kst))
+    except Exception as e:
+        print("Create Notification Error:", e)
 
 def is_admin():
     return session.get('username') == 'admin'
 
-# --- 👑 Main Route ---
+# --- 👑 Main Routes & PWA Files ---
 @app.route('/')
 def index():
     return render_template('index.html')
 
-# 🛠️ [신규 PWA 설정] manifest.json 및 service-worker.js 파일 제공 라우트 추가
 @app.route('/manifest.json')
 def serve_manifest():
-    return send_from_directory('templates', 'manifest.json')
+    return send_from_directory('static', 'manifest.json')
 
 @app.route('/service-worker.js')
 def serve_service_worker():
-    return send_from_directory('templates', 'service-worker.js')
+    response = send_from_directory('static', 'service-worker.js')
+    response.headers['Service-Worker-Allowed'] = '/'
+    return response
 
 @app.route('/profile')
 @app.route('/profile/<username>')
@@ -370,7 +379,7 @@ def delete_admin_story(story_id):
 
     return jsonify({'status': 'success'})
 
-# --- 📰 1시간 주기 뉴스 API ---
+# --- 📰 뉴스 API ---
 @app.route('/api/news', methods=['GET'])
 def get_hot_news():
     now = get_kst_now()
@@ -800,7 +809,7 @@ def get_following(username):
     conn.close()
     return jsonify({'status': 'success', 'users': [r[0] for r in rows]})
 
-# --- ☁️ Cloudinary Upload API ---
+# --- ☁️ Upload API ---
 @app.route('/api/upload', methods=['POST'])
 def upload_file():
     if 'username' not in session:
@@ -1227,7 +1236,7 @@ def get_user_liked_posts(username):
             'image_url': image_urls[0] if image_urls else '',
             'image_urls': image_urls,
             'likes': r['likes'],
-            'created_at': r['created_at'].strftime('%Y-%m-%d %H:%M:%S) if r['created_at'] else ''
+            'created_at': r['created_at'].strftime('%Y-%m-%d %H:%M:%S') if r['created_at'] else ''
         })
 
     return jsonify({'status': 'success', 'posts': posts})
