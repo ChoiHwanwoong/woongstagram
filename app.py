@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, jsonify, session
+from flask import Flask, render_template, request, jsonify, session, send_from_directory # send_from_directory 추가
 import psycopg2
 import psycopg2.extras
 import os
@@ -111,7 +111,6 @@ def init_db():
         );
     ''')
 
-    # 🔔 알림 테이블 추가
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS notifications (
             id SERIAL PRIMARY KEY,
@@ -142,9 +141,19 @@ def create_notification(cursor, recipient, actor, notif_type, post_id=None):
 def is_admin():
     return session.get('username') == 'admin'
 
+# --- 👑 Main Route ---
 @app.route('/')
 def index():
     return render_template('index.html')
+
+# 🛠️ [신규 PWA 설정] manifest.json 및 service-worker.js 파일 제공 라우트 추가
+@app.route('/manifest.json')
+def serve_manifest():
+    return send_from_directory('templates', 'manifest.json')
+
+@app.route('/service-worker.js')
+def serve_service_worker():
+    return send_from_directory('templates', 'service-worker.js')
 
 @app.route('/profile')
 @app.route('/profile/<username>')
@@ -157,7 +166,7 @@ def admin_page():
         return "<script>alert('관리자 권한이 필요합니다.'); location.href='/';</script>"
     return render_template('admin.html')
 
-# 🔔 [신규] 알림 목록 조회 API
+# 🔔 알림 목록 조회 API
 @app.route('/api/notifications', methods=['GET'])
 def get_notifications():
     if 'username' not in session:
@@ -198,7 +207,7 @@ def get_notifications():
 
     return jsonify({'status': 'success', 'notifications': notifications, 'unread_count': unread_count})
 
-# 🔔 [신규] 알림 읽음 처리 API
+# 🔔 알림 읽음 처리 API
 @app.route('/api/notifications/read', methods=['POST'])
 def mark_notifications_read():
     if 'username' not in session:
@@ -738,7 +747,7 @@ def logout():
     session.clear()
     return jsonify({'status': 'success'})
 
-# --- 🤝 Follow APIs (팔로우 알림 연동) ---
+# --- 🤝 Follow APIs ---
 @app.route('/api/follow/<target_username>', methods=['POST'])
 def toggle_follow(target_username):
     if 'username' not in session:
@@ -760,7 +769,6 @@ def toggle_follow(target_username):
     else:
         cursor.execute('INSERT INTO follows (follower, following) VALUES (%s, %s);', (me, target_username))
         is_following = True
-        # 🔔 팔로우 알림 추가
         create_notification(cursor, recipient=target_username, actor=me, notif_type='follow')
 
     conn.commit()
@@ -792,7 +800,7 @@ def get_following(username):
     conn.close()
     return jsonify({'status': 'success', 'users': [r[0] for r in rows]})
 
-# ☁️ 업로드 API
+# --- ☁️ Cloudinary Upload API ---
 @app.route('/api/upload', methods=['POST'])
 def upload_file():
     if 'username' not in session:
@@ -990,7 +998,7 @@ def mark_story_viewed(story_id):
     conn.close()
     return jsonify({'status': 'success'})
 
-# --- 📝 Post APIs (좋아요 알림 연동) ---
+# --- 📝 Post APIs ---
 @app.route('/api/posts', methods=['GET'])
 def get_posts():
     conn = get_db_connection()
@@ -1219,7 +1227,7 @@ def get_user_liked_posts(username):
             'image_url': image_urls[0] if image_urls else '',
             'image_urls': image_urls,
             'likes': r['likes'],
-            'created_at': r['created_at'].strftime('%Y-%m-%d %H:%M:%S') if r['created_at'] else ''
+            'created_at': r['created_at'].strftime('%Y-%m-%d %H:%M:%S) if r['created_at'] else ''
         })
 
     return jsonify({'status': 'success', 'posts': posts})
@@ -1322,7 +1330,6 @@ def toggle_like(post_id):
         cursor.execute('INSERT INTO post_likes (post_id, username) VALUES (%s, %s);', (post_id, username))
         cursor.execute('UPDATE posts SET likes = likes + 1 WHERE id = %s;', (post_id,))
         is_liked = True
-        # 🔔 좋아요 알림 생성
         if post_owner:
             create_notification(cursor, recipient=post_owner, actor=username, notif_type='like', post_id=post_id)
 
@@ -1334,7 +1341,7 @@ def toggle_like(post_id):
 
     return jsonify({'status': 'success', 'is_liked': is_liked, 'likes': new_likes})
 
-# --- 💬 Comment APIs (댓글 알림 연동) ---
+# --- 💬 Comment APIs ---
 @app.route('/api/comments/<int:post_id>', methods=['GET'])
 def get_comments(post_id):
     conn = get_db_connection()
@@ -1379,7 +1386,6 @@ def add_comment():
     cursor.execute('INSERT INTO comments (post_id, username, content, created_at) VALUES (%s, %s, %s, %s);', 
                    (post_id, username, content, now_kst))
 
-    # 🔔 댓글 알림 생성
     if post_owner:
         create_notification(cursor, recipient=post_owner, actor=username, notif_type='comment', post_id=post_id)
 
