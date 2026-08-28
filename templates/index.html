@@ -24,35 +24,37 @@
         .story-viewed { background: #cbd5e1 !important; }
         @keyframes progress { from { width: 0%; } to { width: 100%; } }
         .animate-progress { animation: progress 5s linear forwards; }
-        body { -webkit-text-size-adjust: none; touch-action: manipulation; }
+        body { -webkit-text-size-adjust: none; touch-action: manipulation; overflow-x: hidden; }
         .pwa-install-banner { animation: slideUp 0.4s ease-out forwards; }
         @keyframes slideUp { from { transform: translateY(100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
     </style>
 </head>
-<body class="bg-white text-slate-900 font-sans antialiased min-h-screen flex flex-col justify-between selection:bg-pink-500 selection:text-white" onclick="handleOutsideClicks(event)">
+<body class="bg-white text-slate-900 font-sans antialiased min-h-screen flex flex-col justify-between selection:bg-pink-500 selection:text-white overflow-x-hidden" onclick="handleOutsideClicks(event)">
 
-    <!-- Header Navigation -->
-    <header class="border-b border-slate-200 bg-white sticky top-0 z-40">
-        <div class="max-w-5xl mx-auto px-4 h-14 flex items-center justify-between gap-4">
-            <div onclick="location.reload()" class="text-2xl font-black tracking-tight italic cursor-pointer font-serif text-slate-900 select-none shrink-0">
+    <!-- Header Navigation (모바일 최적화 완벽 적용) -->
+    <header class="border-b border-slate-200 bg-white sticky top-0 z-40 w-full">
+        <div class="max-w-5xl mx-auto px-3 sm:px-4 h-14 flex items-center justify-between gap-2 sm:gap-4">
+            <!-- 로고 -->
+            <div onclick="location.reload()" class="text-xl sm:text-2xl font-black tracking-tight italic cursor-pointer font-serif text-slate-900 select-none shrink-0">
                 Woongstagram
             </div>
 
-            <!-- 🔍 실시간 유저 & 게시글 검색창 -->
-            <div class="relative flex-1 max-w-xs mx-auto">
+            <!-- 🔍 실시간 유저 & 게시글 검색창 (모바일 반응형 자동 조절) -->
+            <div class="relative flex-1 max-w-[130px] sm:max-w-xs mx-auto">
                 <div class="relative">
-                    <input type="text" id="searchInput" oninput="handleSearchInput(this.value)" placeholder="유저 또는 게시글 검색..." class="w-full bg-slate-100 border border-slate-200 rounded-lg pl-8 pr-3 py-1.5 text-xs outline-none focus:bg-white focus:border-slate-400 transition">
-                    <i class="fa-solid fa-magnifying-glass absolute left-2.5 top-2.5 text-slate-400 text-xs"></i>
+                    <input type="text" id="searchInput" oninput="handleSearchInput(this.value)" placeholder="검색" class="w-full bg-slate-100 border border-slate-200 rounded-lg pl-7 sm:pl-8 pr-2 py-1 text-xs outline-none focus:bg-white focus:border-slate-400 transition placeholder:text-slate-400">
+                    <i class="fa-solid fa-magnifying-glass absolute left-2.5 top-2 text-slate-400 text-[10px] sm:text-xs"></i>
                 </div>
 
                 <!-- 검색 결과 드롭다운 Box -->
-                <div id="searchResultsDropdown" class="hidden absolute top-10 left-0 right-0 bg-white border border-slate-200 rounded-xl shadow-xl max-h-80 overflow-y-auto p-2 text-xs z-50 divide-y divide-slate-100">
+                <div id="searchResultsDropdown" class="hidden absolute top-10 -left-16 sm:left-0 w-64 sm:w-full bg-white border border-slate-200 rounded-xl shadow-xl max-h-80 overflow-y-auto p-2 text-xs z-50 divide-y divide-slate-100">
                     <div id="searchUserResults"></div>
                     <div id="searchPostResults"></div>
                 </div>
             </div>
 
-            <div class="flex items-center gap-5 text-xl text-slate-800 shrink-0">
+            <!-- 상단 액션 아이콘들 -->
+            <div class="flex items-center gap-3 sm:gap-5 text-lg sm:text-xl text-slate-800 shrink-0">
                 <i onclick="location.reload()" class="fa-solid fa-house cursor-pointer hover:text-slate-500 transition" title="홈"></i>
                 <i onclick="openCreatePostModal()" class="fa-square-plus fa-regular cursor-pointer hover:text-slate-500 transition" title="새 게시물 만들기"></i>
                 
@@ -84,25 +86,25 @@
     </header>
 
     <!-- Main Layout -->
-    <main class="max-w-4xl mx-auto px-4 py-6 w-full flex-1 grid grid-cols-1 md:grid-cols-3 gap-8 pb-12">
+    <main class="max-w-4xl mx-auto px-3 sm:px-4 py-4 sm:py-6 w-full flex-1 grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8 pb-12">
         
         <!-- Feed Column (2 Cols) -->
-        <section class="md:col-span-2 space-y-6">
+        <section class="md:col-span-2 space-y-4 sm:space-y-6">
             
             <!-- Story Bar -->
-            <div class="bg-white border border-slate-200 rounded-xl p-4 flex items-center gap-4 overflow-x-auto scrollbar-hide shadow-sm select-none">
-                <div onclick="openCreateStoryModal()" class="flex flex-col items-center gap-1 min-w-[64px] cursor-pointer group shrink-0">
-                    <div class="w-14 h-14 rounded-full bg-slate-100 border-2 border-dashed border-slate-300 flex items-center justify-center text-slate-500 group-hover:border-blue-500 group-hover:text-blue-500 transition">
-                        <i class="fa-solid fa-plus text-lg"></i>
+            <div class="bg-white border border-slate-200 rounded-xl p-3 sm:p-4 flex items-center gap-3 sm:gap-4 overflow-x-auto scrollbar-hide shadow-sm select-none">
+                <div onclick="openCreateStoryModal()" class="flex flex-col items-center gap-1 min-w-[56px] sm:min-w-[64px] cursor-pointer group shrink-0">
+                    <div class="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-slate-100 border-2 border-dashed border-slate-300 flex items-center justify-center text-slate-500 group-hover:border-blue-500 group-hover:text-blue-500 transition">
+                        <i class="fa-solid fa-plus text-base sm:text-lg"></i>
                     </div>
-                    <span class="text-[11px] font-semibold text-slate-600 truncate w-14 text-center">내 스토리</span>
+                    <span class="text-[10px] sm:text-[11px] font-semibold text-slate-600 truncate w-12 sm:w-14 text-center">내 스토리</span>
                 </div>
 
-                <div id="storiesContainer" class="flex items-center gap-4"></div>
+                <div id="storiesContainer" class="flex items-center gap-3 sm:gap-4"></div>
             </div>
 
             <!-- Feed Posts -->
-            <div id="postFeedContainer" class="space-y-6"></div>
+            <div id="postFeedContainer" class="space-y-4 sm:space-y-6"></div>
         </section>
 
         <!-- Sidebar Column -->
@@ -920,7 +922,7 @@
                     if (data.status === 'success') {
                         data.stories.forEach(s => {
                             const item = document.createElement('div');
-                            item.className = "flex flex-col items-center gap-1 min-w-[64px] cursor-pointer group shrink-0";
+                            item.className = "flex flex-col items-center gap-1 min-w-[56px] sm:min-w-[64px] cursor-pointer group shrink-0";
                             item.onclick = () => showStoryModal(item, s.id, s.username, s.desc, s.image_url, s.created_at, s.profile_img);
                             
                             const ringClass = s.is_viewed ? 'story-viewed' : 'story-ring';
@@ -929,12 +931,12 @@
                                 getDefaultAvatar("text-lg");
 
                             item.innerHTML = `
-                                <div class="w-14 h-14 rounded-full p-[2px] ${ringClass} transition group-hover:scale-105">
+                                <div class="w-12 h-12 sm:w-14 sm:h-14 rounded-full p-[2px] ${ringClass} transition group-hover:scale-105">
                                     <div class="w-full h-full rounded-full bg-white flex items-center justify-center border-2 border-white overflow-hidden">
                                         ${avatarHtml}
                                     </div>
                                 </div>
-                                <span class="text-[11px] text-slate-600 truncate w-14 text-center">${escapeHtml(s.username)}</span>
+                                <span class="text-[10px] sm:text-[11px] text-slate-600 truncate w-12 sm:w-14 text-center">${escapeHtml(s.username)}</span>
                             `;
                             container.appendChild(item);
                         });
