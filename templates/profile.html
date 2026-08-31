@@ -9,8 +9,14 @@
         tailwind.config = { darkMode: 'class' }
     </script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    
+    <!-- ✂️ Cropper.js -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css"/>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
+
     <style>
         body { -webkit-text-size-adjust: none; touch-action: manipulation; }
+        .cropper-view-box, .cropper-face { border-radius: 50%; }
     </style>
 </head>
 <body class="bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 font-sans antialiased min-h-screen flex flex-col justify-between transition-colors pb-16 md:pb-0">
@@ -31,12 +37,15 @@
     <!-- Profile Main Section -->
     <main class="max-w-4xl mx-auto px-4 py-6 sm:py-8 w-full flex-1">
         <div id="profileHeader" class="flex flex-col sm:flex-row items-center sm:items-start gap-6 sm:gap-8 pb-6 sm:pb-8 border-b border-slate-200 dark:border-slate-800">
-            <!-- 📷 프로필 사진 (내 프로필이면 클릭 시 사진 변경) -->
-            <div class="relative group shrink-0">
-                <div id="profileAvatarBox" onclick="triggerProfileImgUpload()" class="w-24 h-24 sm:w-36 sm:h-36 rounded-full bg-slate-200 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 flex items-center justify-center font-bold shadow-md overflow-hidden cursor-pointer relative">
+            <!-- 프로필 사진 영역 -->
+            <div class="relative group shrink-0 cursor-pointer" onclick="handleAvatarClick()">
+                <div id="profileAvatarBox" class="w-24 h-24 sm:w-36 sm:h-36 rounded-full bg-slate-200 dark:bg-slate-800 border-2 border-slate-300 dark:border-slate-700 flex items-center justify-center font-bold shadow-md overflow-hidden group-hover:opacity-85 transition">
                     <i class="fa-solid fa-user text-3xl sm:text-4xl text-slate-400"></i>
                 </div>
-                <input type="file" id="profileImgInput" accept="image/*" onchange="uploadProfileImage(this)" class="hidden">
+                <div id="avatarEditBadge" class="hidden absolute bottom-0 right-0 bg-blue-500 text-white p-2 rounded-full text-xs shadow">
+                    <i class="fa-solid fa-camera"></i>
+                </div>
+                <input type="file" id="profileFileInput" accept="image/*" class="hidden" onchange="handleProfileFileSelect(this)">
             </div>
 
             <div class="flex flex-col gap-3 sm:gap-4 text-center sm:text-left flex-1 w-full">
@@ -45,19 +54,20 @@
                     <div id="profileActionArea" class="flex items-center justify-center sm:justify-start gap-2"></div>
                 </div>
 
-                <!-- 👥 팔로워 / 팔로잉 클릭 시 목록 팝업 -->
-                <div class="flex justify-center sm:justify-start gap-6 sm:gap-8 text-xs sm:text-sm">
+                <div class="flex justify-center sm:justify-start gap-6 sm:gap-8 text-xs sm:text-sm select-none">
                     <div>게시물 <span id="postCount" class="font-bold">0</span></div>
-                    <div onclick="openUserListModal('followers')" class="cursor-pointer hover:opacity-80">팔로워 <span id="followerCount" class="font-bold">0</span></div>
-                    <div onclick="openUserListModal('following')" class="cursor-pointer hover:opacity-80">팔로우 <span id="followingCount" class="font-bold">0</span></div>
+                    <div class="cursor-pointer hover:underline" onclick="openFollowModal('followers')">팔로워 <span id="followerCount" class="font-bold">0</span></div>
+                    <div class="cursor-pointer hover:underline" onclick="openFollowModal('following')">팔로우 <span id="followingCount" class="font-bold">0</span></div>
                 </div>
 
                 <!-- 📝 자기소개 -->
                 <div class="text-xs space-y-1 mt-1">
                     <p id="profileEmail" class="text-slate-400 text-[11px]"></p>
                     <div class="flex items-center justify-center sm:justify-start gap-2">
-                        <p id="profileBio" class="font-medium whitespace-pre-wrap break-all"></p>
-                        <button id="editBioBtn" onclick="editBioPrompt()" class="hidden text-slate-400 hover:text-blue-500 text-[11px]"><i class="fa-solid fa-pen"></i></button>
+                        <p id="profileBio" class="font-medium whitespace-pre-wrap break-all text-slate-700 dark:text-slate-300"></p>
+                        <button id="editBioBtn" onclick="openBioModal()" class="hidden text-slate-400 hover:text-blue-500 text-xs p-1" title="자기소개 수정">
+                            <i class="fa-solid fa-pen"></i>
+                        </button>
                     </div>
                 </div>
             </div>
@@ -86,6 +96,48 @@
         <div id="myPostsGrid" class="grid grid-cols-3 gap-1 sm:gap-4 mt-2"></div>
     </main>
 
+    <!-- ✂️ 프로필 사진 크롭/편집 모달 -->
+    <div id="profileCropperModal" class="fixed inset-0 bg-black/85 z-50 hidden flex items-center justify-center p-3 sm:p-4">
+        <div class="bg-white dark:bg-slate-900 w-full max-w-sm rounded-2xl overflow-hidden shadow-2xl relative flex flex-col border border-slate-200 dark:border-slate-800">
+            <div class="p-3 border-b border-slate-100 dark:border-slate-800 font-bold text-xs text-center flex justify-between items-center">
+                <span>프로필 사진 자르기</span>
+                <button onclick="closeProfileCropperModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <div class="p-2 bg-black flex items-center justify-center h-64 overflow-hidden">
+                <img id="profileCropperImage" class="max-w-full max-h-full block">
+            </div>
+            <div class="p-3 bg-slate-50 dark:bg-slate-800 flex justify-between items-center text-xs">
+                <div class="flex gap-2">
+                    <button onclick="profileCropperZoom(0.1)" class="p-1.5 bg-white dark:bg-slate-700 border rounded"><i class="fa-solid fa-plus"></i></button>
+                    <button onclick="profileCropperZoom(-0.1)" class="p-1.5 bg-white dark:bg-slate-700 border rounded"><i class="fa-solid fa-minus"></i></button>
+                    <button onclick="profileCropperRotate(90)" class="p-1.5 bg-white dark:bg-slate-700 border rounded"><i class="fa-solid fa-rotate-right"></i></button>
+                </div>
+                <button id="saveProfileCropBtn" onclick="saveCroppedProfileImage()" class="px-4 py-1.5 bg-blue-500 hover:bg-blue-600 text-white font-bold rounded-lg transition">저장</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 📝 자기소개 수정 모달 -->
+    <div id="bioModal" class="fixed inset-0 bg-black/60 z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-slate-900 w-full max-w-sm rounded-2xl p-5 shadow-2xl relative border border-slate-200 dark:border-slate-800 text-xs">
+            <button onclick="closeBioModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+            <h3 class="font-bold text-sm mb-3">자기소개 수정 (최대 30자)</h3>
+            <textarea id="bioInput" rows="3" maxlength="30" placeholder="자신을 표현해보세요..." class="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-lg outline-none bg-transparent mb-3 resize-none"></textarea>
+            <button onclick="saveBio()" class="w-full py-2.5 bg-blue-500 hover:bg-blue-600 text-white font-bold rounded-lg transition">저장하기</button>
+        </div>
+    </div>
+
+    <!-- 👥 팔로워/팔로잉 목록 팝업 모달 -->
+    <div id="followListModal" class="fixed inset-0 bg-black/60 z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-slate-900 w-full max-w-sm h-96 rounded-2xl p-4 shadow-2xl relative flex flex-col border border-slate-200 dark:border-slate-800 text-xs">
+            <div class="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
+                <span id="followListModalTitle" class="font-bold text-sm">팔로워 목록</span>
+                <button onclick="closeFollowModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <div id="followListContainer" class="flex-1 overflow-y-auto space-y-2 py-2"></div>
+        </div>
+    </div>
+
     <!-- 🔍 프로필 전용 게시글 상세 보기 모달 -->
     <div id="profilePostDetailModal" class="fixed inset-0 bg-black/70 z-50 hidden flex items-center justify-center p-3 sm:p-4">
         <div class="bg-white dark:bg-slate-900 w-full max-w-2xl max-h-[85vh] rounded-2xl overflow-hidden shadow-2xl relative flex flex-col sm:flex-row border border-slate-200 dark:border-slate-800">
@@ -98,7 +150,7 @@
                             <span id="profileModalUserAvatar" class="w-7 h-7 rounded-full bg-slate-200 dark:bg-slate-700 overflow-hidden shrink-0"></span>
                             <span id="profileModalUsername" class="font-bold text-slate-900 dark:text-white"></span>
                         </div>
-                        <button id="profileModalDeleteBtn" class="hidden text-slate-400 hover:text-red-500"><i class="fa-solid fa-trash-can"></i></button>
+                        <button id="profileModalDeletePostBtn" class="hidden text-slate-400 hover:text-red-500" title="게시글 삭제"><i class="fa-solid fa-trash-can"></i></button>
                     </div>
                     <p id="profileModalContent" class="text-slate-700 dark:text-slate-300 leading-relaxed mb-4 pb-3 border-b border-slate-100 dark:border-slate-800 break-words"></p>
                     <div id="profileModalCommentsList" class="space-y-2 text-[11px] mb-4"></div>
@@ -111,24 +163,13 @@
         </div>
     </div>
 
-    <!-- 👥 팔로워 / 팔로잉 목록 팝업 모달 -->
-    <div id="userListModal" class="fixed inset-0 bg-black/60 z-50 hidden flex items-center justify-center p-4">
-        <div class="bg-white dark:bg-slate-900 w-full max-w-sm rounded-2xl overflow-hidden shadow-2xl relative border border-slate-200 dark:border-slate-800 text-xs">
-            <div class="p-3.5 border-b border-slate-100 dark:border-slate-800 font-bold text-center flex justify-between items-center">
-                <span id="userListModalTitle">목록</span>
-                <button onclick="closeUserListModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-base"></i></button>
-            </div>
-            <div id="userListModalContent" class="max-h-72 overflow-y-auto p-3 space-y-2"></div>
-        </div>
-    </div>
-
     <!-- 📱 모바일 하단 전용 내비게이션 바 -->
     <nav class="fixed bottom-0 left-0 right-0 h-12 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 z-40 flex items-center justify-around text-lg text-slate-800 dark:text-slate-200 md:hidden">
         <a href="/" class="p-2 hover:text-blue-500"><i class="fa-solid fa-house"></i></a>
         <a href="/profile" class="p-2 text-blue-500"><i class="fa-solid fa-user"></i></a>
     </nav>
 
-    <!-- ⚙️ 환경설정 모달 -->
+    <!-- ⚙️ 환경설정 메인 메뉴 모달 -->
     <div id="settingsModal" class="fixed inset-0 bg-black/60 z-50 hidden flex items-center justify-center p-4">
         <div class="bg-white dark:bg-slate-900 w-full max-w-sm rounded-2xl overflow-hidden shadow-2xl relative text-center text-xs divide-y divide-slate-100 dark:divide-slate-800 border border-slate-200 dark:border-slate-800">
             <div class="py-4 font-bold text-sm">환경설정</div>
@@ -140,48 +181,42 @@
 
             <button onclick="openChangeUsernameModal()" class="w-full py-3.5 hover:bg-slate-50 dark:hover:bg-slate-800 font-semibold">아이디 변경 (30일 1회)</button>
             <button onclick="openChangePasswordModal()" class="w-full py-3.5 hover:bg-slate-50 dark:hover:bg-slate-800 font-semibold">비밀번호 변경</button>
-            <button onclick="openDeleteAccountModal()" class="w-full py-3.5 text-red-400 hover:bg-slate-50 dark:hover:bg-slate-800 font-semibold">회원 탈퇴</button>
-            <button onclick="logout()" class="w-full py-3.5 text-red-500 font-semibold hover:bg-slate-50 dark:hover:bg-slate-800">로그아웃</button>
+            <button onclick="logout()" class="w-full py-3.5 text-blue-500 font-semibold hover:bg-slate-50 dark:hover:bg-slate-800">로그아웃</button>
+            <button onclick="openDeleteAccountModal()" class="w-full py-3.5 text-red-500 font-semibold hover:bg-slate-50 dark:hover:bg-slate-800">회원 탈퇴</button>
             <button onclick="closeSettingsModal()" class="w-full py-3.5 text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800">닫기</button>
         </div>
     </div>
 
-    <!-- 🔏 아이디 변경 모달 -->
+    <!-- 👤 아이디 변경 모달 -->
     <div id="changeUsernameModal" class="fixed inset-0 bg-black/60 z-50 hidden flex items-center justify-center p-4">
-        <div class="bg-white dark:bg-slate-900 w-full max-w-sm rounded-2xl p-6 shadow-2xl relative border border-slate-200 dark:border-slate-800 text-xs">
-            <h3 class="font-bold text-sm mb-3 text-center">아이디 변경</h3>
-            <p class="text-[11px] text-slate-400 mb-3 leading-relaxed">아이디는 30일에 한 번만 변경할 수 있습니다.</p>
-            <input type="text" id="newUsernameInput" placeholder="새 아이디" class="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-lg outline-none bg-transparent mb-3">
-            <div class="flex gap-2">
-                <button onclick="closeChangeUsernameModal()" class="w-1/2 py-2 bg-slate-100 dark:bg-slate-800 rounded-lg font-semibold">취소</button>
-                <button onclick="submitChangeUsername()" class="w-1/2 py-2 bg-blue-500 text-white font-bold rounded-lg">변경하기</button>
-            </div>
+        <div class="bg-white dark:bg-slate-900 w-full max-w-sm rounded-2xl p-5 shadow-2xl relative border border-slate-200 dark:border-slate-800 text-xs">
+            <button onclick="closeChangeUsernameModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+            <h3 class="font-bold text-sm mb-2">새로운 아이디 설정</h3>
+            <p class="text-[11px] text-slate-400 mb-3 leading-relaxed">아이디는 30일에 한 번만 변경할 수 있으며 기존 게시물 및 댓글 작성자가 모두 함께 업데이트됩니다.</p>
+            <input type="text" id="newUsernameInput" placeholder="새로운 아이디 입력" class="w-full px-3 py-2.5 border border-slate-200 dark:border-slate-700 rounded-lg outline-none bg-slate-50 dark:bg-slate-800 mb-3">
+            <button onclick="submitChangeUsername()" class="w-full py-2.5 bg-blue-500 hover:bg-blue-600 text-white font-bold rounded-lg transition">변경하기</button>
         </div>
     </div>
 
     <!-- 🔒 비밀번호 변경 모달 -->
     <div id="changePasswordModal" class="fixed inset-0 bg-black/60 z-50 hidden flex items-center justify-center p-4">
-        <div class="bg-white dark:bg-slate-900 w-full max-w-sm rounded-2xl p-6 shadow-2xl relative border border-slate-200 dark:border-slate-800 text-xs">
-            <h3 class="font-bold text-sm mb-3 text-center">비밀번호 변경</h3>
-            <input type="password" id="currentPasswordInput" placeholder="현재 비밀번호" class="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-lg outline-none bg-transparent mb-2">
-            <input type="password" id="newPasswordInput" placeholder="새 비밀번호" class="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-lg outline-none bg-transparent mb-3">
-            <div class="flex gap-2">
-                <button onclick="closeChangePasswordModal()" class="w-1/2 py-2 bg-slate-100 dark:bg-slate-800 rounded-lg font-semibold">취소</button>
-                <button onclick="submitChangePassword()" class="w-1/2 py-2 bg-blue-500 text-white font-bold rounded-lg">변경하기</button>
-            </div>
+        <div class="bg-white dark:bg-slate-900 w-full max-w-sm rounded-2xl p-5 shadow-2xl relative border border-slate-200 dark:border-slate-800 text-xs space-y-2.5">
+            <button onclick="closeChangePasswordModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+            <h3 class="font-bold text-sm mb-3">비밀번호 변경</h3>
+            <input type="password" id="currentPasswordInput" placeholder="현재 비밀번호" class="w-full px-3 py-2.5 border border-slate-200 dark:border-slate-700 rounded-lg outline-none bg-slate-50 dark:bg-slate-800">
+            <input type="password" id="newPasswordInput" placeholder="새 비밀번호" class="w-full px-3 py-2.5 border border-slate-200 dark:border-slate-700 rounded-lg outline-none bg-slate-50 dark:bg-slate-800">
+            <button onclick="submitChangePassword()" class="w-full py-2.5 bg-blue-500 hover:bg-blue-600 text-white font-bold rounded-lg transition mt-2">비밀번호 변경 완료</button>
         </div>
     </div>
 
     <!-- ⚠️ 회원 탈퇴 모달 -->
     <div id="deleteAccountModal" class="fixed inset-0 bg-black/60 z-50 hidden flex items-center justify-center p-4">
-        <div class="bg-white dark:bg-slate-900 w-full max-w-sm rounded-2xl p-6 shadow-2xl relative border border-slate-200 dark:border-slate-800 text-xs">
-            <h3 class="font-bold text-sm mb-3 text-center text-red-500">회원 탈퇴</h3>
-            <p class="text-[11px] text-slate-400 mb-3 leading-relaxed">탈퇴 시 모든 게시물과 계정 정보가 완전히 삭제됩니다.</p>
-            <input type="password" id="deleteAccountPassword" placeholder="비밀번호 확인" class="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-lg outline-none bg-transparent mb-3">
-            <div class="flex gap-2">
-                <button onclick="closeDeleteAccountModal()" class="w-1/2 py-2 bg-slate-100 dark:bg-slate-800 rounded-lg font-semibold">취소</button>
-                <button onclick="submitDeleteAccount()" class="w-1/2 py-2 bg-red-500 text-white font-bold rounded-lg">탈퇴 확인</button>
-            </div>
+        <div class="bg-white dark:bg-slate-900 w-full max-w-sm rounded-2xl p-5 shadow-2xl relative border border-slate-200 dark:border-slate-800 text-xs space-y-3">
+            <button onclick="closeDeleteAccountModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+            <h3 class="font-bold text-sm text-red-500">회원 탈퇴</h3>
+            <p class="text-slate-400 text-[11px] leading-relaxed">탈퇴 시 모든 게시글, 스토리, 댓글, 팔로우 내역이 영구적으로 삭제됩니다. 본인 확인을 위해 비밀번호를 입력해 주세요.</p>
+            <input type="password" id="deleteAccountPasswordInput" placeholder="비밀번호 확인" class="w-full px-3 py-2.5 border border-slate-200 dark:border-slate-700 rounded-lg outline-none bg-slate-50 dark:bg-slate-800">
+            <button onclick="submitDeleteAccount()" class="w-full py-2.5 bg-red-500 hover:bg-red-600 text-white font-bold rounded-lg transition">탈퇴 확정</button>
         </div>
     </div>
 
@@ -190,8 +225,7 @@
         const targetUserFromUrl = pathParts.length > 2 && pathParts[2] ? decodeURIComponent(pathParts[2]) : null;
         let currentProfileUser = null;
         let loggedInUser = null;
-        let isAdminUser = false;
-        let activeModalPostId = null;
+        let profileCropperInstance = null;
 
         function getDefaultAvatar(sizeClass = "text-base") {
             return `<div class="w-full h-full bg-slate-200 dark:bg-slate-700 text-slate-400 flex items-center justify-center"><i class="fa-solid fa-user ${sizeClass}"></i></div>`;
@@ -207,10 +241,7 @@
         async function initProfile() {
             const meRes = await fetch('/api/me');
             const meData = await meRes.json();
-            if (meData.logged_in) {
-                loggedInUser = meData.username;
-                isAdminUser = meData.is_admin;
-            }
+            if (meData.logged_in) loggedInUser = meData.username;
 
             let targetUser = targetUserFromUrl || (meData.logged_in ? meData.username : null);
             if (!targetUser) { window.location.href = '/'; return; }
@@ -224,11 +255,14 @@
             document.getElementById('profileUsername').innerText = `@${u.username}`;
             document.getElementById('followerCount').innerText = u.follower_count;
             document.getElementById('followingCount').innerText = u.following_count;
-            document.getElementById('profileBio').innerText = u.bio || '자기소개가 없습니다.';
+            document.getElementById('profileBio').innerText = u.bio || '';
 
             const avatarBox = document.getElementById('profileAvatarBox');
-            if (u.profile_img) avatarBox.innerHTML = `<img src="${u.profile_img}" class="w-full h-full object-cover">`;
-            else avatarBox.innerHTML = `<i class="fa-solid fa-user text-3xl sm:text-4xl text-slate-400"></i>`;
+            if (u.profile_img) {
+                avatarBox.innerHTML = `<img src="${u.profile_img}" class="w-full h-full object-cover">`;
+            } else {
+                avatarBox.innerHTML = `<i class="fa-solid fa-user text-3xl sm:text-4xl text-slate-400"></i>`;
+            }
 
             const isMyProfile = meData.logged_in && (meData.username === u.username);
             const actionArea = document.getElementById('profileActionArea');
@@ -237,11 +271,12 @@
                 document.getElementById('profileEmail').innerText = u.email;
                 document.getElementById('tabLikesBtn').classList.remove('hidden');
                 document.getElementById('tabBookmarksBtn').classList.remove('hidden');
-                document.getElementById('editBioBtn').classList.remove('hidden');
                 document.getElementById('privateAccountSwitch').checked = u.is_private;
+                document.getElementById('avatarEditBadge').classList.remove('hidden');
+                document.getElementById('editBioBtn').classList.remove('hidden');
 
                 actionArea.innerHTML = `
-                    <button onclick="openSettingsModal()" class="p-2 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full text-base"><i class="fa-solid fa-gear"></i></button>
+                    <button onclick="openSettingsModal()" class="p-2 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full text-base" title="환경설정"><i class="fa-solid fa-gear"></i></button>
                 `;
             } else {
                 let btnText = '팔로우';
@@ -273,74 +308,134 @@
             }
         }
 
-        function triggerProfileImgUpload() {
+        // ✂️ 프로필 사진 변경 및 크롭
+        function handleAvatarClick() {
             if (loggedInUser && loggedInUser === currentProfileUser) {
-                document.getElementById('profileImgInput').click();
+                document.getElementById('profileFileInput').click();
             }
         }
 
-        async function uploadProfileImage(input) {
+        function handleProfileFileSelect(input) {
             if (!input.files || input.files.length === 0) return;
             const file = input.files[0];
-            const formData = new FormData();
-            formData.append('file', file);
+            const reader = new FileReader();
 
-            try {
-                const res = await fetch('/api/profile-image', { method: 'POST', body: formData });
-                const d = await res.json();
-                if (d.status === 'success') {
-                    document.getElementById('profileAvatarBox').innerHTML = `<img src="${d.profile_img}" class="w-full h-full object-cover">`;
-                } else alert(d.message);
-            } catch (err) {
-                alert('이미지 업로드 실패');
-            }
-        }
+            reader.onload = (e) => {
+                const img = document.getElementById('profileCropperImage');
+                img.src = e.target.result;
+                document.getElementById('profileCropperModal').classList.remove('hidden');
 
-        function editBioPrompt() {
-            const currentBio = document.getElementById('profileBio').innerText;
-            const newBio = prompt('새로운 자기소개를 입력하세요 (최대 30자):', currentBio === '자기소개가 없습니다.' ? '' : currentBio);
-            if (newBio !== null) {
-                fetch('/api/profile-bio', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ bio: newBio })
-                }).then(res => res.json()).then(d => {
-                    if (d.status === 'success') document.getElementById('profileBio').innerText = d.bio || '자기소개가 없습니다.';
-                    else alert(d.message);
+                if (profileCropperInstance) {
+                    profileCropperInstance.destroy();
+                    profileCropperInstance = null;
+                }
+
+                profileCropperInstance = new Cropper(img, {
+                    aspectRatio: 1,
+                    viewMode: 1,
+                    autoCropArea: 0.9,
+                    responsive: true
                 });
-            }
+            };
+            reader.readAsDataURL(file);
         }
 
-        function openUserListModal(type) {
-            const modal = document.getElementById('userListModal');
-            const title = document.getElementById('userListModalTitle');
-            const content = document.getElementById('userListModalContent');
-            title.innerText = type === 'followers' ? '팔로워' : '팔로우';
-            content.innerHTML = '<p class="text-center text-slate-400 py-4">불러오는 중...</p>';
-            modal.classList.remove('hidden');
+        function closeProfileCropperModal() {
+            document.getElementById('profileCropperModal').classList.add('hidden');
+            if (profileCropperInstance) {
+                profileCropperInstance.destroy();
+                profileCropperInstance = null;
+            }
+            document.getElementById('profileFileInput').value = '';
+        }
+
+        function profileCropperZoom(d) { if (profileCropperInstance) profileCropperInstance.zoom(d); }
+        function profileCropperRotate(deg) { if (profileCropperInstance) profileCropperInstance.rotate(deg); }
+
+        function saveCroppedProfileImage() {
+            if (!profileCropperInstance) return;
+            const btn = document.getElementById('saveProfileCropBtn');
+            btn.disabled = true;
+            btn.innerText = '저장 중...';
+
+            profileCropperInstance.getCroppedCanvas({
+                maxWidth: 600,
+                maxHeight: 600
+            }).toBlob(blob => {
+                const formData = new FormData();
+                formData.append('file', blob, 'profile.jpg');
+
+                fetch('/api/profile-image', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(res => res.json())
+                .then(d => {
+                    if (d.status === 'success') {
+                        closeProfileCropperModal();
+                        document.getElementById('profileAvatarBox').innerHTML = `<img src="${d.profile_img}" class="w-full h-full object-cover">`;
+                    } else {
+                        alert(d.message || '프로필 사진 변경 실패');
+                    }
+                })
+                .catch(err => alert('저장 중 오류 발생'))
+                .finally(() => {
+                    btn.disabled = false;
+                    btn.innerText = '저장';
+                });
+            }, 'image/jpeg', 0.9);
+        }
+
+        // 📝 자기소개 모달
+        function openBioModal() {
+            document.getElementById('bioInput').value = document.getElementById('profileBio').innerText;
+            document.getElementById('bioModal').classList.remove('hidden');
+        }
+        function closeBioModal() { document.getElementById('bioModal').classList.add('hidden'); }
+        function saveBio() {
+            const bio = document.getElementById('bioInput').value.trim();
+            fetch('/api/profile-bio', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ bio })
+            })
+            .then(res => res.json())
+            .then(d => {
+                if (d.status === 'success') {
+                    document.getElementById('profileBio').innerText = d.bio;
+                    closeBioModal();
+                } else {
+                    alert(d.message);
+                }
+            });
+        }
+
+        // 👥 팔로워 / 팔로잉 목록 모달
+        function openFollowModal(type) {
+            const title = type === 'followers' ? '팔로워' : '팔로잉';
+            document.getElementById('followListModalTitle').innerText = `${title} 목록`;
+            const container = document.getElementById('followListContainer');
+            container.innerHTML = '<p class="text-center text-slate-400 py-6">불러오는 중...</p>';
+            document.getElementById('followListModal').classList.remove('hidden');
 
             fetch(`/api/users/${encodeURIComponent(currentProfileUser)}/${type}`)
                 .then(res => res.json())
-                .then(data => {
-                    content.innerHTML = '';
-                    if (!data.users || data.users.length === 0) {
-                        content.innerHTML = '<p class="text-center text-slate-400 py-6">목록이 없습니다.</p>';
+                .then(d => {
+                    container.innerHTML = '';
+                    if (!d.users || d.users.length === 0) {
+                        container.innerHTML = `<p class="text-center text-slate-400 py-6">${title}한 사용자가 없습니다.</p>`;
                         return;
                     }
-                    data.users.forEach(username => {
-                        const row = document.createElement('div');
-                        row.className = "flex items-center justify-between py-1";
-                        row.innerHTML = `
-                            <a href="/profile/${username}" class="font-bold hover:underline flex items-center gap-2">
-                                <div class="w-7 h-7 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center font-bold text-[10px]">@</div>
-                                <span>@${escapeHtml(username)}</span>
-                            </a>
-                        `;
-                        content.appendChild(row);
+                    d.users.forEach(u => {
+                        const row = document.createElement('a');
+                        row.href = `/profile/${u}`;
+                        row.className = "flex items-center gap-2.5 p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition font-bold";
+                        row.innerHTML = `<div class="w-8 h-8 rounded-full overflow-hidden border border-slate-200 dark:border-slate-700 flex items-center justify-center">${getDefaultAvatar("text-xs")}</div><span>@${escapeHtml(u)}</span>`;
+                        container.appendChild(row);
                     });
                 });
         }
-        function closeUserListModal() { document.getElementById('userListModal').classList.add('hidden'); }
+        function closeFollowModal() { document.getElementById('followListModal').classList.add('hidden'); }
 
         function switchTab(tab) {
             const pBtn = document.getElementById('tabPostsBtn');
@@ -396,24 +491,28 @@
         }
 
         function openProfilePostDetail(postId) {
-            activeModalPostId = postId;
             fetch(`/api/posts/${postId}`)
                 .then(res => res.json())
                 .then(data => {
                     if (data.status === 'success') {
                         const post = data.post;
                         const avatarBox = document.getElementById('profileModalUserAvatar');
-                        if (post.profile_img) avatarBox.innerHTML = `<img src="${post.profile_img}" class="w-full h-full object-cover">`;
-                        else avatarBox.innerHTML = getDefaultAvatar("text-xs");
+                        if (post.profile_img) {
+                            avatarBox.innerHTML = `<img src="${post.profile_img}" class="w-full h-full object-cover">`;
+                        } else {
+                            avatarBox.innerHTML = getDefaultAvatar("text-xs");
+                        }
 
                         document.getElementById('profileModalUsername').innerText = `@${post.username}`;
                         document.getElementById('profileModalContent').innerText = post.content;
 
-                        const delBtn = document.getElementById('profileModalDeleteBtn');
-                        if (loggedInUser && (loggedInUser === post.username || isAdminUser)) {
+                        const delBtn = document.getElementById('profileModalDeletePostBtn');
+                        if (loggedInUser && (loggedInUser === post.username || loggedInUser === 'admin')) {
                             delBtn.classList.remove('hidden');
-                            delBtn.onclick = () => deleteProfilePost(post.id);
-                        } else delBtn.classList.add('hidden');
+                            delBtn.onclick = () => deletePostFromProfile(post.id);
+                        } else {
+                            delBtn.classList.add('hidden');
+                        }
 
                         const imgArea = document.getElementById('profileModalImageArea');
                         const images = post.image_urls && post.image_urls.length > 0 ? post.image_urls : (post.image_url ? [post.image_url] : []);
@@ -435,14 +534,22 @@
                 });
         }
 
-        function closeProfilePostDetailModal() { document.getElementById('profilePostDetailModal').classList.add('hidden'); }
+        function closeProfilePostDetailModal() {
+            document.getElementById('profilePostDetailModal').classList.add('hidden');
+        }
 
-        function deleteProfilePost(postId) {
+        function deletePostFromProfile(postId) {
             if (!confirm('정말로 이 게시글을 삭제하시겠습니까?')) return;
-            fetch(`/api/posts/${postId}`, { method: 'DELETE' }).then(() => {
-                closeProfilePostDetailModal();
-                switchTab('posts');
-            });
+            fetch(`/api/posts/${postId}`, { method: 'DELETE' })
+                .then(res => res.json())
+                .then(d => {
+                    if (d.status === 'success') {
+                        closeProfilePostDetailModal();
+                        switchTab('posts');
+                    } else {
+                        alert(d.message);
+                    }
+                });
         }
 
         function loadProfileModalComments(postId) {
@@ -453,8 +560,14 @@
                     list.innerHTML = '';
                     if (data.status === 'success') {
                         data.comments.forEach(c => {
-                            const p = document.createElement('p');
-                            p.innerHTML = `<strong class="text-slate-900 dark:text-white">@${escapeHtml(c.username)}</strong> ${escapeHtml(c.content)}`;
+                            const p = document.createElement('div');
+                            p.className = "flex items-center justify-between";
+                            p.innerHTML = `
+                                <span><strong class="text-slate-900 dark:text-white">@${escapeHtml(c.username)}</strong> ${escapeHtml(c.content)}</span>
+                                ${loggedInUser === c.username || loggedInUser === 'admin' ? `
+                                    <button onclick="deleteCommentFromProfile(${c.id}, ${postId})" class="text-slate-400 hover:text-red-500 text-[10px] ml-2"><i class="fa-solid fa-xmark"></i></button>
+                                ` : ''}
+                            `;
                             list.appendChild(p);
                         });
                     }
@@ -470,9 +583,20 @@
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ post_id: postId, content: input.value.trim() })
-            }).then(res => res.json()).then(data => {
-                if (data.status === 'success') { loadProfileModalComments(postId); input.value = ''; }
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    loadProfileModalComments(postId);
+                    input.value = '';
+                }
             });
+        }
+
+        function deleteCommentFromProfile(commentId, postId) {
+            fetch(`/api/comments/${commentId}`, { method: 'DELETE' })
+                .then(res => res.json())
+                .then(data => { if (data.status === 'success') loadProfileModalComments(postId); });
         }
 
         function handleFollowToggle(target, btn) {
@@ -502,52 +626,81 @@
             });
         }
 
+        // ⚙️ 환경설정 하위 모달 제어
         function openSettingsModal() { document.getElementById('settingsModal').classList.remove('hidden'); }
         function closeSettingsModal() { document.getElementById('settingsModal').classList.add('hidden'); }
-        
-        function openChangeUsernameModal() { closeSettingsModal(); document.getElementById('changeUsernameModal').classList.remove('hidden'); }
+
+        function openChangeUsernameModal() {
+            closeSettingsModal();
+            document.getElementById('changeUsernameModal').classList.remove('hidden');
+        }
         function closeChangeUsernameModal() { document.getElementById('changeUsernameModal').classList.add('hidden'); }
         function submitChangeUsername() {
-            const new_username = document.getElementById('newUsernameInput').value.trim();
-            if (!new_username) return;
+            const newUsername = document.getElementById('newUsernameInput').value.trim();
+            if (!newUsername) { alert('아이디를 입력해 주세요.'); return; }
             fetch('/api/change-username', {
                 method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ new_username })
-            }).then(res => res.json()).then(d => {
-                if (d.status === 'success') { alert('아이디가 변경되었습니다.'); window.location.href = `/profile/${d.new_username}`; }
-                else alert(d.message);
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ new_username: newUsername })
+            })
+            .then(res => res.json())
+            .then(d => {
+                if (d.status === 'success') {
+                    alert('아이디가 성공적으로 변경되었습니다!');
+                    window.location.href = `/profile/${d.new_username}`;
+                } else {
+                    alert(d.message);
+                }
             });
         }
 
-        function openChangePasswordModal() { closeSettingsModal(); document.getElementById('changePasswordModal').classList.remove('hidden'); }
+        function openChangePasswordModal() {
+            closeSettingsModal();
+            document.getElementById('changePasswordModal').classList.remove('hidden');
+        }
         function closeChangePasswordModal() { document.getElementById('changePasswordModal').classList.add('hidden'); }
         function submitChangePassword() {
             const current_password = document.getElementById('currentPasswordInput').value.trim();
             const new_password = document.getElementById('newPasswordInput').value.trim();
-            if (!current_password || !new_password) return;
+            if (!current_password || !new_password) { alert('비밀번호를 입력해 주세요.'); return; }
             fetch('/api/change-password', {
                 method: 'POST',
-                headers: {'Content-Type': 'application/json'},
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ current_password, new_password })
-            }).then(res => res.json()).then(d => {
-                if (d.status === 'success') { alert('비밀번호가 변경되었습니다.'); closeChangePasswordModal(); }
-                else alert(d.message);
+            })
+            .then(res => res.json())
+            .then(d => {
+                if (d.status === 'success') {
+                    alert('비밀번호가 변경되었습니다!');
+                    closeChangePasswordModal();
+                } else {
+                    alert(d.message);
+                }
             });
         }
 
-        function openDeleteAccountModal() { closeSettingsModal(); document.getElementById('deleteAccountModal').classList.remove('hidden'); }
+        function openDeleteAccountModal() {
+            closeSettingsModal();
+            document.getElementById('deleteAccountModal').classList.remove('hidden');
+        }
         function closeDeleteAccountModal() { document.getElementById('deleteAccountModal').classList.add('hidden'); }
         function submitDeleteAccount() {
-            const password = document.getElementById('deleteAccountPassword').value.trim();
-            if (!password) return;
+            const password = document.getElementById('deleteAccountPasswordInput').value.trim();
+            if (!password) { alert('비밀번호를 입력해 주세요.'); return; }
+            if (!confirm('정말로 탈퇴하시겠습니까? 탈퇴 후 데이터는 복구할 수 없습니다.')) return;
             fetch('/api/delete-account', {
                 method: 'POST',
-                headers: {'Content-Type': 'application/json'},
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ password })
-            }).then(res => res.json()).then(d => {
-                if (d.status === 'success') { alert('계정이 완전히 삭제되었습니다.'); window.location.href = '/'; }
-                else alert(d.message);
+            })
+            .then(res => res.json())
+            .then(d => {
+                if (d.status === 'success') {
+                    alert('회원 탈퇴가 완료되었습니다.');
+                    window.location.href = '/';
+                } else {
+                    alert(d.message);
+                }
             });
         }
 
