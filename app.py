@@ -16,7 +16,7 @@ app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1)
 
 app.secret_key = os.environ.get('SECRET_KEY', 'super_secret_key_for_woongstagram_app_2026')
 
-# 🔐 50MB 대용량 허용 & 365일 영구 세션
+# 🔐 대용량 업로드(50MB) & 365일 영구 세션
 app.config['MAX_CONTENT_LENGTH'] = 50 * 1024 * 1024
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=365)
 app.config['SESSION_COOKIE_SECURE'] = True
@@ -26,9 +26,13 @@ app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
 DEFAULT_DB_URL = "postgresql://neondb_owner:YOUR_PASSWORD@ep-xyz.region.aws.neon.tech/neondb?sslmode=require"
 DATABASE_URL = os.environ.get('DATABASE_URL', DEFAULT_DB_URL)
 
-# 🛠️ Cloudinary 환경변수 직접 주입 (누락 방지)
-CLOUDINARY_URL = os.environ.get('CLOUDINARY_URL', 'cloudinary://777156499967142:fuugnC0w7tgErnuV143zYqbP4J8@ivbaolu5')
-cloudinary.config(cloudinary_url=CLOUDINARY_URL, secure=True)
+# 🛠️ Cloudinary 계정 정보 직접 명시 (환경 변수 파싱 오류 100% 방지)
+cloudinary.config(
+    cloud_name=os.environ.get('CLOUDINARY_CLOUD_NAME', 'ivbaolu5'),
+    api_key=os.environ.get('CLOUDINARY_API_KEY', '777156499967142'),
+    api_secret=os.environ.get('CLOUDINARY_API_SECRET', 'fuugnC0w7tgErnuV143zYqbP4J8'),
+    secure=True
+)
 
 NEWS_CACHE = {
     'updated_at': None,
@@ -176,14 +180,6 @@ def init_db():
 
 init_db()
 
-@app.errorhandler(413)
-def request_entity_too_large(error):
-    return jsonify({'status': 'error', 'message': '파일 용량이 너무 큽니다. (최대 50MB)'}), 413
-
-@app.errorhandler(500)
-def internal_server_error(error):
-    return jsonify({'status': 'error', 'message': '서버 처리 중 오류가 발생했습니다.'}), 500
-
 def create_notification(cursor, recipient, actor, notif_type, post_id=None):
     if recipient == actor:
         return
@@ -267,7 +263,7 @@ def upload_file():
                 image_urls.append(upload_result.get('secure_url'))
             except Exception as e:
                 print("Cloudinary Upload Exception:", e)
-                return jsonify({'status': 'error', 'message': f'이미지 업로드 실패: {str(e)}'}), 500
+                return jsonify({'status': 'error', 'message': f'Cloudinary 업로드 실패: {str(e)}'}), 500
 
     return jsonify({
         'status': 'success', 
@@ -276,7 +272,7 @@ def upload_file():
         'is_video': is_video
     })
 
-# --- 🔍 아이디/비밀번호 찾기 & 사용자 API ---
+# --- 🔍 아이디 찾기 & 비밀번호 재설정 & 계정 관리 APIs ---
 @app.route('/api/find-id', methods=['POST'])
 def find_id():
     data = request.json or {}
@@ -558,7 +554,7 @@ def send_dm_message(partner):
     conn.close()
     return jsonify({'status': 'success'})
 
-# --- 🔖 북마크 (저장하기) APIs ---
+# --- 🔖 북마크 APIs ---
 @app.route('/api/posts/<int:post_id>/bookmark', methods=['POST'])
 def toggle_bookmark(post_id):
     if 'username' not in session:
