@@ -372,7 +372,7 @@
             }
         });
 
-        // 🕒 '몇 분 전' 시간 계산 함수 복구
+        // 🕒 '몇 분 전' 시간 계산 함수
         function timeAgo(dateString) {
             if (!dateString) return '방금 전';
             const formattedDate = dateString.replace(' ', 'T');
@@ -712,7 +712,7 @@
             document.getElementById('postCroppedPreviewArea').classList.remove('hidden');
         }
 
-        // 📸 스토리 모달 (5초 자동 소멸 및 읽음 상태 회색 링 연동)
+        // 📸 스토리 모달 (5초 자동 소멸 및 읽음 상태 링 연동)
         function openCreateStoryModal() { 
             if (!currentUser) { openAuthModal(); return; } 
             document.getElementById('createStoryModal').classList.remove('hidden'); 
@@ -1229,9 +1229,18 @@
                 const l = document.getElementById('recommendationList');
                 l.innerHTML = '';
                 data.recommendations.forEach(r => {
+                    const avatar = r.profile_img ? `<img src="${r.profile_img}" class="w-full h-full object-cover">` : getDefaultAvatar("text-xs");
                     const d = document.createElement('div');
                     d.className = "flex justify-between items-center";
-                    d.innerHTML = `<a href="/profile/${r.username}" class="font-semibold hover:underline">@${escapeHtml(r.username)}</a><span class="text-[10px] text-slate-400">${escapeHtml(r.reason)}</span>`;
+                    d.innerHTML = `
+                        <div class="flex items-center gap-2.5">
+                            <a href="/profile/${r.username}" class="w-8 h-8 rounded-full border border-slate-200 dark:border-slate-700 flex items-center justify-center overflow-hidden shrink-0">${avatar}</a>
+                            <div class="flex flex-col">
+                                <a href="/profile/${r.username}" class="font-semibold hover:underline">@${escapeHtml(r.username)}</a>
+                                <span class="text-[10px] text-slate-400">${escapeHtml(r.reason)}</span>
+                            </div>
+                        </div>
+                    `;
                     l.appendChild(d);
                 });
             });
