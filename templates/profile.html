@@ -15,34 +15,28 @@
 </head>
 <body class="bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 font-sans antialiased min-h-screen flex flex-col justify-between transition-colors pb-16 md:pb-0">
 
-    <!-- 🔝 Header Navigation -->
+    <!-- Header Navigation -->
     <header class="border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 sticky top-0 z-40">
         <div class="max-w-5xl mx-auto px-4 h-14 flex items-center justify-between">
             <a href="/" class="text-xl sm:text-2xl font-black italic font-serif text-slate-900 dark:text-white select-none">
                 Woongstagram
             </a>
             <div class="flex items-center gap-4 sm:gap-5 text-lg sm:text-xl text-slate-800 dark:text-slate-200">
-                <button onclick="toggleDarkMode()" class="p-1 hover:text-amber-500 transition" title="테마 변경">
-                    <i id="themeIconPC" class="fa-regular fa-moon"></i>
-                </button>
                 <a href="/" title="홈"><i class="fa-solid fa-house"></i></a>
                 <a href="/profile" class="font-bold text-blue-500" title="프로필"><i class="fa-solid fa-user"></i></a>
             </div>
         </div>
     </header>
 
-    <!-- 👤 Profile Main Section -->
+    <!-- Profile Main Section -->
     <main class="max-w-4xl mx-auto px-4 py-6 sm:py-8 w-full flex-1">
         <div id="profileHeader" class="flex flex-col sm:flex-row items-center sm:items-start gap-6 sm:gap-8 pb-6 sm:pb-8 border-b border-slate-200 dark:border-slate-800">
-            <!-- 프로필 사진 (내 프로필일 때 클릭하여 변경 가능) -->
+            <!-- 📷 프로필 사진 (내 프로필이면 클릭 시 사진 변경) -->
             <div class="relative group shrink-0">
-                <div id="profileAvatarBox" onclick="triggerProfileImageUpload()" class="w-24 h-24 sm:w-36 sm:h-36 rounded-full bg-slate-200 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 flex items-center justify-center font-bold shadow-md overflow-hidden cursor-pointer relative">
+                <div id="profileAvatarBox" onclick="triggerProfileImgUpload()" class="w-24 h-24 sm:w-36 sm:h-36 rounded-full bg-slate-200 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 flex items-center justify-center font-bold shadow-md overflow-hidden cursor-pointer relative">
                     <i class="fa-solid fa-user text-3xl sm:text-4xl text-slate-400"></i>
                 </div>
-                <div id="avatarEditOverlay" class="hidden absolute inset-0 bg-black/40 rounded-full flex items-center justify-center text-white text-xs font-bold pointer-events-none opacity-0 group-hover:opacity-100 transition">
-                    <i class="fa-solid fa-camera mr-1"></i> 변경
-                </div>
-                <input type="file" id="profileImageInput" accept="image/*" class="hidden" onchange="handleProfileImageFile(this)">
+                <input type="file" id="profileImgInput" accept="image/*" onchange="uploadProfileImage(this)" class="hidden">
             </div>
 
             <div class="flex flex-col gap-3 sm:gap-4 text-center sm:text-left flex-1 w-full">
@@ -51,17 +45,20 @@
                     <div id="profileActionArea" class="flex items-center justify-center sm:justify-start gap-2"></div>
                 </div>
 
-                <!-- 👥 팔로워 / 팔로잉 숫자 클릭 시 모달 오픈 -->
+                <!-- 👥 팔로워 / 팔로잉 클릭 시 목록 팝업 -->
                 <div class="flex justify-center sm:justify-start gap-6 sm:gap-8 text-xs sm:text-sm">
                     <div>게시물 <span id="postCount" class="font-bold">0</span></div>
-                    <div onclick="openFollowModal('followers')" class="cursor-pointer hover:underline">팔로워 <span id="followerCount" class="font-bold">0</span></div>
-                    <div onclick="openFollowModal('following')" class="cursor-pointer hover:underline">팔로우 <span id="followingCount" class="font-bold">0</span></div>
+                    <div onclick="openUserListModal('followers')" class="cursor-pointer hover:opacity-80">팔로워 <span id="followerCount" class="font-bold">0</span></div>
+                    <div onclick="openUserListModal('following')" class="cursor-pointer hover:opacity-80">팔로우 <span id="followingCount" class="font-bold">0</span></div>
                 </div>
 
-                <!-- 📝 자기소개 & 이메일 -->
+                <!-- 📝 자기소개 -->
                 <div class="text-xs space-y-1 mt-1">
                     <p id="profileEmail" class="text-slate-400 text-[11px]"></p>
-                    <p id="profileBio" class="font-medium whitespace-pre-wrap break-all text-slate-800 dark:text-slate-200"></p>
+                    <div class="flex items-center justify-center sm:justify-start gap-2">
+                        <p id="profileBio" class="font-medium whitespace-pre-wrap break-all"></p>
+                        <button id="editBioBtn" onclick="editBioPrompt()" class="hidden text-slate-400 hover:text-blue-500 text-[11px]"><i class="fa-solid fa-pen"></i></button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -73,7 +70,7 @@
             <p class="text-xs text-slate-500 mt-1">사진과 동영상을 보려면 팔로우 요청을 보내세요.</p>
         </div>
 
-        <!-- 📑 탭 메뉴 (게시물 / 좋아요 / 저장됨) -->
+        <!-- 탭 메뉴 (게시물 / 좋아요 / 저장됨) -->
         <div id="profileTabsArea" class="flex justify-center border-t border-slate-200 dark:border-slate-800 -mt-[1px] gap-6 sm:gap-12">
             <button onclick="switchTab('posts')" id="tabPostsBtn" class="flex items-center gap-2 py-3 border-t-2 border-slate-900 dark:border-white font-bold text-xs tracking-wider">
                 <i class="fa-solid fa-table-cells text-sm"></i> 게시물
@@ -86,158 +83,134 @@
             </button>
         </div>
 
-        <!-- 🖼️ 게시물 그리드 -->
         <div id="myPostsGrid" class="grid grid-cols-3 gap-1 sm:gap-4 mt-2"></div>
     </main>
+
+    <!-- 🔍 프로필 전용 게시글 상세 보기 모달 -->
+    <div id="profilePostDetailModal" class="fixed inset-0 bg-black/70 z-50 hidden flex items-center justify-center p-3 sm:p-4">
+        <div class="bg-white dark:bg-slate-900 w-full max-w-2xl max-h-[85vh] rounded-2xl overflow-hidden shadow-2xl relative flex flex-col sm:flex-row border border-slate-200 dark:border-slate-800">
+            <button onclick="closeProfilePostDetailModal()" class="absolute top-3 right-3 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 z-10 p-1 bg-white/80 dark:bg-slate-800/80 rounded-full"><i class="fa-solid fa-xmark text-lg"></i></button>
+            <div id="profileModalImageArea" class="bg-black sm:w-1/2 flex items-center justify-center min-h-[220px]"></div>
+            <div class="p-4 sm:w-1/2 flex flex-col justify-between text-xs overflow-y-auto bg-white dark:bg-slate-900">
+                <div>
+                    <div class="flex items-center justify-between pb-3 mb-3 border-b border-slate-100 dark:border-slate-800">
+                        <div class="flex items-center gap-2">
+                            <span id="profileModalUserAvatar" class="w-7 h-7 rounded-full bg-slate-200 dark:bg-slate-700 overflow-hidden shrink-0"></span>
+                            <span id="profileModalUsername" class="font-bold text-slate-900 dark:text-white"></span>
+                        </div>
+                        <button id="profileModalDeleteBtn" class="hidden text-slate-400 hover:text-red-500"><i class="fa-solid fa-trash-can"></i></button>
+                    </div>
+                    <p id="profileModalContent" class="text-slate-700 dark:text-slate-300 leading-relaxed mb-4 pb-3 border-b border-slate-100 dark:border-slate-800 break-words"></p>
+                    <div id="profileModalCommentsList" class="space-y-2 text-[11px] mb-4"></div>
+                </div>
+                <div class="pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
+                    <input type="text" id="profileModalCommentInput" placeholder="댓글 달기..." class="flex-1 text-xs outline-none bg-transparent text-slate-800 dark:text-slate-200 placeholder-slate-400">
+                    <button id="profileModalCommentSubmitBtn" class="text-blue-500 font-semibold text-xs ml-2 hover:text-blue-700">게시</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 👥 팔로워 / 팔로잉 목록 팝업 모달 -->
+    <div id="userListModal" class="fixed inset-0 bg-black/60 z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-slate-900 w-full max-w-sm rounded-2xl overflow-hidden shadow-2xl relative border border-slate-200 dark:border-slate-800 text-xs">
+            <div class="p-3.5 border-b border-slate-100 dark:border-slate-800 font-bold text-center flex justify-between items-center">
+                <span id="userListModalTitle">목록</span>
+                <button onclick="closeUserListModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-base"></i></button>
+            </div>
+            <div id="userListModalContent" class="max-h-72 overflow-y-auto p-3 space-y-2"></div>
+        </div>
+    </div>
 
     <!-- 📱 모바일 하단 전용 내비게이션 바 -->
     <nav class="fixed bottom-0 left-0 right-0 h-12 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 z-40 flex items-center justify-around text-lg text-slate-800 dark:text-slate-200 md:hidden">
         <a href="/" class="p-2 hover:text-blue-500"><i class="fa-solid fa-house"></i></a>
-        <button onclick="toggleDarkMode()" class="p-2 hover:text-amber-500"><i id="themeIconMobile" class="fa-regular fa-moon"></i></button>
         <a href="/profile" class="p-2 text-blue-500"><i class="fa-solid fa-user"></i></a>
     </nav>
 
-    <!-- 👥 팔로워 / 팔로잉 유저 목록 모달 -->
-    <div id="followModal" class="fixed inset-0 bg-black/60 z-50 hidden flex items-center justify-center p-4">
-        <div class="bg-white dark:bg-slate-900 w-full max-w-sm rounded-2xl overflow-hidden shadow-2xl relative flex flex-col max-h-[70vh] border border-slate-200 dark:border-slate-800">
-            <div class="h-12 border-b border-slate-100 dark:border-slate-800 px-4 flex items-center justify-between shrink-0">
-                <span id="followModalTitle" class="font-bold text-sm">팔로워</span>
-                <button onclick="closeFollowModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
-            </div>
-            <div id="followListContainer" class="flex-1 overflow-y-auto p-3 space-y-2"></div>
-        </div>
-    </div>
-
-    <!-- ⚙️ 환경설정 메뉴 모달 -->
+    <!-- ⚙️ 환경설정 모달 -->
     <div id="settingsModal" class="fixed inset-0 bg-black/60 z-50 hidden flex items-center justify-center p-4">
         <div class="bg-white dark:bg-slate-900 w-full max-w-sm rounded-2xl overflow-hidden shadow-2xl relative text-center text-xs divide-y divide-slate-100 dark:divide-slate-800 border border-slate-200 dark:border-slate-800">
-            <div class="py-3.5 font-bold text-sm">설정</div>
+            <div class="py-4 font-bold text-sm">환경설정</div>
             
             <div class="p-3.5 flex items-center justify-between px-6">
                 <span class="font-semibold flex items-center gap-2"><i class="fa-solid fa-lock text-slate-400"></i> 비공개 계정</span>
                 <input type="checkbox" id="privateAccountSwitch" onchange="togglePrivateSetting(this.checked)" class="w-4 h-4 cursor-pointer">
             </div>
 
-            <button onclick="openEditBioModal()" class="w-full py-3.5 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 font-medium">자기소개 수정</button>
-            <button onclick="openChangeUsernameModal()" class="w-full py-3.5 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 font-medium">아이디 변경</button>
-            <button onclick="openChangePasswordModal()" class="w-full py-3.5 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 font-medium">비밀번호 변경</button>
-            <button onclick="openDeleteAccountModal()" class="w-full py-3.5 text-red-500 hover:bg-slate-50 dark:hover:bg-slate-800 font-medium">회원 탈퇴</button>
-            <button onclick="logout()" class="w-full py-3.5 text-red-600 font-bold hover:bg-slate-50 dark:hover:bg-slate-800">로그아웃</button>
-            <button onclick="closeSettingsModal()" class="w-full py-3.5 text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800">닫기</button>
+            <button onclick="openChangeUsernameModal()" class="w-full py-3.5 hover:bg-slate-50 dark:hover:bg-slate-800 font-semibold">아이디 변경 (30일 1회)</button>
+            <button onclick="openChangePasswordModal()" class="w-full py-3.5 hover:bg-slate-50 dark:hover:bg-slate-800 font-semibold">비밀번호 변경</button>
+            <button onclick="openDeleteAccountModal()" class="w-full py-3.5 text-red-400 hover:bg-slate-50 dark:hover:bg-slate-800 font-semibold">회원 탈퇴</button>
+            <button onclick="logout()" class="w-full py-3.5 text-red-500 font-semibold hover:bg-slate-50 dark:hover:bg-slate-800">로그아웃</button>
+            <button onclick="closeSettingsModal()" class="w-full py-3.5 text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800">닫기</button>
         </div>
     </div>
 
-    <!-- ✏️ 자기소개(Bio) 수정 모달 -->
-    <div id="editBioModal" class="fixed inset-0 bg-black/60 z-50 hidden flex items-center justify-center p-4">
-        <div class="bg-white dark:bg-slate-900 w-full max-w-sm rounded-2xl p-6 shadow-2xl relative border border-slate-200 dark:border-slate-800">
-            <button onclick="closeEditBioModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
-            <h3 class="text-sm font-bold text-center border-b border-slate-100 dark:border-slate-800 pb-3 mb-4">자기소개 수정</h3>
-            <div class="space-y-3 text-xs">
-                <textarea id="bioInput" rows="3" maxlength="30" placeholder="자기소개를 30자 이내로 입력하세요..." class="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-lg outline-none bg-transparent text-slate-900 dark:text-white resize-none"></textarea>
-                <div class="text-right text-[10px] text-slate-400"><span id="bioCharCount">0</span> / 30자</div>
-                <button onclick="submitBioEdit()" class="w-full py-2 bg-blue-500 hover:bg-blue-600 text-white font-bold rounded-lg transition">저장</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- 🆔 아이디 변경 모달 (30일 제한 안내) -->
+    <!-- 🔏 아이디 변경 모달 -->
     <div id="changeUsernameModal" class="fixed inset-0 bg-black/60 z-50 hidden flex items-center justify-center p-4">
-        <div class="bg-white dark:bg-slate-900 w-full max-w-sm rounded-2xl p-6 shadow-2xl relative border border-slate-200 dark:border-slate-800">
-            <button onclick="closeChangeUsernameModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
-            <h3 class="text-sm font-bold text-center border-b border-slate-100 dark:border-slate-800 pb-3 mb-4">아이디 변경</h3>
-            <div class="space-y-3 text-xs">
-                <p class="text-[11px] text-slate-400 leading-relaxed">아이디는 변경 후 <strong class="text-slate-700 dark:text-slate-200">30일 동안 다시 변경할 수 없습니다.</strong> 신중하게 입력해 주세요.</p>
-                <input type="text" id="newUsernameInput" placeholder="새로운 아이디 입력" class="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-lg outline-none bg-transparent text-slate-900 dark:text-white">
-                <button onclick="submitUsernameChange()" class="w-full py-2 bg-blue-500 hover:bg-blue-600 text-white font-bold rounded-lg transition">아이디 변경</button>
+        <div class="bg-white dark:bg-slate-900 w-full max-w-sm rounded-2xl p-6 shadow-2xl relative border border-slate-200 dark:border-slate-800 text-xs">
+            <h3 class="font-bold text-sm mb-3 text-center">아이디 변경</h3>
+            <p class="text-[11px] text-slate-400 mb-3 leading-relaxed">아이디는 30일에 한 번만 변경할 수 있습니다.</p>
+            <input type="text" id="newUsernameInput" placeholder="새 아이디" class="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-lg outline-none bg-transparent mb-3">
+            <div class="flex gap-2">
+                <button onclick="closeChangeUsernameModal()" class="w-1/2 py-2 bg-slate-100 dark:bg-slate-800 rounded-lg font-semibold">취소</button>
+                <button onclick="submitChangeUsername()" class="w-1/2 py-2 bg-blue-500 text-white font-bold rounded-lg">변경하기</button>
             </div>
         </div>
     </div>
 
-    <!-- 🔑 비밀번호 변경 모달 -->
+    <!-- 🔒 비밀번호 변경 모달 -->
     <div id="changePasswordModal" class="fixed inset-0 bg-black/60 z-50 hidden flex items-center justify-center p-4">
-        <div class="bg-white dark:bg-slate-900 w-full max-w-sm rounded-2xl p-6 shadow-2xl relative border border-slate-200 dark:border-slate-800">
-            <button onclick="closeChangePasswordModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
-            <h3 class="text-sm font-bold text-center border-b border-slate-100 dark:border-slate-800 pb-3 mb-4">비밀번호 변경</h3>
-            <div class="space-y-3 text-xs">
-                <input type="password" id="currentPwInput" placeholder="현재 비밀번호" class="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-lg outline-none bg-transparent text-slate-900 dark:text-white">
-                <input type="password" id="newPwInput" placeholder="새 비밀번호" class="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-lg outline-none bg-transparent text-slate-900 dark:text-white">
-                <button onclick="submitPasswordChange()" class="w-full py-2 bg-blue-500 hover:bg-blue-600 text-white font-bold rounded-lg transition">비밀번호 변경</button>
+        <div class="bg-white dark:bg-slate-900 w-full max-w-sm rounded-2xl p-6 shadow-2xl relative border border-slate-200 dark:border-slate-800 text-xs">
+            <h3 class="font-bold text-sm mb-3 text-center">비밀번호 변경</h3>
+            <input type="password" id="currentPasswordInput" placeholder="현재 비밀번호" class="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-lg outline-none bg-transparent mb-2">
+            <input type="password" id="newPasswordInput" placeholder="새 비밀번호" class="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-lg outline-none bg-transparent mb-3">
+            <div class="flex gap-2">
+                <button onclick="closeChangePasswordModal()" class="w-1/2 py-2 bg-slate-100 dark:bg-slate-800 rounded-lg font-semibold">취소</button>
+                <button onclick="submitChangePassword()" class="w-1/2 py-2 bg-blue-500 text-white font-bold rounded-lg">변경하기</button>
             </div>
         </div>
     </div>
 
     <!-- ⚠️ 회원 탈퇴 모달 -->
     <div id="deleteAccountModal" class="fixed inset-0 bg-black/60 z-50 hidden flex items-center justify-center p-4">
-        <div class="bg-white dark:bg-slate-900 w-full max-w-sm rounded-2xl p-6 shadow-2xl relative border border-slate-200 dark:border-slate-800">
-            <button onclick="closeDeleteAccountModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
-            <h3 class="text-sm font-bold text-center border-b border-slate-100 dark:border-slate-800 pb-3 mb-4 text-red-500">회원 탈퇴</h3>
-            <div class="space-y-3 text-xs">
-                <p class="text-[11px] text-slate-500 leading-relaxed">탈퇴 시 모든 게시글, 스토리, 댓글, 팔로우 정보가 영구 삭제되며 복구할 수 없습니다. 계속하려면 비밀번호를 입력하세요.</p>
-                <input type="password" id="deleteAccountPwInput" placeholder="비밀번호 확인" class="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-lg outline-none bg-transparent text-slate-900 dark:text-white">
-                <button onclick="submitDeleteAccount()" class="w-full py-2 bg-red-500 hover:bg-red-600 text-white font-bold rounded-lg transition">계정 영구 삭제</button>
+        <div class="bg-white dark:bg-slate-900 w-full max-w-sm rounded-2xl p-6 shadow-2xl relative border border-slate-200 dark:border-slate-800 text-xs">
+            <h3 class="font-bold text-sm mb-3 text-center text-red-500">회원 탈퇴</h3>
+            <p class="text-[11px] text-slate-400 mb-3 leading-relaxed">탈퇴 시 모든 게시물과 계정 정보가 완전히 삭제됩니다.</p>
+            <input type="password" id="deleteAccountPassword" placeholder="비밀번호 확인" class="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-lg outline-none bg-transparent mb-3">
+            <div class="flex gap-2">
+                <button onclick="closeDeleteAccountModal()" class="w-1/2 py-2 bg-slate-100 dark:bg-slate-800 rounded-lg font-semibold">취소</button>
+                <button onclick="submitDeleteAccount()" class="w-1/2 py-2 bg-red-500 text-white font-bold rounded-lg">탈퇴 확인</button>
             </div>
         </div>
     </div>
 
-    <!-- Scripts -->
     <script>
         const pathParts = window.location.pathname.split('/');
         const targetUserFromUrl = pathParts.length > 2 && pathParts[2] ? decodeURIComponent(pathParts[2]) : null;
         let currentProfileUser = null;
         let loggedInUser = null;
-        let isMyProfile = false;
+        let isAdminUser = false;
+        let activeModalPostId = null;
 
         function getDefaultAvatar(sizeClass = "text-base") {
             return `<div class="w-full h-full bg-slate-200 dark:bg-slate-700 text-slate-400 flex items-center justify-center"><i class="fa-solid fa-user ${sizeClass}"></i></div>`;
         }
 
-        function initTheme() {
-            const isDark = localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches);
-            if (isDark) {
-                document.documentElement.classList.add('dark');
-            } else {
-                document.documentElement.classList.remove('dark');
-            }
-            updateThemeIcons(isDark);
-        }
-
-        function updateThemeIcons(isDark) {
-            const iconPC = document.getElementById('themeIconPC');
-            const iconMob = document.getElementById('themeIconMobile');
-            const iconClass = isDark ? 'fa-regular fa-sun' : 'fa-regular fa-moon';
-            if (iconPC) iconPC.className = iconClass;
-            if (iconMob) iconMob.className = iconClass;
-        }
-
-        function toggleDarkMode() {
-            const isDark = document.documentElement.classList.contains('dark');
-            if (isDark) {
-                document.documentElement.classList.remove('dark');
-                localStorage.theme = 'light';
-                updateThemeIcons(false);
-            } else {
-                document.documentElement.classList.add('dark');
-                localStorage.theme = 'dark';
-                updateThemeIcons(true);
-            }
-        }
-
         document.addEventListener("DOMContentLoaded", () => {
-            initTheme();
-            initProfile();
-
-            const bioInput = document.getElementById('bioInput');
-            if (bioInput) {
-                bioInput.addEventListener('input', (e) => {
-                    document.getElementById('bioCharCount').innerText = e.target.value.length;
-                });
+            if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                document.documentElement.classList.add('dark');
             }
+            initProfile();
         });
 
         async function initProfile() {
             const meRes = await fetch('/api/me');
             const meData = await meRes.json();
-            if (meData.logged_in) loggedInUser = meData.username;
+            if (meData.logged_in) {
+                loggedInUser = meData.username;
+                isAdminUser = meData.is_admin;
+            }
 
             let targetUser = targetUserFromUrl || (meData.logged_in ? meData.username : null);
             if (!targetUser) { window.location.href = '/'; return; }
@@ -251,35 +224,26 @@
             document.getElementById('profileUsername').innerText = `@${u.username}`;
             document.getElementById('followerCount').innerText = u.follower_count;
             document.getElementById('followingCount').innerText = u.following_count;
-            document.getElementById('profileBio').innerText = u.bio || '';
+            document.getElementById('profileBio').innerText = u.bio || '자기소개가 없습니다.';
 
             const avatarBox = document.getElementById('profileAvatarBox');
-            if (u.profile_img) {
-                avatarBox.innerHTML = `<img src="${u.profile_img}" class="w-full h-full object-cover">`;
-            } else {
-                avatarBox.innerHTML = `<i class="fa-solid fa-user text-3xl sm:text-4xl text-slate-400"></i>`;
-            }
+            if (u.profile_img) avatarBox.innerHTML = `<img src="${u.profile_img}" class="w-full h-full object-cover">`;
+            else avatarBox.innerHTML = `<i class="fa-solid fa-user text-3xl sm:text-4xl text-slate-400"></i>`;
 
-            isMyProfile = meData.logged_in && (meData.username === u.username);
+            const isMyProfile = meData.logged_in && (meData.username === u.username);
             const actionArea = document.getElementById('profileActionArea');
-            const avatarOverlay = document.getElementById('avatarEditOverlay');
 
             if (isMyProfile) {
                 document.getElementById('profileEmail').innerText = u.email;
                 document.getElementById('tabLikesBtn').classList.remove('hidden');
                 document.getElementById('tabBookmarksBtn').classList.remove('hidden');
+                document.getElementById('editBioBtn').classList.remove('hidden');
                 document.getElementById('privateAccountSwitch').checked = u.is_private;
-                avatarOverlay.classList.remove('hidden');
 
                 actionArea.innerHTML = `
-                    <button onclick="openEditBioModal()" class="px-3 py-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 font-bold text-xs rounded-lg transition border border-slate-200 dark:border-slate-700">프로필 편집</button>
                     <button onclick="openSettingsModal()" class="p-2 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full text-base"><i class="fa-solid fa-gear"></i></button>
                 `;
             } else {
-                avatarOverlay.classList.add('hidden');
-                avatarBox.onclick = null;
-                avatarBox.classList.remove('cursor-pointer');
-
                 let btnText = '팔로우';
                 let btnClass = 'bg-blue-500 hover:bg-blue-600 text-white';
 
@@ -309,29 +273,75 @@
             }
         }
 
-        // 📷 프로필 사진 업로드 트리거 및 처리
-        function triggerProfileImageUpload() {
-            if (isMyProfile) {
-                document.getElementById('profileImageInput').click();
+        function triggerProfileImgUpload() {
+            if (loggedInUser && loggedInUser === currentProfileUser) {
+                document.getElementById('profileImgInput').click();
             }
         }
 
-        async function handleProfileImageFile(input) {
+        async function uploadProfileImage(input) {
             if (!input.files || input.files.length === 0) return;
             const file = input.files[0];
             const formData = new FormData();
             formData.append('file', file);
 
-            const res = await fetch('/api/profile-image', { method: 'POST', body: formData });
-            const data = await res.json();
-            if (data.status === 'success') {
-                document.getElementById('profileAvatarBox').innerHTML = `<img src="${data.profile_img}" class="w-full h-full object-cover">`;
-            } else {
-                alert(data.message || '사진 업로드 실패');
+            try {
+                const res = await fetch('/api/profile-image', { method: 'POST', body: formData });
+                const d = await res.json();
+                if (d.status === 'success') {
+                    document.getElementById('profileAvatarBox').innerHTML = `<img src="${d.profile_img}" class="w-full h-full object-cover">`;
+                } else alert(d.message);
+            } catch (err) {
+                alert('이미지 업로드 실패');
             }
         }
 
-        // 📑 탭 전환 (게시물 / 좋아요 / 저장됨)
+        function editBioPrompt() {
+            const currentBio = document.getElementById('profileBio').innerText;
+            const newBio = prompt('새로운 자기소개를 입력하세요 (최대 30자):', currentBio === '자기소개가 없습니다.' ? '' : currentBio);
+            if (newBio !== null) {
+                fetch('/api/profile-bio', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ bio: newBio })
+                }).then(res => res.json()).then(d => {
+                    if (d.status === 'success') document.getElementById('profileBio').innerText = d.bio || '자기소개가 없습니다.';
+                    else alert(d.message);
+                });
+            }
+        }
+
+        function openUserListModal(type) {
+            const modal = document.getElementById('userListModal');
+            const title = document.getElementById('userListModalTitle');
+            const content = document.getElementById('userListModalContent');
+            title.innerText = type === 'followers' ? '팔로워' : '팔로우';
+            content.innerHTML = '<p class="text-center text-slate-400 py-4">불러오는 중...</p>';
+            modal.classList.remove('hidden');
+
+            fetch(`/api/users/${encodeURIComponent(currentProfileUser)}/${type}`)
+                .then(res => res.json())
+                .then(data => {
+                    content.innerHTML = '';
+                    if (!data.users || data.users.length === 0) {
+                        content.innerHTML = '<p class="text-center text-slate-400 py-6">목록이 없습니다.</p>';
+                        return;
+                    }
+                    data.users.forEach(username => {
+                        const row = document.createElement('div');
+                        row.className = "flex items-center justify-between py-1";
+                        row.innerHTML = `
+                            <a href="/profile/${username}" class="font-bold hover:underline flex items-center gap-2">
+                                <div class="w-7 h-7 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center font-bold text-[10px]">@</div>
+                                <span>@${escapeHtml(username)}</span>
+                            </a>
+                        `;
+                        content.appendChild(row);
+                    });
+                });
+        }
+        function closeUserListModal() { document.getElementById('userListModal').classList.add('hidden'); }
+
         function switchTab(tab) {
             const pBtn = document.getElementById('tabPostsBtn');
             const lBtn = document.getElementById('tabLikesBtn');
@@ -365,8 +375,8 @@
 
             posts.forEach(p => {
                 const card = document.createElement('div');
-                card.className = "aspect-square bg-slate-100 dark:bg-slate-800 rounded-lg overflow-hidden relative border border-slate-200 dark:border-slate-700 cursor-pointer group";
-                card.onclick = () => window.location.href = `/?post=${p.id}`;
+                card.className = "aspect-square bg-slate-100 dark:bg-slate-800 rounded-lg overflow-hidden relative border border-slate-200 dark:border-slate-700 cursor-pointer";
+                card.onclick = () => openProfilePostDetail(p.id);
 
                 const images = p.image_urls && p.image_urls.length > 0 ? p.image_urls : (p.image_url ? [p.image_url] : []);
                 const firstImg = images.length > 0 ? images[0] : '';
@@ -377,7 +387,7 @@
                         <i class="fa-solid fa-play absolute top-2 right-2 text-white text-xs drop-shadow"></i>
                     `;
                 } else if (firstImg) {
-                    card.innerHTML = `<img src="${escapeHtml(firstImg)}" class="w-full h-full object-cover group-hover:scale-105 transition duration-300">`;
+                    card.innerHTML = `<img src="${escapeHtml(firstImg)}" class="w-full h-full object-cover">`;
                 } else {
                     card.innerHTML = `<div class="p-2 text-[10px] text-center flex items-center justify-center h-full break-all">${escapeHtml(p.content)}</div>`;
                 }
@@ -385,44 +395,85 @@
             });
         }
 
-        // 👥 팔로워 / 팔로잉 목록 모달 열기
-        function openFollowModal(type) {
-            const modal = document.getElementById('followModal');
-            const title = document.getElementById('followModalTitle');
-            const list = document.getElementById('followListContainer');
-
-            title.innerText = (type === 'followers') ? '팔로워' : '팔로우';
-            list.innerHTML = '<div class="text-center py-8 text-slate-400 text-xs">불러오는 중...</div>';
-            modal.classList.remove('hidden');
-
-            fetch(`/api/users/${encodeURIComponent(currentProfileUser)}/${type}`)
+        function openProfilePostDetail(postId) {
+            activeModalPostId = postId;
+            fetch(`/api/posts/${postId}`)
                 .then(res => res.json())
                 .then(data => {
-                    list.innerHTML = '';
-                    if (data.status === 'success' && data.users.length > 0) {
-                        data.users.forEach(u => {
-                            const avatarHtml = u.profile_img ? `<img src="${u.profile_img}" class="w-full h-full object-cover">` : getDefaultAvatar("text-xs");
-                            const row = document.createElement('div');
-                            row.className = "flex items-center justify-between p-2 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-xl transition";
-                            row.innerHTML = `
-                                <div class="flex items-center gap-3">
-                                    <a href="/profile/${encodeURIComponent(u.username)}" class="w-9 h-9 rounded-full overflow-hidden border border-slate-200 dark:border-slate-700 shrink-0">${avatarHtml}</a>
-                                    <div class="truncate">
-                                        <a href="/profile/${encodeURIComponent(u.username)}" class="font-bold text-xs text-slate-900 dark:text-white hover:underline block truncate">@${escapeHtml(u.username)}</a>
-                                        <span class="text-[10px] text-slate-400 truncate block">${escapeHtml(u.bio || '')}</span>
-                                    </div>
-                                </div>
-                                <a href="/profile/${encodeURIComponent(u.username)}" class="px-3 py-1 bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold rounded-lg hover:bg-slate-200 transition">보기</a>
-                            `;
-                            list.appendChild(row);
-                        });
-                    } else {
-                        list.innerHTML = `<div class="text-center py-10 text-slate-400 text-xs">목록이 비어 있습니다.</div>`;
+                    if (data.status === 'success') {
+                        const post = data.post;
+                        const avatarBox = document.getElementById('profileModalUserAvatar');
+                        if (post.profile_img) avatarBox.innerHTML = `<img src="${post.profile_img}" class="w-full h-full object-cover">`;
+                        else avatarBox.innerHTML = getDefaultAvatar("text-xs");
+
+                        document.getElementById('profileModalUsername').innerText = `@${post.username}`;
+                        document.getElementById('profileModalContent').innerText = post.content;
+
+                        const delBtn = document.getElementById('profileModalDeleteBtn');
+                        if (loggedInUser && (loggedInUser === post.username || isAdminUser)) {
+                            delBtn.classList.remove('hidden');
+                            delBtn.onclick = () => deleteProfilePost(post.id);
+                        } else delBtn.classList.add('hidden');
+
+                        const imgArea = document.getElementById('profileModalImageArea');
+                        const images = post.image_urls && post.image_urls.length > 0 ? post.image_urls : (post.image_url ? [post.image_url] : []);
+                        
+                        if (post.is_video && images.length > 0) {
+                            imgArea.innerHTML = `<video src="${escapeHtml(images[0])}" controls autoplay playsinline class="w-full max-h-[350px]"></video>`;
+                        } else if (images.length > 0) {
+                            imgArea.innerHTML = `<img src="${escapeHtml(images[0])}" class="w-full max-h-[350px] object-contain">`;
+                        } else {
+                            imgArea.innerHTML = `<div class="text-white text-xs p-6 text-center">${escapeHtml(post.content)}</div>`;
+                        }
+
+                        const submitBtn = document.getElementById('profileModalCommentSubmitBtn');
+                        submitBtn.onclick = () => submitProfileModalComment(post.id);
+
+                        loadProfileModalComments(post.id);
+                        document.getElementById('profilePostDetailModal').classList.remove('hidden');
                     }
                 });
         }
 
-        function closeFollowModal() { document.getElementById('followModal').classList.add('hidden'); }
+        function closeProfilePostDetailModal() { document.getElementById('profilePostDetailModal').classList.add('hidden'); }
+
+        function deleteProfilePost(postId) {
+            if (!confirm('정말로 이 게시글을 삭제하시겠습니까?')) return;
+            fetch(`/api/posts/${postId}`, { method: 'DELETE' }).then(() => {
+                closeProfilePostDetailModal();
+                switchTab('posts');
+            });
+        }
+
+        function loadProfileModalComments(postId) {
+            fetch(`/api/comments/${postId}`)
+                .then(res => res.json())
+                .then(data => {
+                    const list = document.getElementById('profileModalCommentsList');
+                    list.innerHTML = '';
+                    if (data.status === 'success') {
+                        data.comments.forEach(c => {
+                            const p = document.createElement('p');
+                            p.innerHTML = `<strong class="text-slate-900 dark:text-white">@${escapeHtml(c.username)}</strong> ${escapeHtml(c.content)}`;
+                            list.appendChild(p);
+                        });
+                    }
+                });
+        }
+
+        function submitProfileModalComment(postId) {
+            if (!loggedInUser) { alert('로그인이 필요합니다.'); return; }
+            const input = document.getElementById('profileModalCommentInput');
+            if (!input.value.trim()) return;
+
+            fetch('/api/comments', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ post_id: postId, content: input.value.trim() })
+            }).then(res => res.json()).then(data => {
+                if (data.status === 'success') { loadProfileModalComments(postId); input.value = ''; }
+            });
+        }
 
         function handleFollowToggle(target, btn) {
             if (!loggedInUser) { window.location.href = '/'; return; }
@@ -451,85 +502,52 @@
             });
         }
 
-        // ⚙️ 모달 제어 함수들
         function openSettingsModal() { document.getElementById('settingsModal').classList.remove('hidden'); }
         function closeSettingsModal() { document.getElementById('settingsModal').classList.add('hidden'); }
-
-        function openEditBioModal() {
-            closeSettingsModal();
-            const currentBio = document.getElementById('profileBio').innerText;
-            document.getElementById('bioInput').value = currentBio;
-            document.getElementById('bioCharCount').innerText = currentBio.length;
-            document.getElementById('editBioModal').classList.remove('hidden');
-        }
-        function closeEditBioModal() { document.getElementById('editBioModal').classList.add('hidden'); }
-
-        function submitBioEdit() {
-            const bio = document.getElementById('bioInput').value.trim();
-            fetch('/api/profile-bio', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ bio })
-            }).then(r => r.json()).then(d => {
-                if (d.status === 'success') {
-                    document.getElementById('profileBio').innerText = d.bio;
-                    closeEditBioModal();
-                } else alert(d.message);
-            });
-        }
-
+        
         function openChangeUsernameModal() { closeSettingsModal(); document.getElementById('changeUsernameModal').classList.remove('hidden'); }
         function closeChangeUsernameModal() { document.getElementById('changeUsernameModal').classList.add('hidden'); }
-
-        function submitUsernameChange() {
-            const newUsername = document.getElementById('newUsernameInput').value.trim();
-            if (!newUsername) { alert('새 아이디를 입력해 주세요.'); return; }
+        function submitChangeUsername() {
+            const new_username = document.getElementById('newUsernameInput').value.trim();
+            if (!new_username) return;
             fetch('/api/change-username', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ new_username: newUsername })
-            }).then(r => r.json()).then(d => {
-                if (d.status === 'success') {
-                    alert('아이디가 변경되었습니다!');
-                    window.location.href = `/profile/${encodeURIComponent(d.new_username)}`;
-                } else alert(d.message);
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ new_username })
+            }).then(res => res.json()).then(d => {
+                if (d.status === 'success') { alert('아이디가 변경되었습니다.'); window.location.href = `/profile/${d.new_username}`; }
+                else alert(d.message);
             });
         }
 
         function openChangePasswordModal() { closeSettingsModal(); document.getElementById('changePasswordModal').classList.remove('hidden'); }
         function closeChangePasswordModal() { document.getElementById('changePasswordModal').classList.add('hidden'); }
-
-        function submitPasswordChange() {
-            const current_password = document.getElementById('currentPwInput').value.trim();
-            const new_password = document.getElementById('newPwInput').value.trim();
+        function submitChangePassword() {
+            const current_password = document.getElementById('currentPasswordInput').value.trim();
+            const new_password = document.getElementById('newPasswordInput').value.trim();
+            if (!current_password || !new_password) return;
             fetch('/api/change-password', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({ current_password, new_password })
-            }).then(r => r.json()).then(d => {
-                if (d.status === 'success') {
-                    alert('비밀번호가 성공적으로 변경되었습니다.');
-                    closeChangePasswordModal();
-                } else alert(d.message);
+            }).then(res => res.json()).then(d => {
+                if (d.status === 'success') { alert('비밀번호가 변경되었습니다.'); closeChangePasswordModal(); }
+                else alert(d.message);
             });
         }
 
         function openDeleteAccountModal() { closeSettingsModal(); document.getElementById('deleteAccountModal').classList.remove('hidden'); }
         function closeDeleteAccountModal() { document.getElementById('deleteAccountModal').classList.add('hidden'); }
-
         function submitDeleteAccount() {
-            const password = document.getElementById('deleteAccountPwInput').value.trim();
-            if (!password) { alert('비밀번호를 입력해 주세요.'); return; }
-            if (!confirm('정말로 탈퇴하시겠습니까? 데이터는 복구되지 않습니다.')) return;
+            const password = document.getElementById('deleteAccountPassword').value.trim();
+            if (!password) return;
             fetch('/api/delete-account', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({ password })
-            }).then(r => r.json()).then(d => {
-                if (d.status === 'success') {
-                    alert('회원 탈퇴가 완료되었습니다.');
-                    window.location.href = '/';
-                } else alert(d.message);
+            }).then(res => res.json()).then(d => {
+                if (d.status === 'success') { alert('계정이 완전히 삭제되었습니다.'); window.location.href = '/'; }
+                else alert(d.message);
             });
         }
 
