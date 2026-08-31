@@ -2,21 +2,26 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>프로필 • Woongstagram</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script>tailwind.config = { darkMode: 'class' }</script>
+    <script>
+        tailwind.config = { darkMode: 'class' }
+    </script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body { -webkit-text-size-adjust: none; touch-action: manipulation; }
+    </style>
 </head>
-<body class="bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 font-sans antialiased min-h-screen flex flex-col justify-between transition-colors">
+<body class="bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 font-sans antialiased min-h-screen flex flex-col justify-between transition-colors pb-16 md:pb-0">
 
     <!-- Header Navigation -->
     <header class="border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 sticky top-0 z-40">
         <div class="max-w-5xl mx-auto px-4 h-14 flex items-center justify-between">
-            <a href="/" class="text-2xl font-black italic font-serif text-slate-900 dark:text-white select-none">
+            <a href="/" class="text-xl sm:text-2xl font-black italic font-serif text-slate-900 dark:text-white select-none">
                 Woongstagram
             </a>
-            <div class="flex items-center gap-5 text-xl text-slate-800 dark:text-slate-200">
+            <div class="flex items-center gap-4 sm:gap-5 text-lg sm:text-xl text-slate-800 dark:text-slate-200">
                 <a href="/" title="홈"><i class="fa-solid fa-house"></i></a>
                 <a href="/profile" class="font-bold text-blue-500" title="프로필"><i class="fa-solid fa-user"></i></a>
             </div>
@@ -24,21 +29,21 @@
     </header>
 
     <!-- Profile Main Section -->
-    <main class="max-w-4xl mx-auto px-4 py-8 w-full flex-1">
-        <div id="profileHeader" class="flex flex-col sm:flex-row items-center sm:items-start gap-8 pb-8 border-b border-slate-200 dark:border-slate-800">
-            <div class="relative group">
-                <div id="profileAvatarBox" class="w-28 h-28 sm:w-36 sm:h-36 rounded-full bg-slate-200 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 flex items-center justify-center font-bold shadow-md overflow-hidden">
-                    <i class="fa-solid fa-user text-4xl text-slate-400"></i>
+    <main class="max-w-4xl mx-auto px-4 py-6 sm:py-8 w-full flex-1">
+        <div id="profileHeader" class="flex flex-col sm:flex-row items-center sm:items-start gap-6 sm:gap-8 pb-6 sm:pb-8 border-b border-slate-200 dark:border-slate-800">
+            <div class="relative group shrink-0">
+                <div id="profileAvatarBox" class="w-24 h-24 sm:w-36 sm:h-36 rounded-full bg-slate-200 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 flex items-center justify-center font-bold shadow-md overflow-hidden">
+                    <i class="fa-solid fa-user text-3xl sm:text-4xl text-slate-400"></i>
                 </div>
             </div>
 
-            <div class="flex flex-col gap-4 text-center sm:text-left flex-1">
-                <div class="flex flex-col sm:flex-row sm:items-center gap-3">
-                    <h1 id="profileUsername" class="text-xl font-bold">@username</h1>
+            <div class="flex flex-col gap-3 sm:gap-4 text-center sm:text-left flex-1 w-full">
+                <div class="flex flex-col sm:flex-row sm:items-center gap-3 justify-center sm:justify-start">
+                    <h1 id="profileUsername" class="text-lg sm:text-xl font-bold">@username</h1>
                     <div id="profileActionArea" class="flex items-center justify-center sm:justify-start gap-2"></div>
                 </div>
 
-                <div class="flex justify-center sm:justify-start gap-8 text-xs">
+                <div class="flex justify-center sm:justify-start gap-6 sm:gap-8 text-xs sm:text-sm">
                     <div>게시물 <span id="postCount" class="font-bold">0</span></div>
                     <div>팔로워 <span id="followerCount" class="font-bold">0</span></div>
                     <div>팔로우 <span id="followingCount" class="font-bold">0</span></div>
@@ -60,20 +65,26 @@
         </div>
 
         <!-- 탭 메뉴 (게시물 / 좋아요 / 저장됨) -->
-        <div id="profileTabsArea" class="flex justify-center border-t border-slate-200 dark:border-slate-800 -mt-[1px] gap-8">
+        <div id="profileTabsArea" class="flex justify-center border-t border-slate-200 dark:border-slate-800 -mt-[1px] gap-6 sm:gap-12">
             <button onclick="switchTab('posts')" id="tabPostsBtn" class="flex items-center gap-2 py-3 border-t-2 border-slate-900 dark:border-white font-bold text-xs tracking-wider">
                 <i class="fa-solid fa-table-cells text-sm"></i> 게시물
             </button>
-            <button onclick="switchTab('likes')" id="tabLikesBtn" class="hidden items-center gap-2 py-3 border-t-2 border-transparent font-semibold text-xs text-slate-400 hover:text-slate-600 tracking-wider">
+            <button onclick="switchTab('likes')" id="tabLikesBtn" class="hidden items-center gap-2 py-3 border-t-2 border-transparent font-semibold text-xs text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 tracking-wider">
                 <i class="fa-solid fa-heart text-sm"></i> 좋아요
             </button>
-            <button onclick="switchTab('bookmarks')" id="tabBookmarksBtn" class="hidden items-center gap-2 py-3 border-t-2 border-transparent font-semibold text-xs text-slate-400 hover:text-slate-600 tracking-wider">
+            <button onclick="switchTab('bookmarks')" id="tabBookmarksBtn" class="hidden items-center gap-2 py-3 border-t-2 border-transparent font-semibold text-xs text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 tracking-wider">
                 <i class="fa-solid fa-bookmark text-sm"></i> 저장됨
             </button>
         </div>
 
         <div id="myPostsGrid" class="grid grid-cols-3 gap-1 sm:gap-4 mt-2"></div>
     </main>
+
+    <!-- 📱 모바일 하단 전용 내비게이션 바 -->
+    <nav class="fixed bottom-0 left-0 right-0 h-12 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 z-40 flex items-center justify-around text-lg text-slate-800 dark:text-slate-200 md:hidden">
+        <a href="/" class="p-2 hover:text-blue-500"><i class="fa-solid fa-house"></i></a>
+        <a href="/profile" class="p-2 text-blue-500"><i class="fa-solid fa-user"></i></a>
+    </nav>
 
     <!-- ⚙️ 환경설정 모달 (비공개 전환 스위치 포함) -->
     <div id="settingsModal" class="fixed inset-0 bg-black/60 z-50 hidden flex items-center justify-center p-4">
@@ -92,12 +103,14 @@
 
     <script>
         const pathParts = window.location.pathname.split('/');
-        const targetUserFromUrl = pathParts.length > 2 && pathParts[2] ? pathParts[2] : null;
+        const targetUserFromUrl = pathParts.length > 2 && pathParts[2] ? decodeURIComponent(pathParts[2]) : null;
         let currentProfileUser = null;
         let loggedInUser = null;
 
         document.addEventListener("DOMContentLoaded", () => {
-            if (localStorage.theme === 'dark') document.documentElement.classList.add('dark');
+            if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                document.documentElement.classList.add('dark');
+            }
             initProfile();
         });
 
@@ -110,7 +123,7 @@
             if (!targetUser) { window.location.href = '/'; return; }
             currentProfileUser = targetUser;
 
-            const userRes = await fetch(`/api/users/${targetUser}`);
+            const userRes = await fetch(`/api/users/${encodeURIComponent(targetUser)}`);
             const userData = await userRes.json();
             if (userData.status !== 'success') { alert('사용자를 찾을 수 없습니다.'); window.location.href = '/'; return; }
 
@@ -121,7 +134,11 @@
             document.getElementById('profileBio').innerText = u.bio || '';
 
             const avatarBox = document.getElementById('profileAvatarBox');
-            if (u.profile_img) avatarBox.innerHTML = `<img src="${u.profile_img}" class="w-full h-full object-cover">`;
+            if (u.profile_img) {
+                avatarBox.innerHTML = `<img src="${u.profile_img}" class="w-full h-full object-cover">`;
+            } else {
+                avatarBox.innerHTML = `<i class="fa-solid fa-user text-3xl sm:text-4xl text-slate-400"></i>`;
+            }
 
             const isMyProfile = meData.logged_in && (meData.username === u.username);
             const actionArea = document.getElementById('profileActionArea');
@@ -137,12 +154,20 @@
                 `;
             } else {
                 let btnText = '팔로우';
-                if (u.is_following) btnText = '팔로잉';
-                else if (u.is_requested) btnText = '요청됨';
+                let btnClass = 'bg-blue-500 hover:bg-blue-600 text-white';
 
+                if (u.is_following) {
+                    btnText = '팔로잉';
+                    btnClass = 'bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-700';
+                } else if (u.is_requested) {
+                    btnText = '요청됨';
+                    btnClass = 'bg-slate-100 dark:bg-slate-800 text-slate-500 border border-slate-200 dark:border-slate-700';
+                }
+
+                // 💬 [메시지] 버튼 클릭 시 /?dm=상대아이디 로 이동하도록 설정
                 actionArea.innerHTML = `
-                    <button onclick="handleFollowToggle('${u.username}', this)" class="px-4 py-1.5 bg-blue-500 text-white font-bold text-xs rounded-lg">${btnText}</button>
-                    <a href="/?dm=${u.username}" class="px-4 py-1.5 bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-white font-bold text-xs rounded-lg">메시지</a>
+                    <button onclick="handleFollowToggle('${escapeHtml(u.username)}', this)" class="px-4 py-1.5 font-bold text-xs rounded-lg transition ${btnClass}">${btnText}</button>
+                    <a href="/?dm=${encodeURIComponent(u.username)}" class="px-4 py-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-800 dark:text-white font-bold text-xs rounded-lg transition border border-slate-200 dark:border-slate-700">메시지</a>
                 `;
             }
 
@@ -151,6 +176,9 @@
                 document.getElementById('profileTabsArea').classList.add('hidden');
                 document.getElementById('myPostsGrid').classList.add('hidden');
             } else {
+                document.getElementById('privateLockNotice').classList.add('hidden');
+                document.getElementById('profileTabsArea').classList.remove('hidden');
+                document.getElementById('myPostsGrid').classList.remove('hidden');
                 switchTab('posts');
             }
         }
@@ -159,39 +187,50 @@
             const pBtn = document.getElementById('tabPostsBtn');
             const lBtn = document.getElementById('tabLikesBtn');
             const bBtn = document.getElementById('tabBookmarksBtn');
-            pBtn.className = "py-3 border-t-2 border-transparent text-slate-400 font-semibold text-xs";
-            lBtn.className = "py-3 border-t-2 border-transparent text-slate-400 font-semibold text-xs";
-            bBtn.className = "py-3 border-t-2 border-transparent text-slate-400 font-semibold text-xs";
+
+            pBtn.className = "flex items-center gap-2 py-3 border-t-2 border-transparent text-slate-400 font-semibold text-xs hover:text-slate-600 dark:hover:text-slate-200 tracking-wider";
+            lBtn.className = "flex items-center gap-2 py-3 border-t-2 border-transparent text-slate-400 font-semibold text-xs hover:text-slate-600 dark:hover:text-slate-200 tracking-wider";
+            bBtn.className = "flex items-center gap-2 py-3 border-t-2 border-transparent text-slate-400 font-semibold text-xs hover:text-slate-600 dark:hover:text-slate-200 tracking-wider";
 
             if (tab === 'posts') {
-                pBtn.className = "py-3 border-t-2 border-slate-900 dark:border-white font-bold text-xs";
-                fetch(`/api/posts/user/${currentProfileUser}`).then(r => r.json()).then(d => renderGrid(d.posts));
+                pBtn.className = "flex items-center gap-2 py-3 border-t-2 border-slate-900 dark:border-white font-bold text-xs tracking-wider text-slate-900 dark:text-white";
+                fetch(`/api/posts/user/${encodeURIComponent(currentProfileUser)}`).then(r => r.json()).then(d => renderGrid(d.posts));
             } else if (tab === 'likes') {
-                lBtn.className = "py-3 border-t-2 border-slate-900 dark:border-white font-bold text-xs";
-                fetch(`/api/users/${currentProfileUser}/liked-posts`).then(r => r.json()).then(d => renderGrid(d.posts));
+                lBtn.className = "flex items-center gap-2 py-3 border-t-2 border-slate-900 dark:border-white font-bold text-xs tracking-wider text-slate-900 dark:text-white";
+                fetch(`/api/users/${encodeURIComponent(currentProfileUser)}/liked-posts`).then(r => r.json()).then(d => renderGrid(d.posts));
             } else if (tab === 'bookmarks') {
-                bBtn.className = "py-3 border-t-2 border-slate-900 dark:border-white font-bold text-xs";
-                fetch(`/api/users/${currentProfileUser}/bookmarks`).then(r => r.json()).then(d => renderGrid(d.posts));
+                bBtn.className = "flex items-center gap-2 py-3 border-t-2 border-slate-900 dark:border-white font-bold text-xs tracking-wider text-slate-900 dark:text-white";
+                fetch(`/api/users/${encodeURIComponent(currentProfileUser)}/bookmarks`).then(r => r.json()).then(d => renderGrid(d.posts));
             }
         }
 
         function renderGrid(posts) {
             const grid = document.getElementById('myPostsGrid');
             grid.innerHTML = '';
-            document.getElementById('postCount').innerText = posts.length;
-            if (posts.length === 0) {
+            document.getElementById('postCount').innerText = posts ? posts.length : 0;
+
+            if (!posts || posts.length === 0) {
                 grid.innerHTML = '<div class="col-span-3 text-center py-16 text-slate-400 text-xs">게시물이 없습니다.</div>';
                 return;
             }
+
             posts.forEach(p => {
                 const card = document.createElement('div');
-                card.className = "aspect-square bg-slate-100 dark:bg-slate-800 rounded-lg overflow-hidden relative border border-slate-200 dark:border-slate-700";
-                if (p.is_video) {
-                    card.innerHTML = `<video src="${p.image_url}" class="w-full h-full object-cover"></video><i class="fa-solid fa-play absolute top-2 right-2 text-white text-xs drop-shadow"></i>`;
-                } else if (p.image_url) {
-                    card.innerHTML = `<img src="${p.image_url}" class="w-full h-full object-cover">`;
+                card.className = "aspect-square bg-slate-100 dark:bg-slate-800 rounded-lg overflow-hidden relative border border-slate-200 dark:border-slate-700 cursor-pointer";
+                card.onclick = () => window.location.href = `/?post=${p.id}`;
+
+                const images = p.image_urls && p.image_urls.length > 0 ? p.image_urls : (p.image_url ? [p.image_url] : []);
+                const firstImg = images.length > 0 ? images[0] : '';
+
+                if (p.is_video && firstImg) {
+                    card.innerHTML = `
+                        <video src="${escapeHtml(firstImg)}" class="w-full h-full object-cover"></video>
+                        <i class="fa-solid fa-play absolute top-2 right-2 text-white text-xs drop-shadow"></i>
+                    `;
+                } else if (firstImg) {
+                    card.innerHTML = `<img src="${escapeHtml(firstImg)}" class="w-full h-full object-cover">`;
                 } else {
-                    card.innerHTML = `<div class="p-2 text-[10px] text-center">${p.content}</div>`;
+                    card.innerHTML = `<div class="p-2 text-[10px] text-center flex items-center justify-center h-full break-all">${escapeHtml(p.content)}</div>`;
                 }
                 grid.appendChild(card);
             });
@@ -199,12 +238,19 @@
 
         function handleFollowToggle(target, btn) {
             if (!loggedInUser) { window.location.href = '/'; return; }
-            fetch(`/api/follow/${target}`, { method: 'POST' })
+            fetch(`/api/follow/${encodeURIComponent(target)}`, { method: 'POST' })
                 .then(res => res.json())
                 .then(d => {
-                    if (d.result_status === 'following') btn.innerText = '팔로잉';
-                    else if (d.result_status === 'requested') btn.innerText = '요청됨';
-                    else btn.innerText = '팔로우';
+                    if (d.result_status === 'following') {
+                        btn.innerText = '팔로잉';
+                        btn.className = 'px-4 py-1.5 font-bold text-xs rounded-lg transition bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-700';
+                    } else if (d.result_status === 'requested') {
+                        btn.innerText = '요청됨';
+                        btn.className = 'px-4 py-1.5 font-bold text-xs rounded-lg transition bg-slate-100 dark:bg-slate-800 text-slate-500 border border-slate-200 dark:border-slate-700';
+                    } else {
+                        btn.innerText = '팔로우';
+                        btn.className = 'px-4 py-1.5 font-bold text-xs rounded-lg transition bg-blue-500 hover:bg-blue-600 text-white';
+                    }
                     document.getElementById('followerCount').innerText = d.follower_count;
                 });
         }
@@ -220,6 +266,7 @@
         function openSettingsModal() { document.getElementById('settingsModal').classList.remove('hidden'); }
         function closeSettingsModal() { document.getElementById('settingsModal').classList.add('hidden'); }
         function logout() { fetch('/api/logout', { method: 'POST' }).then(() => location.href = '/'); }
+        function escapeHtml(text) { return text ? text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;") : ''; }
     </script>
 </body>
 </html>
