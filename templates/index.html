@@ -35,7 +35,7 @@
 </head>
 <body class="bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 font-sans antialiased min-h-screen flex flex-col justify-between selection:bg-pink-500 selection:text-white transition-colors duration-200 pb-16 md:pb-0" onclick="handleOutsideClicks(event)">
 
-    <!-- 🔝 상단 헤더 (모바일에서는 로고 / 검색 / 하트 / DM만 노출) -->
+    <!-- 🔝 상단 헤더 (PC에서는 모든 도구 표시, 모바일에서는 하트/DM만 깔끔하게 배치) -->
     <header class="border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 sticky top-0 z-40 w-full transition-colors">
         <div class="max-w-5xl mx-auto px-3 sm:px-4 h-14 flex items-center justify-between gap-2 sm:gap-4">
             <!-- 로고 -->
@@ -56,8 +56,14 @@
                 </div>
             </div>
 
-            <!-- 상단 우측 아이콘 (알림 & DM / PC에서는 프로필 추가 표시) -->
-            <div class="flex items-center gap-3 sm:gap-4 text-lg text-slate-800 dark:text-slate-200 shrink-0">
+            <!-- 상단 우측 액션 버튼들 -->
+            <div class="flex items-center gap-3 sm:gap-4 text-base sm:text-lg text-slate-800 dark:text-slate-200 shrink-0">
+                <!-- 🖥️ PC 전용 액션 버튼들 (홈, 릴스, 새글, 다크모드) -->
+                <a href="/" class="hidden md:inline-block hover:text-slate-500" title="홈"><i class="fa-solid fa-house"></i></a>
+                <button onclick="openReelsModal()" class="hidden md:inline-block hover:text-pink-500" title="릴스"><i class="fa-solid fa-clapperboard"></i></button>
+                <button onclick="openCreatePostModal()" class="hidden md:inline-block hover:text-blue-500" title="새 게시물"><i class="fa-square-plus fa-regular"></i></button>
+                <button onclick="toggleDarkMode()" class="hidden md:inline-block hover:text-amber-500" title="테마 변경"><i id="themeIconPC" class="fa-regular fa-moon"></i></button>
+
                 <!-- 🔔 알림 버튼 -->
                 <div class="relative">
                     <button onclick="toggleNotificationDropdown(event)" class="relative p-1.5 hover:text-slate-500 transition flex items-center" title="알림">
@@ -84,13 +90,9 @@
                     <span id="dmBadge" class="hidden absolute top-0 right-0 bg-blue-500 text-white text-[8px] font-bold w-3.5 h-3.5 rounded-full flex items-center justify-center">0</span>
                 </button>
 
-                <!-- 👤 PC 화면 전용 상단 프로필/관리자 버튼 (모바일에서는 자동 숨김) -->
-                <a href="/admin" id="headerAdminBtn" class="hidden md:block text-red-500 hover:text-red-700 transition p-1" title="관리자">
-                    <i class="fa-solid fa-key"></i>
-                </a>
-                <a href="/profile" id="headerProfileBtn" class="hidden md:block hover:text-slate-500 transition p-1" title="프로필">
-                    <i class="fa-regular fa-user"></i>
-                </a>
+                <!-- 🖥️ PC 전용 프로필/관리자 버튼 -->
+                <a href="/admin" id="headerAdminBtn" class="hidden text-red-500 hover:text-red-700 transition p-1" title="관리자"><i class="fa-solid fa-key"></i></a>
+                <a href="/profile" id="headerProfileBtn" class="hidden md:inline-block hover:text-slate-500 transition p-1" title="프로필"><i class="fa-regular fa-user"></i></a>
             </div>
         </div>
     </header>
@@ -145,19 +147,18 @@
 
     </main>
 
-    <!-- 📱 모바일 하단 전용 내비게이션 바 (인스타그램 스타일) -->
+    <!-- 📱 모바일 하단 전용 내비게이션 바 -->
     <nav class="fixed bottom-0 left-0 right-0 h-12 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 z-40 flex items-center justify-around text-lg text-slate-800 dark:text-slate-200 md:hidden">
         <a href="/" class="p-2 text-slate-900 dark:text-white"><i class="fa-solid fa-house"></i></a>
         <button onclick="openReelsModal()" class="p-2 hover:text-pink-500"><i class="fa-solid fa-clapperboard"></i></button>
         <button onclick="openCreatePostModal()" class="p-2 hover:text-blue-500"><i class="fa-square-plus fa-regular text-xl"></i></button>
         <button onclick="toggleDarkMode()" class="p-2 hover:text-amber-500"><i id="themeIconMobile" class="fa-regular fa-moon"></i></button>
-        <a href="/profile" id="bottomProfileLink" class="p-2 hover:text-blue-500"><i class="fa-regular fa-user"></i></a>
+        <a href="/profile" class="p-2 hover:text-blue-500"><i class="fa-regular fa-user"></i></a>
     </nav>
 
     <!-- 💬 1:1 DM 모달 -->
     <div id="dmModal" class="fixed inset-0 bg-black/60 z-50 hidden flex items-center justify-center p-2 sm:p-4">
         <div class="bg-white dark:bg-slate-900 w-full max-w-lg h-[550px] rounded-2xl overflow-hidden shadow-2xl relative flex flex-col border border-slate-200 dark:border-slate-800">
-            <!-- DM 헤더 -->
             <div class="h-12 border-b border-slate-200 dark:border-slate-800 px-4 flex items-center justify-between shrink-0">
                 <div class="flex items-center gap-2">
                     <button id="dmBackBtn" onclick="showDmList()" class="hidden text-slate-600 dark:text-slate-300 mr-1"><i class="fa-solid fa-arrow-left"></i></button>
@@ -166,12 +167,10 @@
                 <button onclick="closeDmModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
             </div>
 
-            <!-- 대화 목록 뷰 -->
             <div id="dmListView" class="flex-1 overflow-y-auto p-3 space-y-1">
                 <div id="dmConvContainer" class="space-y-1"></div>
             </div>
 
-            <!-- 채팅방 뷰 -->
             <div id="dmChatView" class="hidden flex-1 flex flex-col justify-between bg-slate-50 dark:bg-slate-950 overflow-hidden">
                 <div id="dmMessagesContainer" class="flex-1 overflow-y-auto space-y-2 p-3 text-xs"></div>
                 <div class="p-2.5 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 flex items-center gap-2">
@@ -301,10 +300,14 @@
                 document.documentElement.classList.add('dark');
                 const tMob = document.getElementById('themeIconMobile');
                 if (tMob) tMob.className = 'fa-regular fa-sun';
+                const tPC = document.getElementById('themeIconPC');
+                if (tPC) tPC.className = 'fa-regular fa-sun';
             } else {
                 document.documentElement.classList.remove('dark');
                 const tMob = document.getElementById('themeIconMobile');
                 if (tMob) tMob.className = 'fa-regular fa-moon';
+                const tPC = document.getElementById('themeIconPC');
+                if (tPC) tPC.className = 'fa-regular fa-moon';
             }
         }
 
@@ -314,11 +317,15 @@
                 localStorage.theme = 'light';
                 const tMob = document.getElementById('themeIconMobile');
                 if (tMob) tMob.className = 'fa-regular fa-moon';
+                const tPC = document.getElementById('themeIconPC');
+                if (tPC) tPC.className = 'fa-regular fa-moon';
             } else {
                 document.documentElement.classList.add('dark');
                 localStorage.theme = 'dark';
                 const tMob = document.getElementById('themeIconMobile');
                 if (tMob) tMob.className = 'fa-regular fa-sun';
+                const tPC = document.getElementById('themeIconPC');
+                if (tPC) tPC.className = 'fa-regular fa-sun';
             }
         }
 
@@ -330,7 +337,6 @@
             loadHotNews();
             setInterval(loadNotifications, 10000);
 
-            // 🔗 URL 파라미터 체크 (?dm=username 들어왔을 때 자동으로 해당 상대 DM 창 열기)
             const urlParams = new URLSearchParams(window.location.search);
             const dmTarget = urlParams.get('dm');
             if (dmTarget) {
@@ -364,9 +370,11 @@
                 .then(res => res.json())
                 .then(data => {
                     const card = document.getElementById('profileCard');
+                    const adminBtn = document.getElementById('headerAdminBtn');
                     if (data.logged_in) {
                         currentUser = data.username;
                         isAdminUser = data.is_admin;
+                        if (isAdminUser && adminBtn) adminBtn.classList.remove('hidden');
                         loadNotifications();
                         loadFollowRequests();
 
@@ -489,11 +497,9 @@
         }
         function closeReelsModal() { document.getElementById('reelsModal').classList.add('hidden'); }
 
-        // 💬 1:1 DM 모달 기능
         function openDmModal(partner = null) {
             if (!currentUser) { alert('로그인이 필요합니다.'); openAuthModal(); return; }
             document.getElementById('dmModal').classList.remove('hidden');
-            
             if (partner && partner !== currentUser) {
                 loadDmMessages(partner);
             } else {
@@ -557,7 +563,7 @@
                 .then(data => {
                     const container = document.getElementById('dmMessagesContainer');
                     container.innerHTML = '';
-                    if (data.messages.length === 0) {
+                    if (!data.messages || data.messages.length === 0) {
                         container.innerHTML = `<p class="text-center text-slate-400 text-[11px] py-6">@${escapeHtml(partner)} 님과 대화를 시작해 보세요!</p>`;
                     } else {
                         data.messages.forEach(m => {
