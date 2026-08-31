@@ -12,6 +12,12 @@ import cloudinary.uploader
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', 'super_secret_key_for_woongstagram_app')
 
+# 🔐 [영구 로그인 설정] 로그인 유지 기간을 365일(1년)로 설정
+app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=365)
+app.config['SESSION_COOKIE_SECURE'] = True  # HTTPS(Render) 환경 쿠키 보안
+app.config['SESSION_COOKIE_HTTPONLY'] = True
+app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
+
 DEFAULT_DB_URL = "postgresql://neondb_owner:YOUR_PASSWORD@ep-xyz.region.aws.neon.tech/neondb?sslmode=require"
 DATABASE_URL = os.environ.get('DATABASE_URL', DEFAULT_DB_URL)
 
@@ -537,6 +543,9 @@ def signup():
         conn.commit()
         cursor.close()
         conn.close()
+        
+        # 🔐 영구 로그인 적용
+        session.permanent = True
         session['username'] = username
         session['name'] = username
         return jsonify({'status': 'success', 'username': username})
@@ -557,6 +566,8 @@ def login():
     conn.close()
 
     if user:
+        # 🔐 영구 로그인 적용 (365일간 앱을 꺼도 유지)
+        session.permanent = True
         session['username'] = user['username']
         session['name'] = user['username']
         return jsonify({'status': 'success', 'username': user['username']})
@@ -698,6 +709,7 @@ def change_username():
         cursor.execute('UPDATE notifications SET actor = %s WHERE actor = %s;', (new_username, current_username))
 
         conn.commit()
+        session.permanent = True
         session['username'] = new_username
         session['name'] = new_username
         
