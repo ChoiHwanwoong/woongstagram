@@ -107,6 +107,9 @@ def init_db():
             );
         ''')
         cursor.execute('ALTER TABLE posts ADD COLUMN IF NOT EXISTS is_video BOOLEAN DEFAULT FALSE;')
+        cursor.execute('ALTER TABLE posts ADD COLUMN IF NOT EXISTS title VARCHAR(255) DEFAULT \'\';')
+        # title 제약 조건 완화
+        cursor.execute('ALTER TABLE posts ALTER COLUMN title DROP NOT NULL;')
 
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS comments (
@@ -147,6 +150,9 @@ def init_db():
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             );
         ''')
+        cursor.execute('ALTER TABLE stories ADD COLUMN IF NOT EXISTS title VARCHAR(255) DEFAULT \'\';')
+        # title 제약 조건 완화
+        cursor.execute('ALTER TABLE stories ALTER COLUMN title DROP NOT NULL;')
 
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS story_views (
@@ -214,7 +220,7 @@ def request_entity_too_large(error):
 @app.errorhandler(Exception)
 def handle_all_exceptions(e):
     print("SERVER ERROR TRACEBACK:\n", traceback.format_exc())
-    return jsonify({'status': 'error', 'message': f'서버 오류 상세: {str(e)}'}), 400
+    return jsonify({'status': 'error', 'message': f'서버 오류: {str(e)}'}), 400
 
 def create_notification(cursor, recipient, actor, notif_type, post_id=None):
     if recipient == actor:
@@ -363,8 +369,9 @@ def create_story():
 
         conn = get_db_connection()
         cursor = conn.cursor()
-        cursor.execute('INSERT INTO stories (username, desc_text, image_url, created_at) VALUES (%s, %s, %s, %s);', 
-                       (username, desc, image_url, now_kst))
+        # title 컬럼에 빈 문자열('') 전달
+        cursor.execute('INSERT INTO stories (username, title, desc_text, image_url, created_at) VALUES (%s, %s, %s, %s, %s);', 
+                       (username, '', desc, image_url, now_kst))
         conn.commit()
         cursor.close()
         conn.close()
@@ -514,8 +521,9 @@ def create_post():
 
         conn = get_db_connection()
         cursor = conn.cursor()
-        cursor.execute('INSERT INTO posts (username, content, image_url, is_video, created_at) VALUES (%s, %s, %s, %s, %s) RETURNING id;', 
-                       (username, content, image_url_db, is_video, now_kst))
+        # title 컬럼에 빈 문자열('') 전달
+        cursor.execute('INSERT INTO posts (username, title, content, image_url, is_video, created_at) VALUES (%s, %s, %s, %s, %s, %s) RETURNING id;', 
+                       (username, '', content, image_url_db, is_video, now_kst))
         new_post_id = cursor.fetchone()[0]
 
         parse_and_notify_mentions(cursor, content, username, new_post_id)
