@@ -34,31 +34,33 @@
 </head>
 <body class="bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 font-sans antialiased min-h-screen flex flex-col justify-between selection:bg-pink-500 selection:text-white transition-colors duration-200 pb-16 md:pb-0" onclick="handleOutsideClicks(event)">
 
-    <!-- 🔝 상단 헤더 -->
+    <!-- 🔝 상단 헤더 (인스타그램 완벽 정렬 스타일) -->
     <header class="border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 sticky top-0 z-40 w-full transition-colors">
-        <div class="max-w-5xl mx-auto px-3 sm:px-4 h-14 flex items-center justify-between gap-2 sm:gap-4 relative">
+        <div class="max-w-5xl mx-auto px-4 h-14 flex items-center justify-between gap-4 relative">
+            <!-- 로고 -->
             <div onclick="location.href='/'" class="text-xl sm:text-2xl font-black italic cursor-pointer font-serif text-slate-900 dark:text-white select-none shrink-0">
                 Woongstagram
             </div>
 
             <!-- 🔍 실시간 검색창 -->
-            <div class="relative flex-1 max-w-[150px] sm:max-w-xs mx-auto" onclick="event.stopPropagation()">
+            <div class="relative flex-1 max-w-[180px] sm:max-w-xs mx-auto" onclick="event.stopPropagation()">
                 <div class="relative">
-                    <input type="text" id="searchInput" oninput="handleSearchInput(this.value)" placeholder="검색" class="w-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg pl-7 pr-2 py-1 text-xs outline-none focus:bg-white dark:focus:bg-slate-900 focus:border-slate-400 transition text-slate-900 dark:text-slate-100 placeholder:text-slate-400">
-                    <i class="fa-solid fa-magnifying-glass absolute left-2.5 top-2 text-slate-400 text-[10px] sm:text-xs"></i>
+                    <input type="text" id="searchInput" oninput="handleSearchInput(this.value)" placeholder="검색" class="w-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg pl-8 pr-3 py-1.5 text-xs outline-none focus:bg-white dark:focus:bg-slate-900 focus:border-slate-400 transition text-slate-900 dark:text-slate-100 placeholder:text-slate-400">
+                    <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-slate-400 text-xs"></i>
                 </div>
-                <div id="searchResultsDropdown" class="hidden absolute top-10 -left-12 sm:left-0 w-64 sm:w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-2xl max-h-80 overflow-y-auto p-2 text-xs z-50 divide-y divide-slate-100 dark:divide-slate-800">
+                <div id="searchResultsDropdown" class="hidden absolute top-10 left-0 w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-2xl max-h-80 overflow-y-auto p-2 text-xs z-50 divide-y divide-slate-100 dark:divide-slate-800">
                     <div id="searchUserResults"></div>
                     <div id="searchPostResults"></div>
                 </div>
             </div>
 
-            <!-- 상단 우측 아이콘 -->
-            <div class="flex items-center gap-3 sm:gap-4 text-lg text-slate-800 dark:text-slate-200 shrink-0">
+            <!-- 상단 우측 아이콘 (알림, DM, 관리자(조건부), 프로필) -->
+            <div class="flex items-center gap-5 text-lg text-slate-800 dark:text-slate-200 shrink-0">
+                <!-- 🔔 알림 버튼 -->
                 <div class="relative">
-                    <button onclick="toggleNotificationDropdown(event)" class="relative p-1.5 hover:text-slate-500 transition flex items-center" title="알림">
+                    <button onclick="toggleNotificationDropdown(event)" class="relative hover:text-slate-500 transition flex items-center" title="알림">
                         <i class="fa-regular fa-heart"></i>
-                        <span id="notifBadge" class="hidden absolute top-0 right-0 bg-red-500 text-white text-[8px] font-bold w-3.5 h-3.5 rounded-full flex items-center justify-center">0</span>
+                        <span id="notifBadge" class="hidden absolute -top-1 -right-1 bg-red-500 text-white text-[8px] font-bold w-3.5 h-3.5 rounded-full flex items-center justify-center">0</span>
                     </button>
                     <div id="notifDropdown" class="hidden absolute top-10 right-0 w-72 sm:w-80 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl max-h-96 overflow-y-auto p-3 text-xs z-50 divide-y divide-slate-100 dark:divide-slate-800" onclick="event.stopPropagation()">
                         <div class="font-bold text-slate-900 dark:text-white pb-2 mb-1 flex justify-between items-center text-xs">
@@ -73,15 +75,19 @@
                     </div>
                 </div>
 
-                <button onclick="openDmModal()" class="relative p-1.5 hover:text-blue-500 transition" title="메시지">
+                <!-- 💬 DM 버튼 -->
+                <button onclick="openDmModal()" class="relative hover:text-blue-500 transition" title="메시지">
                     <i class="fa-regular fa-paper-plane"></i>
-                    <span id="dmBadge" class="hidden absolute top-0 right-0 bg-blue-500 text-white text-[8px] font-bold w-3.5 h-3.5 rounded-full flex items-center justify-center">0</span>
+                    <span id="dmBadge" class="hidden absolute -top-1 -right-1 bg-blue-500 text-white text-[8px] font-bold w-3.5 h-3.5 rounded-full flex items-center justify-center">0</span>
                 </button>
 
-                <a href="/admin" id="headerAdminBtn" class="hidden md:block text-red-500 hover:text-red-700 transition p-1" title="관리자">
+                <!-- 🔑 관리자 버튼 (PC 전용 / 관리자일 때만 눈에 띄게 배치) -->
+                <a href="/admin" id="headerAdminBtn" class="hidden text-slate-600 dark:text-slate-300 hover:text-red-500 transition" title="관리자 페이지">
                     <i class="fa-solid fa-key"></i>
                 </a>
-                <a href="/profile" id="headerProfileBtn" class="hidden md:block hover:text-slate-500 transition p-1" title="프로필">
+
+                <!-- 👤 프로필 버튼 -->
+                <a href="/profile" class="hover:text-slate-500 transition" title="프로필">
                     <i class="fa-regular fa-user"></i>
                 </a>
             </div>
@@ -417,11 +423,18 @@
                 .then(res => res.json())
                 .then(data => {
                     const card = document.getElementById('profileCard');
+                    const adminBtn = document.getElementById('headerAdminBtn');
+
                     if (data.logged_in) {
                         currentUser = data.username;
                         isAdminUser = data.is_admin;
                         loadNotifications();
                         loadFollowRequests();
+
+                        // 🔑 관리자 계정일 때만 상단바에 열쇠 아이콘 노출
+                        if (isAdminUser && adminBtn) {
+                            adminBtn.classList.remove('hidden');
+                        }
 
                         const avatar = data.profile_img ? `<img src="${data.profile_img}" class="w-full h-full object-cover">` : getDefaultAvatar("text-sm");
                         card.innerHTML = `
@@ -435,6 +448,7 @@
                         `;
                     } else {
                         currentUser = null;
+                        if (adminBtn) adminBtn.classList.add('hidden');
                         card.innerHTML = `
                             <p class="text-xs text-slate-500 mb-3">로그인하여 친구들과 사진을 공유해 보세요.</p>
                             <button onclick="openAuthModal()" class="w-full py-2 bg-blue-500 hover:bg-blue-600 text-white text-xs font-bold rounded-lg">로그인 / 회원가입</button>
