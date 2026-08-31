@@ -9,7 +9,7 @@
         tailwind.config = { darkMode: 'class' }
     </script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <!-- ✂️ Cropper.js (프로필 사진 편집용) -->
+    <!-- ✂️ Cropper.js -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css"/>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
 
@@ -35,7 +35,7 @@
     <!-- Profile Main Section -->
     <main class="max-w-4xl mx-auto px-4 py-6 sm:py-8 w-full flex-1">
         <div id="profileHeader" class="flex flex-col sm:flex-row items-center sm:items-start gap-6 sm:gap-8 pb-6 sm:pb-8 border-b border-slate-200 dark:border-slate-800">
-            <!-- 프로필 사진 (클릭 시 사진 변경 가능) -->
+            <!-- 프로필 사진 -->
             <div class="relative group shrink-0">
                 <div id="profileAvatarBox" class="w-24 h-24 sm:w-36 sm:h-36 rounded-full bg-slate-200 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 flex items-center justify-center font-bold shadow-md overflow-hidden">
                     <i class="fa-solid fa-user text-3xl sm:text-4xl text-slate-400"></i>
@@ -95,71 +95,119 @@
         <a href="/profile" class="p-2 text-blue-500"><i class="fa-solid fa-user"></i></a>
     </nav>
 
-    <!-- ⚙️ 통합 환경설정 모달 (다크모드 / 프로필변경 / 비공개 / 계정관리 / 탈퇴) -->
+    <!-- ⚙️ 환경설정 모달 (계층형 네비게이션 적용) -->
     <div id="settingsModal" class="fixed inset-0 bg-black/60 z-50 hidden flex items-center justify-center p-4 overflow-y-auto">
         <div class="bg-white dark:bg-slate-900 w-full max-w-sm rounded-2xl overflow-hidden shadow-2xl relative text-xs border border-slate-200 dark:border-slate-800 my-8">
-            <div class="p-4 border-b border-slate-100 dark:border-slate-800 font-bold text-center text-sm flex justify-between items-center">
-                <span>환경설정 및 계정 관리</span>
-                <button onclick="closeSettingsModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-base"></i></button>
+            <!-- 모달 상단 헤더 (뒤로가기 / 타이틀 / 닫기) -->
+            <div class="p-3.5 border-b border-slate-100 dark:border-slate-800 font-bold text-center text-sm flex justify-between items-center">
+                <button id="settingsBackBtn" onclick="showSettingsMenu()" class="hidden text-slate-600 dark:text-slate-300 p-1 hover:text-slate-900">
+                    <i class="fa-solid fa-arrow-left"></i>
+                </button>
+                <span id="settingsModalTitle" class="flex-1 text-center font-bold">환경설정</span>
+                <button onclick="closeSettingsModal()" class="text-slate-400 hover:text-slate-600 p-1">
+                    <i class="fa-solid fa-xmark text-base"></i>
+                </button>
             </div>
 
-            <div class="divide-y divide-slate-100 dark:divide-slate-800">
-                <!-- 🌓 테마 설정 (다크모드 / 라이트모드) -->
-                <div class="p-4 flex items-center justify-between">
-                    <span class="font-semibold flex items-center gap-2"><i class="fa-solid fa-circle-half-stroke text-slate-400"></i> 다크 모드 (검정 화면)</span>
-                    <input type="checkbox" id="darkModeSwitch" onchange="toggleDarkModeSetting(this.checked)" class="w-4 h-4 cursor-pointer">
-                </div>
-
-                <!-- 🔒 비공개 계정 전환 -->
+            <!-- 1️⃣ 환경설정 메인 메뉴 목록 (클릭 시 세부 뷰로 진입) -->
+            <div id="settingsMenuView" class="divide-y divide-slate-100 dark:divide-slate-800">
+                <!-- 🔒 비공개 계정 토글 -->
                 <div class="p-4 flex items-center justify-between">
                     <div>
-                        <span class="font-semibold flex items-center gap-2"><i class="fa-solid fa-lock text-slate-400"></i> 비공개 계정</span>
-                        <p class="text-[10px] text-slate-400 mt-0.5">승인된 팔로워만 내 피드를 볼 수 있습니다.</p>
+                        <span class="font-semibold flex items-center gap-2.5 text-slate-800 dark:text-slate-200">
+                            <i class="fa-solid fa-lock text-slate-400 w-4 text-center"></i> 비공개 계정
+                        </span>
+                        <p class="text-[10px] text-slate-400 mt-0.5 ml-6">승인된 팔로워만 내 피드를 볼 수 있습니다.</p>
                     </div>
                     <input type="checkbox" id="privateAccountSwitch" onchange="togglePrivateSetting(this.checked)" class="w-4 h-4 cursor-pointer">
                 </div>
 
-                <!-- 📝 자기소개 변경 -->
-                <div class="p-4 space-y-2">
-                    <label class="font-semibold flex items-center gap-2"><i class="fa-solid fa-pen text-slate-400"></i> 자기소개 수정 (30자 이내)</label>
-                    <div class="flex gap-2">
-                        <input type="text" id="editBioInput" maxlength="30" placeholder="자기소개 입력..." class="flex-1 px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-lg outline-none bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white">
-                        <button onclick="submitBioChange()" class="px-3 py-2 bg-blue-500 hover:bg-blue-600 text-white font-bold rounded-lg shrink-0">저장</button>
-                    </div>
-                </div>
-
-                <!-- 👤 아이디(사용자 이름) 변경 -->
-                <div class="p-4 space-y-2">
-                    <div>
-                        <label class="font-semibold flex items-center gap-2"><i class="fa-solid fa-user-tag text-slate-400"></i> 아이디 변경</label>
-                        <p class="text-[10px] text-slate-400 mt-0.5">아이디는 30일에 한 번만 변경 가능합니다.</p>
-                    </div>
-                    <div class="flex gap-2">
-                        <input type="text" id="editUsernameInput" placeholder="새 아이디 입력..." class="flex-1 px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-lg outline-none bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white">
-                        <button onclick="submitUsernameChange()" class="px-3 py-2 bg-blue-500 hover:bg-blue-600 text-white font-bold rounded-lg shrink-0">변경</button>
-                    </div>
-                </div>
-
-                <!-- 🔑 비밀번호 변경 -->
-                <div class="p-4 space-y-2">
-                    <label class="font-semibold flex items-center gap-2"><i class="fa-solid fa-key text-slate-400"></i> 비밀번호 변경</label>
-                    <input type="password" id="currentPwInput" placeholder="현재 비밀번호" class="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-lg outline-none bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white mb-1.5">
-                    <input type="password" id="newPwInput" placeholder="새 비밀번호" class="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-lg outline-none bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white mb-1.5">
-                    <button onclick="submitPasswordChange()" class="w-full py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 font-bold rounded-lg transition">비밀번호 변경 완료</button>
-                </div>
-
-                <!-- 🚪 로그아웃 -->
-                <button onclick="logout()" class="w-full p-4 text-center text-blue-500 font-bold hover:bg-slate-50 dark:hover:bg-slate-800">
-                    로그아웃
+                <!-- 📝 프로필 사진 변경 메뉴 -->
+                <button onclick="document.getElementById('profileImgInput').click()" class="w-full p-4 flex items-center justify-between text-left hover:bg-slate-50 dark:hover:bg-slate-800 transition">
+                    <span class="font-semibold flex items-center gap-2.5 text-slate-800 dark:text-slate-200">
+                        <i class="fa-solid fa-camera text-slate-400 w-4 text-center"></i> 프로필 사진 변경
+                    </span>
+                    <i class="fa-solid fa-chevron-right text-slate-400 text-[10px]"></i>
                 </button>
 
-                <!-- ⚠️ 계정 영구 삭제 (탈퇴) -->
-                <div class="p-4 space-y-2 bg-red-50/50 dark:bg-red-950/20">
-                    <label class="font-semibold text-red-600 dark:text-red-400 flex items-center gap-2"><i class="fa-solid fa-triangle-exclamation"></i> 회원 탈퇴 (계정 삭제)</label>
-                    <p class="text-[10px] text-slate-400">모든 게시글, 사진, 댓글 및 정보가 영구 삭제됩니다.</p>
-                    <input type="password" id="deleteAccountPwInput" placeholder="비밀번호 확인 후 탈퇴" class="w-full px-3 py-2 border border-red-200 dark:border-red-900/50 rounded-lg outline-none bg-white dark:bg-slate-900 text-slate-900 dark:text-white mb-1.5">
-                    <button onclick="submitDeleteAccount()" class="w-full py-2 bg-red-500 hover:bg-red-600 text-white font-bold rounded-lg transition">계정 영구 삭제하기</button>
+                <!-- 📝 자기소개 수정 메뉴 -->
+                <button onclick="openSettingsSubView('bio')" class="w-full p-4 flex items-center justify-between text-left hover:bg-slate-50 dark:hover:bg-slate-800 transition">
+                    <span class="font-semibold flex items-center gap-2.5 text-slate-800 dark:text-slate-200">
+                        <i class="fa-solid fa-pen text-slate-400 w-4 text-center"></i> 자기소개 수정
+                    </span>
+                    <i class="fa-solid fa-chevron-right text-slate-400 text-[10px]"></i>
+                </button>
+
+                <!-- 👤 아이디 변경 메뉴 -->
+                <button onclick="openSettingsSubView('username')" class="w-full p-4 flex items-center justify-between text-left hover:bg-slate-50 dark:hover:bg-slate-800 transition">
+                    <span class="font-semibold flex items-center gap-2.5 text-slate-800 dark:text-slate-200">
+                        <i class="fa-solid fa-user-tag text-slate-400 w-4 text-center"></i> 아이디 변경
+                    </span>
+                    <i class="fa-solid fa-chevron-right text-slate-400 text-[10px]"></i>
+                </button>
+
+                <!-- 🔑 비밀번호 변경 메뉴 -->
+                <button onclick="openSettingsSubView('password')" class="w-full p-4 flex items-center justify-between text-left hover:bg-slate-50 dark:hover:bg-slate-800 transition">
+                    <span class="font-semibold flex items-center gap-2.5 text-slate-800 dark:text-slate-200">
+                        <i class="fa-solid fa-key text-slate-400 w-4 text-center"></i> 비밀번호 변경
+                    </span>
+                    <i class="fa-solid fa-chevron-right text-slate-400 text-[10px]"></i>
+                </button>
+
+                <!-- 🚪 로그아웃 -->
+                <button onclick="logout()" class="w-full p-4 flex items-center gap-2.5 text-left text-blue-500 font-bold hover:bg-slate-50 dark:hover:bg-slate-800 transition">
+                    <i class="fa-solid fa-arrow-right-from-bracket w-4 text-center"></i> 로그아웃
+                </button>
+
+                <!-- ⚠️ 계정 탈퇴 메뉴 -->
+                <button onclick="openSettingsSubView('delete')" class="w-full p-4 flex items-center justify-between text-left text-red-500 font-semibold hover:bg-red-50/50 dark:hover:bg-red-950/20 transition">
+                    <span class="flex items-center gap-2.5">
+                        <i class="fa-solid fa-triangle-exclamation w-4 text-center"></i> 회원 탈퇴 (계정 삭제)
+                    </span>
+                    <i class="fa-solid fa-chevron-right text-red-400 text-[10px]"></i>
+                </button>
+            </div>
+
+            <!-- 2️⃣ 세부 설정 화면들 (클릭 시 전환) -->
+            <!-- 2-1. 자기소개 수정 뷰 -->
+            <div id="subViewBio" class="hidden p-5 space-y-4">
+                <div>
+                    <label class="font-bold text-slate-800 dark:text-slate-200 block mb-1">자기소개 수정</label>
+                    <p class="text-[10px] text-slate-400">프로필에 표시될 소개글을 입력하세요 (최대 30자).</p>
                 </div>
+                <textarea id="editBioInput" maxlength="30" rows="3" placeholder="자기소개 입력..." class="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-lg outline-none bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white resize-none"></textarea>
+                <button onclick="submitBioChange()" class="w-full py-2.5 bg-blue-500 hover:bg-blue-600 text-white font-bold rounded-lg transition">저장하기</button>
+            </div>
+
+            <!-- 2-2. 아이디 변경 뷰 -->
+            <div id="subViewUsername" class="hidden p-5 space-y-4">
+                <div>
+                    <label class="font-bold text-slate-800 dark:text-slate-200 block mb-1">새 사용자 이름(아이디)</label>
+                    <p class="text-[10px] text-slate-400 leading-relaxed">아이디는 변경 후 <strong class="text-slate-600 dark:text-slate-300">30일 동안 다시 변경할 수 없습니다.</strong></p>
+                </div>
+                <input type="text" id="editUsernameInput" placeholder="새 아이디 입력 (영문, 숫자, _)" class="w-full px-3 py-2.5 border border-slate-200 dark:border-slate-700 rounded-lg outline-none bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white">
+                <button onclick="submitUsernameChange()" class="w-full py-2.5 bg-blue-500 hover:bg-blue-600 text-white font-bold rounded-lg transition">아이디 변경하기</button>
+            </div>
+
+            <!-- 2-3. 비밀번호 변경 뷰 -->
+            <div id="subViewPassword" class="hidden p-5 space-y-3">
+                <div>
+                    <label class="font-bold text-slate-800 dark:text-slate-200 block mb-1">비밀번호 변경</label>
+                    <p class="text-[10px] text-slate-400">안전한 계정 관리를 위해 비밀번호를 주기적으로 변경해 주세요.</p>
+                </div>
+                <input type="password" id="currentPwInput" placeholder="현재 비밀번호" class="w-full px-3 py-2.5 border border-slate-200 dark:border-slate-700 rounded-lg outline-none bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white">
+                <input type="password" id="newPwInput" placeholder="새로운 비밀번호" class="w-full px-3 py-2.5 border border-slate-200 dark:border-slate-700 rounded-lg outline-none bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white">
+                <button onclick="submitPasswordChange()" class="w-full py-2.5 bg-blue-500 hover:bg-blue-600 text-white font-bold rounded-lg transition mt-2">비밀번호 변경 완료</button>
+            </div>
+
+            <!-- 2-4. 회원 탈퇴 뷰 -->
+            <div id="subViewDelete" class="hidden p-5 space-y-4">
+                <div class="p-3 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/50 rounded-xl">
+                    <p class="font-bold text-red-600 dark:text-red-400 mb-1"><i class="fa-solid fa-triangle-exclamation"></i> 주의사항</p>
+                    <p class="text-[11px] text-slate-600 dark:text-slate-300 leading-relaxed">탈퇴 시 회원님의 모든 피드 게시글, 사진, 댓글, 좋아요, 스토리 및 메시지 내역이 즉시 영구 삭제되며 복구할 수 없습니다.</p>
+                </div>
+                <input type="password" id="deleteAccountPwInput" placeholder="본인 확인용 비밀번호 입력" class="w-full px-3 py-2.5 border border-slate-200 dark:border-slate-700 rounded-lg outline-none bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white">
+                <button onclick="submitDeleteAccount()" class="w-full py-2.5 bg-red-500 hover:bg-red-600 text-white font-bold rounded-lg transition">계정 영구 삭제</button>
             </div>
         </div>
     </div>
@@ -184,33 +232,13 @@
         let currentProfileUser = null;
         let loggedInUser = null;
         let cropperInstance = null;
-        let selectedProfileBlob = null;
 
         document.addEventListener("DOMContentLoaded", () => {
-            initThemeState();
+            if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                document.documentElement.classList.add('dark');
+            }
             initProfile();
         });
-
-        function initThemeState() {
-            const isDark = localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches);
-            if (isDark) {
-                document.documentElement.classList.add('dark');
-                document.getElementById('darkModeSwitch').checked = true;
-            } else {
-                document.documentElement.classList.remove('dark');
-                document.getElementById('darkModeSwitch').checked = false;
-            }
-        }
-
-        function toggleDarkModeSetting(isDark) {
-            if (isDark) {
-                document.documentElement.classList.add('dark');
-                localStorage.theme = 'dark';
-            } else {
-                document.documentElement.classList.remove('dark');
-                localStorage.theme = 'light';
-            }
-        }
 
         async function initProfile() {
             const meRes = await fetch('/api/me');
@@ -338,6 +366,51 @@
             });
         }
 
+        // ⚙️ 환경설정 계층형 뷰 전환 로직
+        function openSettingsModal() {
+            showSettingsMenu();
+            document.getElementById('settingsModal').classList.remove('hidden');
+        }
+
+        function closeSettingsModal() {
+            document.getElementById('settingsModal').classList.add('hidden');
+        }
+
+        function showSettingsMenu() {
+            document.getElementById('settingsModalTitle').innerText = '환경설정';
+            document.getElementById('settingsBackBtn').classList.add('hidden');
+            document.getElementById('settingsMenuView').classList.remove('hidden');
+            
+            document.getElementById('subViewBio').classList.add('hidden');
+            document.getElementById('subViewUsername').classList.add('hidden');
+            document.getElementById('subViewPassword').classList.add('hidden');
+            document.getElementById('subViewDelete').classList.add('hidden');
+        }
+
+        function openSettingsSubView(type) {
+            document.getElementById('settingsMenuView').classList.add('hidden');
+            document.getElementById('settingsBackBtn').classList.remove('hidden');
+
+            document.getElementById('subViewBio').classList.add('hidden');
+            document.getElementById('subViewUsername').classList.add('hidden');
+            document.getElementById('subViewPassword').classList.add('hidden');
+            document.getElementById('subViewDelete').classList.add('hidden');
+
+            if (type === 'bio') {
+                document.getElementById('settingsModalTitle').innerText = '자기소개 수정';
+                document.getElementById('subViewBio').classList.remove('hidden');
+            } else if (type === 'username') {
+                document.getElementById('settingsModalTitle').innerText = '아이디 변경';
+                document.getElementById('subViewUsername').classList.remove('hidden');
+            } else if (type === 'password') {
+                document.getElementById('settingsModalTitle').innerText = '비밀번호 변경';
+                document.getElementById('subViewPassword').classList.remove('hidden');
+            } else if (type === 'delete') {
+                document.getElementById('settingsModalTitle').innerText = '회원 탈퇴';
+                document.getElementById('subViewDelete').classList.remove('hidden');
+            }
+        }
+
         // 📷 프로필 사진 크롭 & 업로드
         function handleProfileImageSelect(input) {
             if (!input.files || input.files.length === 0) return;
@@ -430,6 +503,7 @@
                     alert('비밀번호가 성공적으로 변경되었습니다!');
                     document.getElementById('currentPwInput').value = '';
                     document.getElementById('newPwInput').value = '';
+                    showSettingsMenu();
                 } else alert(d.message);
             });
         }
@@ -479,8 +553,6 @@
             });
         }
 
-        function openSettingsModal() { document.getElementById('settingsModal').classList.remove('hidden'); }
-        function closeSettingsModal() { document.getElementById('settingsModal').classList.add('hidden'); }
         function logout() { fetch('/api/logout', { method: 'POST' }).then(() => location.href = '/'); }
         function escapeHtml(text) { return text ? text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;") : ''; }
     </script>
