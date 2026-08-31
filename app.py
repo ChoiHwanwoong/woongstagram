@@ -17,7 +17,7 @@ app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1)
 
 app.secret_key = os.environ.get('SECRET_KEY', 'super_secret_key_for_woongstagram_app_2026')
 
-# 🔐 대용량 업로드(50MB) & 365일 영구 세션 설정
+# 🔐 대용량 업로드 & 365일 영구 세션 설정
 app.config['MAX_CONTENT_LENGTH'] = 50 * 1024 * 1024
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=365)
 app.config['SESSION_COOKIE_SECURE'] = True
@@ -27,17 +27,32 @@ app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
 DEFAULT_DB_URL = "postgresql://neondb_owner:YOUR_PASSWORD@ep-xyz.region.aws.neon.tech/neondb?sslmode=require"
 DATABASE_URL = os.environ.get('DATABASE_URL', DEFAULT_DB_URL)
 
-# ☁️ Cloudinary 표준 URL 파싱 연동 (오류 방지)
-cloudinary_raw_url = os.environ.get('CLOUDINARY_URL', '').strip()
-if cloudinary_raw_url:
+# ☁️ Cloudinary 설정 파싱 (모든 케이스 완벽 대응)
+c_url = os.environ.get('CLOUDINARY_URL', '').strip()
+if c_url:
+    # URL 파싱 시도 (cloudinary://api_key:api_secret@cloud_name)
     try:
-        parsed = urllib.parse.urlparse(cloudinary_raw_url)
-        cloudinary.config(
-            cloud_name=parsed.hostname,
-            api_key=parsed.username,
-            api_secret=parsed.password,
-            secure=True
-        )
+        # 혹시 'CLOUDINARY_URL=' 접두어가 붙어있는 경우 제거
+        if c_url.startswith('CLOUDINARY_URL='):
+            c_url = c_url.replace('CLOUDINARY_URL=', '').strip()
+        
+        # 따옴표 제거
+        c_url = c_url.strip('"').strip("'")
+        
+        parsed = urllib.parse.urlparse(c_url)
+        c_key = parsed.username
+        c_secret = parsed.password
+        c_name = parsed.hostname
+
+        if c_key and c_secret and c_name:
+            cloudinary.config(
+                cloud_name=c_name,
+                api_key=c_key,
+                api_secret=c_secret,
+                secure=True
+            )
+        else:
+            cloudinary.config(cloudinary_url=c_url, secure=True)
     except Exception as e:
         print("Cloudinary Config Error:", e)
         cloudinary.config(secure=True)
@@ -202,7 +217,8 @@ def request_entity_too_large(error):
 
 @app.errorhandler(500)
 def internal_server_error(error):
-    return jsonify({'status': 'error', 'message': '서버 처리 중 오류가 발생했습니다.'}), 500
+    # 실제 서버 에러를 숨기지 않고 명확히 표시
+    return jsonify({'status': 'error', 'message': f'서버 내부 오류: {str(error)}'}), 500
 
 def create_notification(cursor, recipient, actor, notif_type, post_id=None):
     if recipient == actor:
