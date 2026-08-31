@@ -4,326 +4,100 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>프로필 • Woongstagram</title>
-    <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>tailwind.config = { darkMode: 'class' }</script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <style>
-        .story-badge { background: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%); }
-        @keyframes progress { from { width: 0%; } to { width: 100%; } }
-        .animate-progress { animation: progress 5s linear forwards; }
-    </style>
 </head>
-<body class="bg-white text-slate-900 font-sans antialiased min-h-screen flex flex-col justify-between">
+<body class="bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 font-sans antialiased min-h-screen flex flex-col justify-between transition-colors">
 
     <!-- Header Navigation -->
-    <header class="border-b border-slate-200 bg-white sticky top-0 z-40">
+    <header class="border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 sticky top-0 z-40">
         <div class="max-w-5xl mx-auto px-4 h-14 flex items-center justify-between">
-            <a href="/" class="text-2xl font-black tracking-tight italic font-serif text-slate-900 select-none">
+            <a href="/" class="text-2xl font-black italic font-serif text-slate-900 dark:text-white select-none">
                 Woongstagram
             </a>
-
-            <div class="flex items-center gap-5 text-xl text-slate-800">
-                <a href="/" class="hover:text-slate-500 transition" title="홈"><i class="fa-solid fa-house"></i></a>
-                <a href="/profile" class="text-slate-900 font-bold" title="프로필"><i class="fa-solid fa-user"></i></a>
+            <div class="flex items-center gap-5 text-xl text-slate-800 dark:text-slate-200">
+                <a href="/" title="홈"><i class="fa-solid fa-house"></i></a>
+                <a href="/profile" class="font-bold text-blue-500" title="프로필"><i class="fa-solid fa-user"></i></a>
             </div>
         </div>
     </header>
 
     <!-- Profile Main Section -->
-    <main class="max-w-4xl mx-auto px-4 py-10 w-full flex-1">
-        
-        <!-- Profile Header Area -->
-        <div id="profileHeader" class="flex flex-col sm:flex-row items-center sm:items-start gap-8 pb-10 border-b border-slate-200">
+    <main class="max-w-4xl mx-auto px-4 py-8 w-full flex-1">
+        <div id="profileHeader" class="flex flex-col sm:flex-row items-center sm:items-start gap-8 pb-8 border-b border-slate-200 dark:border-slate-800">
             <div class="relative group">
-                <div id="profileAvatarBox" class="w-28 h-28 sm:w-36 sm:h-36 rounded-full bg-slate-200 text-slate-400 border border-slate-300 flex items-center justify-center font-bold shadow-md shrink-0 overflow-hidden bg-white">
-                    <i class="fa-solid fa-user text-4xl sm:text-5xl"></i>
+                <div id="profileAvatarBox" class="w-28 h-28 sm:w-36 sm:h-36 rounded-full bg-slate-200 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 flex items-center justify-center font-bold shadow-md overflow-hidden">
+                    <i class="fa-solid fa-user text-4xl text-slate-400"></i>
                 </div>
-                <div id="profileImageUploadBtn" class="hidden absolute inset-0 rounded-full bg-black/40 cursor-pointer flex-col items-center justify-center text-white opacity-0 group-hover:opacity-100 transition">
-                    <i class="fa-solid fa-camera text-xl mb-1"></i>
-                    <span class="text-[10px] font-semibold">사진 변경</span>
-                </div>
-                <input type="file" id="profileImageInput" accept="image/*" class="hidden" onchange="uploadProfileImage(this)">
             </div>
 
             <div class="flex flex-col gap-4 text-center sm:text-left flex-1">
                 <div class="flex flex-col sm:flex-row sm:items-center gap-3">
-                    <h1 id="profileUsername" class="text-xl font-bold text-slate-900">@username</h1>
-                    
-                    <button id="viewMyStoryBtn" onclick="openMyStoryModal()" class="hidden px-3.5 py-1.5 text-white font-bold text-xs rounded-full shadow-sm hover:opacity-90 transition flex items-center gap-1.5 self-center sm:self-auto story-badge">
-                        <i class="fa-solid fa-circle-play text-sm"></i> 스토리 보기
-                    </button>
-
+                    <h1 id="profileUsername" class="text-xl font-bold">@username</h1>
                     <div id="profileActionArea" class="flex items-center justify-center sm:justify-start gap-2"></div>
                 </div>
 
-                <div class="flex justify-center sm:justify-start gap-8 text-xs text-slate-800">
+                <div class="flex justify-center sm:justify-start gap-8 text-xs">
                     <div>게시물 <span id="postCount" class="font-bold">0</span></div>
-                    <div onclick="openFollowListModal('followers')" class="cursor-pointer hover:underline">팔로워 <span id="followerCount" class="font-bold">0</span></div>
-                    <div onclick="openFollowListModal('following')" class="cursor-pointer hover:underline">팔로우 <span id="followingCount" class="font-bold">0</span></div>
+                    <div>팔로워 <span id="followerCount" class="font-bold">0</span></div>
+                    <div>팔로우 <span id="followingCount" class="font-bold">0</span></div>
                 </div>
 
-                <!-- 📝 자기소개 영역 -->
+                <!-- 📝 자기소개 -->
                 <div class="text-xs space-y-1 mt-1">
                     <p id="profileEmail" class="text-slate-400 text-[11px]"></p>
-                    <div class="flex items-center justify-center sm:justify-start gap-2">
-                        <p id="profileBio" class="text-slate-800 font-medium whitespace-pre-wrap break-all"></p>
-                        <button id="editBioBtn" onclick="openEditBioModal()" class="hidden text-slate-400 hover:text-blue-500 transition text-[11px] shrink-0" title="자기소개 수정">
-                            <i class="fa-solid fa-pen-to-square"></i>
-                        </button>
-                    </div>
+                    <p id="profileBio" class="font-medium whitespace-pre-wrap break-all"></p>
                 </div>
             </div>
         </div>
 
-        <div class="flex justify-center border-t border-slate-200 -mt-[1px] gap-8">
-            <button onclick="switchTab('posts')" id="tabPostsBtn" class="flex items-center gap-2 py-3 border-t-2 border-slate-900 font-bold text-xs text-slate-900 tracking-wider">
+        <!-- 🔒 비공개 계정 잠금 안내 -->
+        <div id="privateLockNotice" class="hidden text-center py-20">
+            <i class="fa-solid fa-lock text-4xl text-slate-400 mb-3"></i>
+            <h3 class="font-bold text-sm">비공개 계정입니다</h3>
+            <p class="text-xs text-slate-500 mt-1">사진과 동영상을 보려면 팔로우 요청을 보내세요.</p>
+        </div>
+
+        <!-- 탭 메뉴 (게시물 / 좋아요 / 저장됨) -->
+        <div id="profileTabsArea" class="flex justify-center border-t border-slate-200 dark:border-slate-800 -mt-[1px] gap-8">
+            <button onclick="switchTab('posts')" id="tabPostsBtn" class="flex items-center gap-2 py-3 border-t-2 border-slate-900 dark:border-white font-bold text-xs tracking-wider">
                 <i class="fa-solid fa-table-cells text-sm"></i> 게시물
             </button>
             <button onclick="switchTab('likes')" id="tabLikesBtn" class="hidden items-center gap-2 py-3 border-t-2 border-transparent font-semibold text-xs text-slate-400 hover:text-slate-600 tracking-wider">
                 <i class="fa-solid fa-heart text-sm"></i> 좋아요
             </button>
-            <button onclick="switchTab('comments')" id="tabCommentsBtn" class="hidden items-center gap-2 py-3 border-t-2 border-transparent font-semibold text-xs text-slate-400 hover:text-slate-600 tracking-wider">
-                <i class="fa-solid fa-comment text-sm"></i> 댓글
+            <button onclick="switchTab('bookmarks')" id="tabBookmarksBtn" class="hidden items-center gap-2 py-3 border-t-2 border-transparent font-semibold text-xs text-slate-400 hover:text-slate-600 tracking-wider">
+                <i class="fa-solid fa-bookmark text-sm"></i> 저장됨
             </button>
         </div>
 
         <div id="myPostsGrid" class="grid grid-cols-3 gap-1 sm:gap-4 mt-2"></div>
-
     </main>
 
-    <!-- 📝 자기소개 수정 모달 (30자 제한) -->
-    <div id="editBioModal" class="fixed inset-0 bg-black/60 z-50 hidden flex items-center justify-center p-4">
-        <div class="bg-white w-full max-w-sm rounded-2xl p-6 shadow-2xl relative">
-            <button onclick="closeEditBioModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600">
-                <i class="fa-solid fa-xmark text-lg"></i>
-            </button>
-
-            <h3 class="text-sm font-bold text-center border-b border-slate-100 pb-3 mb-4">자기소개 수정 (30자 이내)</h3>
-
-            <div class="space-y-3 text-xs">
-                <div class="relative">
-                    <textarea id="bioInput" rows="2" maxlength="30" oninput="updateBioCharCount(this)" placeholder="자기소개를 입력해 주세요 (최대 30자)" class="w-full px-3 py-2.5 border border-slate-200 rounded-lg outline-none focus:border-slate-400 bg-slate-50 resize-none"></textarea>
-                    <span id="bioCharCount" class="absolute right-2 bottom-2 text-[10px] text-slate-400">0/30</span>
-                </div>
-                
-                <button onclick="submitProfileBio()" class="w-full py-2.5 bg-blue-500 hover:bg-blue-600 text-white font-bold rounded-lg transition mt-2">저장하기</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- ⚙️ 1. 환경설정 모달 -->
+    <!-- ⚙️ 환경설정 모달 (비공개 전환 스위치 포함) -->
     <div id="settingsModal" class="fixed inset-0 bg-black/60 z-50 hidden flex items-center justify-center p-4">
-        <div class="bg-white w-full max-w-sm rounded-2xl overflow-hidden shadow-2xl relative text-center text-xs divide-y divide-slate-100">
-            <div class="py-4 font-bold text-slate-900 border-b border-slate-100 text-sm">
-                환경설정
-            </div>
+        <div class="bg-white dark:bg-slate-900 w-full max-w-sm rounded-2xl overflow-hidden shadow-2xl relative text-center text-xs divide-y divide-slate-100 dark:divide-slate-800 border border-slate-200 dark:border-slate-800">
+            <div class="py-4 font-bold text-sm">환경설정</div>
             
-            <button onclick="openChangeUsernameModal()" class="w-full py-3.5 hover:bg-slate-50 transition text-slate-800 font-semibold flex items-center justify-center gap-2">
-                <i class="fa-solid fa-at text-slate-400"></i> 아이디 변경
-            </button>
-
-            <button onclick="openChangePasswordModal()" class="w-full py-3.5 hover:bg-slate-50 transition text-slate-800 font-semibold flex items-center justify-center gap-2">
-                <i class="fa-solid fa-key text-slate-400"></i> 비밀번호 변경
-            </button>
-            
-            <button onclick="logout()" class="w-full py-3.5 hover:bg-slate-50 transition text-slate-800 font-semibold flex items-center justify-center gap-2">
-                <i class="fa-solid fa-right-from-bracket text-slate-400"></i> 로그아웃
-            </button>
-
-            <button onclick="openDeleteAccountModal()" id="deleteAccountBtn" class="w-full py-3.5 hover:bg-red-50 transition text-red-600 font-bold flex items-center justify-center gap-2">
-                <i class="fa-solid fa-user-xmark"></i> 회원 탈퇴
-            </button>
-
-            <button onclick="closeSettingsModal()" class="w-full py-3.5 hover:bg-slate-50 transition text-slate-500 font-semibold">
-                취소
-            </button>
-        </div>
-    </div>
-
-    <!-- 🆔 1-1. 아이디 변경 모달 -->
-    <div id="changeUsernameModal" class="fixed inset-0 bg-black/60 z-50 hidden flex items-center justify-center p-4">
-        <div class="bg-white w-full max-w-sm rounded-2xl p-6 shadow-2xl relative">
-            <button onclick="closeChangeUsernameModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600">
-                <i class="fa-solid fa-xmark text-lg"></i>
-            </button>
-
-            <h3 class="text-sm font-bold text-center border-b border-slate-100 pb-3 mb-2">아이디 변경</h3>
-            
-            <div class="p-3 bg-amber-50 border border-amber-200 rounded-lg mb-4 text-[11px] text-amber-800 leading-relaxed">
-                <i class="fa-solid fa-circle-exclamation mr-1 text-amber-600"></i>
-                <strong>주의:</strong> 아이디를 변경하면 **30일 동안 다시 변경할 수 없습니다.**
+            <div class="p-3.5 flex items-center justify-between px-6">
+                <span class="font-semibold flex items-center gap-2"><i class="fa-solid fa-lock text-slate-400"></i> 비공개 계정</span>
+                <input type="checkbox" id="privateAccountSwitch" onchange="togglePrivateSetting(this.checked)" class="w-4 h-4 cursor-pointer">
             </div>
 
-            <div class="space-y-3 text-xs">
-                <input type="text" id="newUsernameInput" placeholder="새로운 사용자 이름 (아이디)" class="w-full px-3 py-2.5 border border-slate-200 rounded-lg outline-none focus:border-slate-400 bg-slate-50">
-                
-                <button onclick="submitChangeUsername()" class="w-full py-2.5 bg-blue-500 hover:bg-blue-600 text-white font-bold rounded-lg transition mt-2">아이디 변경하기</button>
-            </div>
+            <button onclick="logout()" class="w-full py-3.5 text-red-500 font-semibold hover:bg-slate-50 dark:hover:bg-slate-800">로그아웃</button>
+            <button onclick="closeSettingsModal()" class="w-full py-3.5 text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800">닫기</button>
         </div>
     </div>
-
-    <!-- 🔑 1-2. 비밀번호 변경 모달 -->
-    <div id="changePwModal" class="fixed inset-0 bg-black/60 z-50 hidden flex items-center justify-center p-4">
-        <div class="bg-white w-full max-w-sm rounded-2xl p-6 shadow-2xl relative">
-            <button onclick="closeChangePwModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600">
-                <i class="fa-solid fa-xmark text-lg"></i>
-            </button>
-
-            <h3 class="text-sm font-bold text-center border-b border-slate-100 pb-3 mb-4">비밀번호 변경</h3>
-
-            <div class="space-y-3 text-xs">
-                <div class="relative">
-                    <input type="password" id="currentPasswordInput" placeholder="현재 비밀번호" class="w-full px-3 py-2.5 border border-slate-200 rounded-lg outline-none focus:border-slate-400 bg-slate-50">
-                    <i onclick="togglePasswordVisibility('currentPasswordInput', this)" class="fa-regular fa-eye absolute right-3 top-3 text-slate-400 cursor-pointer"></i>
-                </div>
-                <div class="relative">
-                    <input type="password" id="newPasswordInput" placeholder="새로운 비밀번호" class="w-full px-3 py-2.5 border border-slate-200 rounded-lg outline-none focus:border-slate-400 bg-slate-50">
-                    <i onclick="togglePasswordVisibility('newPasswordInput', this)" class="fa-regular fa-eye absolute right-3 top-3 text-slate-400 cursor-pointer"></i>
-                </div>
-                <div class="relative">
-                    <input type="password" id="newPasswordConfirmInput" placeholder="새로운 비밀번호 확인" class="w-full px-3 py-2.5 border border-slate-200 rounded-lg outline-none focus:border-slate-400 bg-slate-50">
-                    <i onclick="togglePasswordVisibility('newPasswordConfirmInput', this)" class="fa-regular fa-eye absolute right-3 top-3 text-slate-400 cursor-pointer"></i>
-                </div>
-                
-                <button onclick="submitChangePassword()" class="w-full py-2.5 bg-blue-500 hover:bg-blue-600 text-white font-bold rounded-lg transition mt-2">변경 완료</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- 🚨 1-3. 회원 탈퇴 확인 모달 -->
-    <div id="deleteAccModal" class="fixed inset-0 bg-black/60 z-50 hidden flex items-center justify-center p-4">
-        <div class="bg-white w-full max-w-sm rounded-2xl p-6 shadow-2xl relative">
-            <button onclick="closeDeleteAccModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600">
-                <i class="fa-solid fa-xmark text-lg"></i>
-            </button>
-
-            <h3 class="text-sm font-bold text-center text-red-600 border-b border-slate-100 pb-3 mb-2">회원 탈퇴</h3>
-            <p class="text-[11px] text-slate-500 text-center mb-4 leading-relaxed">
-                정말로 탈퇴하시겠습니까?<br>작성하신 게시글, 댓글, 스토리 및 회원 정보가 **모두 영구 삭제**됩니다.
-            </p>
-
-            <div class="space-y-3 text-xs">
-                <div class="relative">
-                    <input type="password" id="deleteAccPasswordInput" placeholder="비밀번호 확인" class="w-full px-3 py-2.5 border border-slate-200 rounded-lg outline-none focus:border-slate-400 bg-slate-50">
-                    <i onclick="togglePasswordVisibility('deleteAccPasswordInput', this)" class="fa-regular fa-eye absolute right-3 top-3 text-slate-400 cursor-pointer"></i>
-                </div>
-                
-                <button onclick="submitDeleteAccount()" class="w-full py-2.5 bg-red-500 hover:bg-red-600 text-white font-bold rounded-lg transition shadow-sm mt-2">계정 삭제 및 탈퇴하기</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- 2. 스토리 뷰어 모달 -->
-    <div id="storyModal" class="fixed inset-0 bg-black/90 z-50 hidden flex items-center justify-center">
-        <button onclick="closeStoryModal()" class="absolute top-5 right-5 text-white text-2xl hover:text-slate-400 z-50">
-            <i class="fa-solid fa-xmark"></i>
-        </button>
-
-        <div class="w-full max-w-sm h-[580px] bg-slate-900 rounded-2xl overflow-hidden relative flex flex-col justify-between shadow-2xl border border-slate-800">
-            <div class="p-4 z-10 bg-gradient-to-b from-black/80 to-transparent">
-                <div class="w-full bg-white/30 h-1 rounded-full mb-3 overflow-hidden">
-                    <div id="storyProgress" class="bg-white h-full w-0"></div>
-                </div>
-                <div class="flex items-center justify-between text-white text-xs">
-                    <div class="flex items-center gap-2.5">
-                        <div id="storyAvatarBox" class="w-8 h-8 rounded-full bg-slate-200 text-slate-500 border border-white/50 flex items-center justify-center font-bold text-[10px] overflow-hidden"></div>
-                        <span id="storyUser" class="font-bold">username</span>
-                        <span id="storyTimeAgo" class="text-white/60 text-[10px]">방금 전</span>
-                    </div>
-                    <button id="storyDeleteBtn" class="text-white/70 hover:text-red-400 text-sm transition px-2 py-1" title="스토리 삭제">
-                        <i class="fa-solid fa-trash-can"></i>
-                    </button>
-                </div>
-            </div>
-
-            <div id="storyBg" class="absolute inset-0 flex flex-col items-center justify-end text-white p-6 pb-16 text-center bg-cover bg-center">
-                <p id="storyDesc" class="text-lg sm:text-xl font-serif italic font-bold text-white leading-relaxed drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] tracking-wide max-w-xs"></p>
-            </div>
-        </div>
-    </div>
-
-    <!-- 3. 게시글 상세 모달 -->
-    <div id="postDetailModal" class="fixed inset-0 bg-black/60 z-50 hidden flex items-center justify-center p-4">
-        <div class="bg-white w-full max-w-2xl rounded-2xl overflow-hidden shadow-2xl relative flex flex-col md:flex-row max-h-[85vh]">
-            <button onclick="closePostDetailModal()" class="absolute top-3 right-3 text-slate-400 hover:text-slate-600 z-10 bg-white/80 p-1 rounded-full">
-                <i class="fa-solid fa-xmark text-lg"></i>
-            </button>
-
-            <div id="modalImageArea" class="bg-slate-900 md:w-1/2 flex items-center justify-center min-h-[250px]"></div>
-
-            <div class="p-4 md:w-1/2 flex flex-col justify-between text-xs overflow-y-auto bg-white">
-                <div>
-                    <div class="flex items-center gap-2 pb-3 mb-3 border-b border-slate-100">
-                        <span id="modalUserAvatar" class="w-7 h-7 rounded-full bg-slate-200 text-slate-400 border border-slate-300 flex items-center justify-center text-[10px] overflow-hidden shrink-0"></span>
-                        <a id="modalUsername" href="#" class="font-bold text-slate-900 hover:underline"></a>
-                    </div>
-                    
-                    <p id="modalContent" class="text-slate-700 leading-relaxed mb-4 pb-3 border-b border-slate-100"></p>
-
-                    <div id="modalCommentsList" class="space-y-2 text-[11px] mb-4"></div>
-                </div>
-
-                <div class="pt-2 border-t border-slate-100 flex items-center justify-between">
-                    <input type="text" id="modalCommentInput" placeholder="댓글 달기..." class="w-full text-xs outline-none bg-transparent text-slate-800 placeholder-slate-400">
-                    <button id="modalCommentSubmitBtn" class="text-blue-500 font-semibold text-xs ml-2 hover:text-blue-700 whitespace-nowrap">게시</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- 4. 팔로워 / 팔로잉 목록 모달 -->
-    <div id="followListModal" class="fixed inset-0 bg-black/60 z-50 hidden flex items-center justify-center p-4">
-        <div class="bg-white w-full max-w-sm rounded-2xl p-5 shadow-2xl relative">
-            <button onclick="closeFollowListModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600">
-                <i class="fa-solid fa-xmark text-lg"></i>
-            </button>
-
-            <h3 id="followListTitle" class="text-sm font-bold text-center border-b border-slate-100 pb-3 mb-4">팔로워</h3>
-
-            <div id="followUsersContainer" class="space-y-3 text-xs max-h-60 overflow-y-auto"></div>
-        </div>
-    </div>
-
-    <footer class="border-t border-slate-100 py-6 text-center text-slate-400 text-xs">
-        <p>© 2026 WOONGSTAGRAM PROFILE PAGE</p>
-    </footer>
 
     <script>
         const pathParts = window.location.pathname.split('/');
         const targetUserFromUrl = pathParts.length > 2 && pathParts[2] ? pathParts[2] : null;
         let currentProfileUser = null;
         let loggedInUser = null;
-        let myActiveStory = null;
-        let storyTimer = null;
-        let currentTab = 'posts';
-        let currentBioText = '';
-
-        function getDefaultAvatar(sizeClass = "text-xl") {
-            return `<div class="w-full h-full bg-slate-200 text-slate-400 flex items-center justify-center"><i class="fa-solid fa-user ${sizeClass}"></i></div>`;
-        }
-
-        function timeAgo(dateString) {
-            if (!dateString) return '방금 전';
-            const formattedDate = dateString.replace(' ', 'T');
-            const past = new Date(formattedDate);
-            const now = new Date();
-
-            if (isNaN(past.getTime())) return '방금 전';
-
-            const diffInSeconds = Math.floor((now - past) / 1000);
-
-            if (diffInSeconds < 60) return '방금 전';
-            const diffInMinutes = Math.floor(diffInSeconds / 60);
-            if (diffInMinutes < 60) return `${diffInMinutes}분 전`;
-            const diffInHours = Math.floor(diffInMinutes / 60);
-            if (diffInHours < 24) return `${diffInHours}시간 전`;
-            const diffInDays = Math.floor(diffInHours / 24);
-            if (diffInDays < 7) return `${diffInDays}일 전`;
-            
-            return `${past.getFullYear()}년 ${past.getMonth() + 1}월 ${past.getDate()}일`;
-        }
 
         document.addEventListener("DOMContentLoaded", () => {
+            if (localStorage.theme === 'dark') document.documentElement.classList.add('dark');
             initProfile();
         });
 
@@ -332,599 +106,120 @@
             const meData = await meRes.json();
             if (meData.logged_in) loggedInUser = meData.username;
 
-            let targetUser = targetUserFromUrl;
-
-            if (!targetUser) {
-                if (meData.logged_in) {
-                    targetUser = meData.username;
-                } else {
-                    alert('로그인이 필요한 페이지입니다.');
-                    window.location.href = '/';
-                    return;
-                }
-            }
-
+            let targetUser = targetUserFromUrl || (meData.logged_in ? meData.username : null);
+            if (!targetUser) { window.location.href = '/'; return; }
             currentProfileUser = targetUser;
 
             const userRes = await fetch(`/api/users/${targetUser}`);
             const userData = await userRes.json();
+            if (userData.status !== 'success') { alert('사용자를 찾을 수 없습니다.'); window.location.href = '/'; return; }
 
-            if (userData.status !== 'success') {
-                alert('사용자를 찾을 수 없습니다.');
-                window.location.href = '/';
-                return;
-            }
-
-            const user = userData.user;
-            document.getElementById('profileUsername').innerText = `@${user.username}`;
-            document.getElementById('followerCount').innerText = user.follower_count;
-            document.getElementById('followingCount').innerText = user.following_count;
-
-            currentBioText = user.bio || '';
-            const bioEl = document.getElementById('profileBio');
-            bioEl.innerText = currentBioText || (meData.logged_in && meData.username === user.username ? '자기소개를 추가해 보세요.' : '');
+            const u = userData.user;
+            document.getElementById('profileUsername').innerText = `@${u.username}`;
+            document.getElementById('followerCount').innerText = u.follower_count;
+            document.getElementById('followingCount').innerText = u.following_count;
+            document.getElementById('profileBio').innerText = u.bio || '';
 
             const avatarBox = document.getElementById('profileAvatarBox');
-            if (user.profile_img) {
-                avatarBox.innerHTML = `<img src="${user.profile_img}" class="w-full h-full object-cover">`;
-            } else {
-                avatarBox.innerHTML = `<i class="fa-solid fa-user text-4xl sm:text-5xl"></i>`;
-            }
+            if (u.profile_img) avatarBox.innerHTML = `<img src="${u.profile_img}" class="w-full h-full object-cover">`;
 
-            const isMyProfile = meData.logged_in && (meData.username === user.username);
+            const isMyProfile = meData.logged_in && (meData.username === u.username);
             const actionArea = document.getElementById('profileActionArea');
-            const uploadBtn = document.getElementById('profileImageUploadBtn');
-            const editBioBtn = document.getElementById('editBioBtn');
-
-            const tabLikesBtn = document.getElementById('tabLikesBtn');
-            const tabCommentsBtn = document.getElementById('tabCommentsBtn');
 
             if (isMyProfile) {
-                document.getElementById('profileEmail').innerText = user.email;
-                uploadBtn.classList.remove('hidden');
-                uploadBtn.classList.add('flex');
-                uploadBtn.onclick = () => document.getElementById('profileImageInput').click();
-
-                editBioBtn.classList.remove('hidden');
-
-                tabLikesBtn.classList.remove('hidden');
-                tabLikesBtn.classList.add('flex');
-                tabCommentsBtn.classList.remove('hidden');
-                tabCommentsBtn.classList.add('flex');
+                document.getElementById('profileEmail').innerText = u.email;
+                document.getElementById('tabLikesBtn').classList.remove('hidden');
+                document.getElementById('tabBookmarksBtn').classList.remove('hidden');
+                document.getElementById('privateAccountSwitch').checked = u.is_private;
 
                 actionArea.innerHTML = `
-                    <button onclick="openSettingsModal()" class="p-2 text-slate-700 hover:text-slate-900 hover:bg-slate-100 rounded-full transition text-lg" title="환경설정">
-                        <i class="fa-solid fa-gear"></i>
-                    </button>
+                    <button onclick="openSettingsModal()" class="p-2 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full text-base"><i class="fa-solid fa-gear"></i></button>
                 `;
-
-                if (user.username === 'admin') {
-                    const delBtn = document.getElementById('deleteAccountBtn');
-                    if (delBtn) delBtn.classList.add('hidden');
-                }
-
-                checkActiveStory(user.username, user.profile_img);
             } else {
-                document.getElementById('profileEmail').innerText = '';
-                uploadBtn.classList.add('hidden');
-                uploadBtn.classList.remove('flex');
-
-                editBioBtn.classList.add('hidden');
-
-                tabLikesBtn.classList.add('hidden');
-                tabLikesBtn.classList.remove('flex');
-                tabCommentsBtn.classList.add('hidden');
-                tabCommentsBtn.classList.remove('flex');
-
-                const btnText = user.is_following ? '팔로잉' : '팔로우';
-                const btnClass = user.is_following ? 
-                    "px-5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 font-semibold text-xs rounded-lg border border-slate-200 transition" :
-                    "px-5 py-1.5 bg-blue-500 hover:bg-blue-600 text-white font-bold text-xs rounded-lg transition shadow-sm";
+                let btnText = '팔로우';
+                if (u.is_following) btnText = '팔로잉';
+                else if (u.is_requested) btnText = '요청됨';
 
                 actionArea.innerHTML = `
-                    <button onclick="handleFollowToggle('${user.username}', this)" class="${btnClass}">
-                        ${btnText}
-                    </button>
+                    <button onclick="handleFollowToggle('${u.username}', this)" class="px-4 py-1.5 bg-blue-500 text-white font-bold text-xs rounded-lg">${btnText}</button>
+                    <a href="/?dm=${u.username}" class="px-4 py-1.5 bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-white font-bold text-xs rounded-lg">메시지</a>
                 `;
-
-                checkActiveStory(user.username, user.profile_img);
             }
 
-            switchTab('posts');
-        }
-
-        // 📝 자기소개 편집 모달 제어
-        function openEditBioModal() {
-            const input = document.getElementById('bioInput');
-            input.value = currentBioText;
-            updateBioCharCount(input);
-            document.getElementById('editBioModal').classList.remove('hidden');
-        }
-
-        function closeEditBioModal() {
-            document.getElementById('editBioModal').classList.add('hidden');
-        }
-
-        function updateBioCharCount(input) {
-            const count = input.value.length;
-            document.getElementById('bioCharCount').innerText = `${count}/30`;
-        }
-
-        function submitProfileBio() {
-            const bio = document.getElementById('bioInput').value.trim();
-
-            if (bio.length > 30) {
-                alert('자기소개는 30자 이내로 작성해 주세요.');
-                return;
+            if (!u.can_view_content) {
+                document.getElementById('privateLockNotice').classList.remove('hidden');
+                document.getElementById('profileTabsArea').classList.add('hidden');
+                document.getElementById('myPostsGrid').classList.add('hidden');
+            } else {
+                switchTab('posts');
             }
-
-            fetch('/api/profile-bio', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ bio })
-            })
-            .then(res => res.json())
-            .then(data => {
-                if (data.status === 'success') {
-                    currentBioText = data.bio;
-                    document.getElementById('profileBio').innerText = data.bio || '자기소개를 추가해 보세요.';
-                    closeEditBioModal();
-                } else {
-                    alert(data.message);
-                }
-            });
         }
 
         function switchTab(tab) {
-            currentTab = tab;
-            const postsBtn = document.getElementById('tabPostsBtn');
-            const likesBtn = document.getElementById('tabLikesBtn');
-            const commentsBtn = document.getElementById('tabCommentsBtn');
-
-            postsBtn.className = "flex items-center gap-2 py-3 border-t-2 border-transparent font-semibold text-xs text-slate-400 hover:text-slate-600 tracking-wider";
-            likesBtn.className = "hidden items-center gap-2 py-3 border-t-2 border-transparent font-semibold text-xs text-slate-400 hover:text-slate-600 tracking-wider";
-            commentsBtn.className = "hidden items-center gap-2 py-3 border-t-2 border-transparent font-semibold text-xs text-slate-400 hover:text-slate-600 tracking-wider";
-
-            if (loggedInUser === currentProfileUser) {
-                likesBtn.classList.remove('hidden');
-                likesBtn.classList.add('flex');
-                commentsBtn.classList.remove('hidden');
-                commentsBtn.classList.add('flex');
-            }
+            const pBtn = document.getElementById('tabPostsBtn');
+            const lBtn = document.getElementById('tabLikesBtn');
+            const bBtn = document.getElementById('tabBookmarksBtn');
+            pBtn.className = "py-3 border-t-2 border-transparent text-slate-400 font-semibold text-xs";
+            lBtn.className = "py-3 border-t-2 border-transparent text-slate-400 font-semibold text-xs";
+            bBtn.className = "py-3 border-t-2 border-transparent text-slate-400 font-semibold text-xs";
 
             if (tab === 'posts') {
-                postsBtn.className = "flex items-center gap-2 py-3 border-t-2 border-slate-900 font-bold text-xs text-slate-900 tracking-wider";
-                loadUserPosts(currentProfileUser);
+                pBtn.className = "py-3 border-t-2 border-slate-900 dark:border-white font-bold text-xs";
+                fetch(`/api/posts/user/${currentProfileUser}`).then(r => r.json()).then(d => renderGrid(d.posts));
             } else if (tab === 'likes') {
-                likesBtn.className = "flex items-center gap-2 py-3 border-t-2 border-slate-900 font-bold text-xs text-slate-900 tracking-wider";
-                loadUserLikedPosts(currentProfileUser);
-            } else if (tab === 'comments') {
-                commentsBtn.className = "flex items-center gap-2 py-3 border-t-2 border-slate-900 font-bold text-xs text-slate-900 tracking-wider";
-                loadUserCommentedPosts(currentProfileUser);
+                lBtn.className = "py-3 border-t-2 border-slate-900 dark:border-white font-bold text-xs";
+                fetch(`/api/users/${currentProfileUser}/liked-posts`).then(r => r.json()).then(d => renderGrid(d.posts));
+            } else if (tab === 'bookmarks') {
+                bBtn.className = "py-3 border-t-2 border-slate-900 dark:border-white font-bold text-xs";
+                fetch(`/api/users/${currentProfileUser}/bookmarks`).then(r => r.json()).then(d => renderGrid(d.posts));
             }
         }
 
-        async function checkActiveStory(username, profileImg) {
-            try {
-                const storiesRes = await fetch('/api/stories');
-                const storiesData = await storiesRes.json();
-                if (storiesData.status === 'success') {
-                    const story = storiesData.stories.find(s => s.username === username);
-                    const viewBtn = document.getElementById('viewMyStoryBtn');
-                    
-                    if (story) {
-                        myActiveStory = story;
-                        myActiveStory.profile_img = profileImg;
-                        viewBtn.classList.remove('hidden');
-                        viewBtn.classList.add('flex');
-                    } else {
-                        viewBtn.classList.add('hidden');
-                        viewBtn.classList.remove('flex');
-                    }
+        function renderGrid(posts) {
+            const grid = document.getElementById('myPostsGrid');
+            grid.innerHTML = '';
+            document.getElementById('postCount').innerText = posts.length;
+            if (posts.length === 0) {
+                grid.innerHTML = '<div class="col-span-3 text-center py-16 text-slate-400 text-xs">게시물이 없습니다.</div>';
+                return;
+            }
+            posts.forEach(p => {
+                const card = document.createElement('div');
+                card.className = "aspect-square bg-slate-100 dark:bg-slate-800 rounded-lg overflow-hidden relative border border-slate-200 dark:border-slate-700";
+                if (p.is_video) {
+                    card.innerHTML = `<video src="${p.image_url}" class="w-full h-full object-cover"></video><i class="fa-solid fa-play absolute top-2 right-2 text-white text-xs drop-shadow"></i>`;
+                } else if (p.image_url) {
+                    card.innerHTML = `<img src="${p.image_url}" class="w-full h-full object-cover">`;
+                } else {
+                    card.innerHTML = `<div class="p-2 text-[10px] text-center">${p.content}</div>`;
                 }
-            } catch (err) {
-                console.error(err);
-            }
+                grid.appendChild(card);
+            });
         }
 
-        function openMyStoryModal() {
-            if (!myActiveStory) return;
-
-            document.getElementById('storyUser').innerText = myActiveStory.username;
-            const avatarBox = document.getElementById('storyAvatarBox');
-            if (myActiveStory.profile_img) {
-                avatarBox.innerHTML = `<img src="${myActiveStory.profile_img}" class="w-full h-full object-cover">`;
-            } else {
-                avatarBox.innerHTML = getDefaultAvatar("text-xs");
-            }
-
-            document.getElementById('storyTimeAgo').innerText = timeAgo(myActiveStory.created_at);
-            
-            const descEl = document.getElementById('storyDesc');
-            if (myActiveStory.desc) {
-                descEl.innerText = myActiveStory.desc;
-                descEl.classList.remove('hidden');
-            } else {
-                descEl.classList.add('hidden');
-            }
-
-            const bg = document.getElementById('storyBg');
-            if (myActiveStory.image_url) {
-                bg.style.backgroundImage = `url('${myActiveStory.image_url}')`;
-            } else {
-                bg.style.backgroundImage = 'none';
-                bg.className = "absolute inset-0 flex flex-col items-center justify-center text-white p-8 text-center bg-gradient-to-br from-pink-500 to-rose-600";
-            }
-
-            const delBtn = document.getElementById('storyDeleteBtn');
-            if (loggedInUser && (loggedInUser === myActiveStory.username || loggedInUser === 'admin')) {
-                delBtn.classList.remove('hidden');
-                delBtn.onclick = () => deleteMyStory(myActiveStory.id);
-            } else {
-                delBtn.classList.add('hidden');
-            }
-
-            const modal = document.getElementById('storyModal');
-            const progress = document.getElementById('storyProgress');
-            modal.classList.remove('hidden');
-            progress.classList.remove('animate-progress');
-            void progress.offsetWidth;
-            progress.classList.add('animate-progress');
-
-            clearTimeout(storyTimer);
-            storyTimer = setTimeout(() => closeStoryModal(), 5000);
-        }
-
-        function closeStoryModal() {
-            document.getElementById('storyModal').classList.add('hidden');
-            clearTimeout(storyTimer);
-        }
-
-        function deleteMyStory(storyId) {
-            if (!confirm('정말로 이 스토리를 삭제하시겠습니까?')) return;
-            fetch(`/api/stories/${storyId}`, { method: 'DELETE' })
+        function handleFollowToggle(target, btn) {
+            if (!loggedInUser) { window.location.href = '/'; return; }
+            fetch(`/api/follow/${target}`, { method: 'POST' })
                 .then(res => res.json())
-                .then(data => {
-                    if (data.status === 'success') {
-                        closeStoryModal();
-                        location.reload();
-                    } else alert(data.message);
+                .then(d => {
+                    if (d.result_status === 'following') btn.innerText = '팔로잉';
+                    else if (d.result_status === 'requested') btn.innerText = '요청됨';
+                    else btn.innerText = '팔로우';
+                    document.getElementById('followerCount').innerText = d.follower_count;
                 });
         }
 
-        function uploadProfileImage(input) {
-            if (input.files.length === 0) return;
-            const formData = new FormData();
-            formData.append('file', input.files[0]);
-
-            fetch('/api/profile-image', {
+        function togglePrivateSetting(isPrivate) {
+            fetch('/api/profile-privacy', {
                 method: 'POST',
-                body: formData
-            })
-            .then(res => res.json())
-            .then(data => {
-                if (data.status === 'success') {
-                    document.getElementById('profileAvatarBox').innerHTML = `<img src="${data.profile_img}" class="w-full h-full object-cover">`;
-                } else {
-                    alert(data.message);
-                }
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ is_private: isPrivate })
             });
         }
 
         function openSettingsModal() { document.getElementById('settingsModal').classList.remove('hidden'); }
         function closeSettingsModal() { document.getElementById('settingsModal').classList.add('hidden'); }
-
-        function openChangeUsernameModal() {
-            closeSettingsModal();
-            document.getElementById('changeUsernameModal').classList.remove('hidden');
-        }
-        function closeChangeUsernameModal() { document.getElementById('changeUsernameModal').classList.add('hidden'); }
-
-        function submitChangeUsername() {
-            const newUsername = document.getElementById('newUsernameInput').value.trim();
-
-            if (!newUsername) {
-                alert('새로운 아이디를 입력해 주세요.');
-                return;
-            }
-
-            if (!confirm(`아이디를 @${newUsername} (으)로 변경하시겠습니까?\n변경 후 30일 동안 다시 변경할 수 없습니다.`)) return;
-
-            fetch('/api/change-username', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ new_username: newUsername })
-            })
-            .then(res => res.json())
-            .then(data => {
-                if (data.status === 'success') {
-                    alert('아이디가 성공적으로 변경되었습니다!');
-                    window.location.href = `/profile/${data.new_username}`;
-                } else {
-                    alert(data.message);
-                }
-            });
-        }
-
-        function openChangePasswordModal() {
-            closeSettingsModal();
-            document.getElementById('changePwModal').classList.remove('hidden');
-        }
-        function closeChangePwModal() { document.getElementById('changePwModal').classList.add('hidden'); }
-
-        function submitChangePassword() {
-            const currentPassword = document.getElementById('currentPasswordInput').value.trim();
-            const newPassword = document.getElementById('newPasswordInput').value.trim();
-            const newPasswordConfirm = document.getElementById('newPasswordConfirmInput').value.trim();
-
-            if (!currentPassword || !newPassword || !newPasswordConfirm) {
-                alert('모든 필수 항목을 입력해 주세요.');
-                return;
-            }
-
-            if (newPassword !== newPasswordConfirm) {
-                alert('새로운 비밀번호가 일치하지 않습니다.');
-                return;
-            }
-
-            fetch('/api/change-password', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ current_password: currentPassword, new_password: newPassword })
-            })
-            .then(res => res.json())
-            .then(data => {
-                if (data.status === 'success') {
-                    alert('비밀번호가 성공적으로 변경되었습니다!');
-                    closeChangePwModal();
-                    document.getElementById('currentPasswordInput').value = '';
-                    document.getElementById('newPasswordInput').value = '';
-                    document.getElementById('newPasswordConfirmInput').value = '';
-                } else {
-                    alert(data.message);
-                }
-            });
-        }
-
-        function openDeleteAccountModal() {
-            closeSettingsModal();
-            document.getElementById('deleteAccModal').classList.remove('hidden');
-        }
-        function closeDeleteAccModal() { document.getElementById('deleteAccModal').classList.add('hidden'); }
-
-        function submitDeleteAccount() {
-            const password = document.getElementById('deleteAccPasswordInput').value.trim();
-
-            if (!password) {
-                alert('비밀번호를 입력해 주세요.');
-                return;
-            }
-
-            fetch('/api/delete-account', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ password })
-            })
-            .then(res => res.json())
-            .then(data => {
-                if (data.status === 'success') {
-                    alert('회원 탈퇴가 정상적으로 완료되었습니다. 이용해 주셔서 감사합니다.');
-                    window.location.href = '/';
-                } else {
-                    alert(data.message);
-                }
-            });
-        }
-
-        function handleFollowToggle(targetUsername, btn) {
-            if (!loggedInUser) { alert('로그인이 필요합니다.'); window.location.href = '/'; return; }
-            fetch(`/api/follow/${targetUsername}`, { method: 'POST' })
-                .then(res => res.json())
-                .then(data => {
-                    if (data.status === 'success') {
-                        document.getElementById('followerCount').innerText = data.follower_count;
-                        if (data.is_following) {
-                            btn.innerText = '팔로잉';
-                            btn.className = "px-5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 font-semibold text-xs rounded-lg border border-slate-200 transition";
-                        } else {
-                            btn.innerText = '팔로우';
-                            btn.className = "px-5 py-1.5 bg-blue-500 hover:bg-blue-600 text-white font-bold text-xs rounded-lg transition shadow-sm";
-                        }
-                    } else { alert(data.message); }
-                });
-        }
-
-        function openFollowListModal(type) {
-            const title = type === 'followers' ? '팔로워' : '팔로우';
-            document.getElementById('followListTitle').innerText = title;
-            const container = document.getElementById('followUsersContainer');
-            container.innerHTML = '<div class="text-center text-slate-400">로딩 중...</div>';
-
-            fetch(`/api/users/${currentProfileUser}/${type}`)
-                .then(res => res.json())
-                .then(data => {
-                    container.innerHTML = '';
-                    if (data.status === 'success') {
-                        if (data.users.length === 0) {
-                            container.innerHTML = `<div class="text-center text-slate-400 py-4">${title} 목록이 없습니다.</div>`;
-                            return;
-                        }
-                        data.users.forEach(u => {
-                            const item = document.createElement('div');
-                            item.className = "flex items-center justify-between py-1";
-                            item.innerHTML = `
-                                <div class="flex items-center gap-2.5">
-                                    <div class="w-8 h-8 rounded-full bg-slate-200 text-slate-400 border border-slate-300 flex items-center justify-center text-xs overflow-hidden shrink-0">
-                                        <i class="fa-solid fa-user"></i>
-                                    </div>
-                                    <a href="/profile/${u}" class="font-bold text-slate-800 hover:underline">@${escapeHtml(u)}</a>
-                                </div>
-                                <a href="/profile/${u}" class="text-blue-500 font-semibold text-[11px] hover:underline">프로필</a>
-                            `;
-                            container.appendChild(item);
-                        });
-                    }
-                });
-
-            document.getElementById('followListModal').classList.remove('hidden');
-        }
-
-        function closeFollowListModal() {
-            document.getElementById('followListModal').classList.add('hidden');
-        }
-
-        function loadUserPosts(username) {
-            fetch(`/api/posts/user/${username}`)
-                .then(res => res.json())
-                .then(data => {
-                    renderGridPosts(data, '작성한 게시물이 없습니다.');
-                    if (data.status === 'success') {
-                        document.getElementById('postCount').innerText = data.posts.length;
-                    }
-                });
-        }
-
-        function loadUserLikedPosts(username) {
-            fetch(`/api/users/${username}/liked-posts`)
-                .then(res => res.json())
-                .then(data => {
-                    renderGridPosts(data, '좋아요를 누른 게시물이 없습니다.');
-                });
-        }
-
-        function loadUserCommentedPosts(username) {
-            fetch(`/api/users/${username}/commented-posts`)
-                .then(res => res.json())
-                .then(data => {
-                    renderGridPosts(data, '댓글을 남긴 게시물이 없습니다.');
-                });
-        }
-
-        function renderGridPosts(data, emptyMessage) {
-            const grid = document.getElementById('myPostsGrid');
-            grid.innerHTML = '';
-
-            if (data.status === 'success') {
-                if (data.posts.length === 0) {
-                    grid.className = "text-center py-16 text-xs text-slate-400 col-span-3";
-                    grid.innerHTML = emptyMessage;
-                    return;
-                }
-
-                grid.className = "grid grid-cols-3 gap-1 sm:gap-4 mt-2";
-
-                data.posts.forEach(post => {
-                    const card = document.createElement('div');
-                    card.className = "aspect-square bg-slate-100 rounded-lg overflow-hidden relative group cursor-pointer border border-slate-200";
-                    card.onclick = () => openPostDetailModal(post.id);
-
-                    const img = post.image_url ? 
-                        `<img src="${escapeHtml(post.image_url)}" class="w-full h-full object-cover">` :
-                        `<div class="w-full h-full flex flex-col items-center justify-center p-3 text-center bg-slate-50">
-                            <span class="font-semibold text-xs text-slate-800 line-clamp-3">${escapeHtml(post.content)}</span>
-                        </div>`;
-
-                    card.innerHTML = `
-                        ${img}
-                        <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition flex items-center justify-center text-white font-bold text-xs gap-3">
-                            <span><i class="fa-solid fa-heart mr-1"></i> ${post.likes}</span>
-                        </div>
-                    `;
-                    grid.appendChild(card);
-                });
-            }
-        }
-
-        function openPostDetailModal(postId) {
-            fetch(`/api/posts/${postId}`)
-                .then(res => res.json())
-                .then(data => {
-                    if (data.status === 'success') {
-                        const post = data.post;
-                        const avatarBox = document.getElementById('modalUserAvatar');
-                        if (post.profile_img) {
-                            avatarBox.innerHTML = `<img src="${post.profile_img}" class="w-full h-full object-cover">`;
-                        } else {
-                            avatarBox.innerHTML = getDefaultAvatar("text-xs");
-                        }
-
-                        document.getElementById('modalUsername').innerText = `@${post.username}`;
-                        document.getElementById('modalUsername').href = `/profile/${post.username}`;
-                        document.getElementById('modalContent').innerText = post.content;
-
-                        const imgArea = document.getElementById('modalImageArea');
-                        const images = post.image_urls && post.image_urls.length > 0 ? post.image_urls : (post.image_url ? [post.image_url] : []);
-                        
-                        if (images.length > 0) {
-                            imgArea.innerHTML = `<img src="${escapeHtml(images[0])}" class="w-full h-full object-contain max-h-[400px]">`;
-                        } else {
-                            imgArea.innerHTML = `<div class="text-white text-xs p-6 text-center">${escapeHtml(post.content)}</div>`;
-                        }
-
-                        const submitBtn = document.getElementById('modalCommentSubmitBtn');
-                        submitBtn.onclick = () => submitModalComment(post.id);
-
-                        loadModalComments(post.id);
-                        document.getElementById('postDetailModal').classList.remove('hidden');
-                    }
-                });
-        }
-
-        function closePostDetailModal() {
-            document.getElementById('postDetailModal').classList.add('hidden');
-        }
-
-        function loadModalComments(postId) {
-            fetch(`/api/comments/${postId}`)
-                .then(res => res.json())
-                .then(data => {
-                    const list = document.getElementById(`modalCommentsList`);
-                    list.innerHTML = '';
-                    if (data.status === 'success') {
-                        data.comments.forEach(c => {
-                            const p = document.createElement('p');
-                            p.innerHTML = `<a href="/profile/${c.username}" class="font-bold text-slate-900 hover:underline">@${escapeHtml(c.username)}</a> ${escapeHtml(c.content)}`;
-                            list.appendChild(p);
-                        });
-                    }
-                });
-        }
-
-        function submitModalComment(postId) {
-            if (!loggedInUser) { alert('로그인이 필요합니다.'); return; }
-            const input = document.getElementById('modalCommentInput');
-            if (!input.value.trim()) return;
-
-            fetch('/api/comments', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ post_id: postId, content: input.value.trim() })
-            })
-            .then(res => res.json())
-            .then(data => {
-                if (data.status === 'success') {
-                    loadModalComments(postId);
-                    input.value = '';
-                }
-            });
-        }
-
-        function logout() {
-            fetch('/api/logout', { method: 'POST' }).then(() => { window.location.href = '/'; });
-        }
-
-        function togglePasswordVisibility(inputId, icon) {
-            const input = document.getElementById(inputId);
-            if (input.type === 'password') {
-                input.type = 'text';
-                icon.className = 'fa-regular fa-eye-slash absolute right-3 top-3 text-slate-400 cursor-pointer';
-            } else {
-                input.type = 'password';
-                icon.className = 'fa-regular fa-eye absolute right-3 top-3 text-slate-400 cursor-pointer';
-            }
-        }
-
-        function escapeHtml(text) { return text ? text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;") : ''; }
+        function logout() { fetch('/api/logout', { method: 'POST' }).then(() => location.href = '/'); }
     </script>
 </body>
 </html>

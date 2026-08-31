@@ -2,6 +2,7 @@ from flask import Flask, render_template, request, jsonify, session, send_from_d
 import psycopg2
 import psycopg2.extras
 import os
+import re
 import json
 import urllib.request
 import xml.etree.ElementTree as ET
@@ -12,9 +13,9 @@ import cloudinary.uploader
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', 'super_secret_key_for_woongstagram_app')
 
-# 🔐 [영구 로그인 설정] 로그인 유지 기간을 365일(1년)로 설정
+# 🔐 영구 로그인 설정 (365일)
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=365)
-app.config['SESSION_COOKIE_SECURE'] = True  # HTTPS(Render) 환경 쿠키 보안
+app.config['SESSION_COOKIE_SECURE'] = True
 app.config['SESSION_COOKIE_HTTPONLY'] = True
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
 
@@ -40,6 +41,7 @@ def init_db():
         conn = get_db_connection()
         cursor = conn.cursor()
         
+        # 1. users 테이블 (비공개 계정 is_private 포함)
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS users (
                 id SERIAL PRIMARY KEY,
@@ -49,17 +51,16 @@ def init_db():
                 password VARCHAR(255) NOT NULL,
                 profile_img TEXT DEFAULT '',
                 bio VARCHAR(30) DEFAULT '',
+                is_private BOOLEAN DEFAULT FALSE,
                 username_updated_at TIMESTAMP
             );
         ''')
 
-        cursor.execute('''
-            ALTER TABLE users ADD COLUMN IF NOT EXISTS bio VARCHAR(30) DEFAULT '';
-        ''')
-        cursor.execute('''
-            ALTER TABLE users ADD COLUMN IF NOT EXISTS username_updated_at TIMESTAMP;
-        ''')
+        cursor.execute('ALTER TABLE users ADD COLUMN IF NOT EXISTS bio VARCHAR(30) DEFAULT \'\';')
+        cursor.execute('ALTER TABLE users ADD COLUMN IF NOT EXISTS is_private BOOLEAN DEFAULT FALSE;')
+        cursor.execute('ALTER TABLE users ADD COLUMN IF NOT EXISTS username_updated_at TIMESTAMP;')
 
+        # 2. posts 테이블 (동영상 여부 is_video 포함)
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS posts (
                 id SERIAL PRIMARY KEY,
@@ -67,11 +68,14 @@ def init_db():
                 title VARCHAR(255) DEFAULT '',
                 content TEXT NOT NULL,
                 image_url TEXT,
+                is_video BOOLEAN DEFAULT FALSE,
                 likes INT DEFAULT 0,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             );
         ''')
+        cursor.execute('ALTER TABLE posts ADD COLUMN IF NOT EXISTS is_video BOOLEAN DEFAULT FALSE;')
 
+        # 3. comments 테이블
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS comments (
                 id SERIAL PRIMARY KEY,
@@ -82,6 +86,7 @@ def init_db():
             );
         ''')
 
+        # 4. post_likes 테이블
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS post_likes (
                 id SERIAL PRIMARY KEY,
@@ -91,6 +96,18 @@ def init_db():
             );
         ''')
 
+        # 5. bookmarks 테이블 (북마크/저장됨)
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS bookmarks (
+                id SERIAL PRIMARY KEY,
+                post_id INT NOT NULL,
+                username VARCHAR(100) NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                UNIQUE(post_id, username)
+            );
+        ''')
+
+        # 6. stories 테이블
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS stories (
                 id SERIAL PRIMARY KEY,
@@ -102,6 +119,7 @@ def init_db():
             );
         ''')
 
+        # 7. story_views 테이블
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS story_views (
                 id SERIAL PRIMARY KEY,
@@ -111,6 +129,7 @@ def init_db():
             );
         ''')
 
+        # 8. follows 테이블
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS follows (
                 id SERIAL PRIMARY KEY,
@@ -120,12 +139,36 @@ def init_db():
             );
         ''')
 
+        # 9. follow_requests 테이블 (비공개 계정 승인 대기)
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS follow_requests (
+                id SERIAL PRIMARY KEY,
+                requester VARCHAR(100) NOT NULL,
+                target VARCHAR(100) NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                UNIQUE(requester, target)
+            );
+        ''')
+
+        # 10. direct_messages 테이블 (1:1 DM)
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS direct_messages (
+                id SERIAL PRIMARY KEY,
+                sender VARCHAR(100) NOT NULL,
+                receiver VARCHAR(100) NOT NULL,
+                message TEXT NOT NULL,
+                is_read BOOLEAN DEFAULT FALSE,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+        ''')
+
+        # 11. notifications 테이블
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS notifications (
                 id SERIAL PRIMARY KEY,
                 recipient VARCHAR(100) NOT NULL,
                 actor VARCHAR(100) NOT NULL,
-                type VARCHAR(20) NOT NULL,
+                type VARCHAR(30) NOT NULL,
                 post_id INT,
                 is_read BOOLEAN DEFAULT FALSE,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -151,6 +194,13 @@ def create_notification(cursor, recipient, actor, notif_type, post_id=None):
         ''', (recipient, actor, notif_type, post_id, now_kst))
     except Exception as e:
         print("Create Notification Error:", e)
+
+def parse_and_notify_mentions(cursor, text, actor, post_id=None):
+    mentions = set(re.findall(r'@([a-zA-Z0-9_]+)', text))
+    for username in mentions:
+        cursor.execute('SELECT 1 FROM users WHERE username = %s;', (username,))
+        if cursor.fetchone():
+            create_notification(cursor, recipient=username, actor=actor, notif_type='mention', post_id=post_id)
 
 def is_admin():
     return session.get('username') == 'admin'
@@ -181,6 +231,314 @@ def admin_page():
         return "<script>alert('관리자 권한이 필요합니다.'); location.href='/';</script>"
     return render_template('admin.html')
 
+# --- 💬 1:1 DM APIs ---
+@app.route('/api/dm/conversations', methods=['GET'])
+def get_dm_conversations():
+    if 'username' not in session:
+        return jsonify({'status': 'error', 'message': '로그인이 필요합니다.'}), 401
+
+    me = session['username']
+    conn = get_db_connection()
+    cursor = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+
+    query = '''
+        SELECT DISTINCT ON (partner) 
+            CASE WHEN sender = %s THEN receiver ELSE sender END as partner,
+            message, created_at, sender, is_read
+        FROM direct_messages
+        WHERE sender = %s OR receiver = %s
+        ORDER BY partner, id DESC;
+    '''
+    cursor.execute(query, (me, me, me))
+    rows = cursor.fetchall()
+
+    conversations = []
+    for r in rows:
+        cursor.execute('SELECT profile_img FROM users WHERE username = %s;', (r['partner'],))
+        u = cursor.fetchone()
+        
+        cursor.execute('SELECT COUNT(*) FROM direct_messages WHERE sender = %s AND receiver = %s AND is_read = FALSE;', (r['partner'], me))
+        unread_cnt = cursor.fetchone()[0]
+
+        conversations.append({
+            'partner': r['partner'],
+            'last_message': r['message'],
+            'last_time': r['created_at'].strftime('%Y-%m-%d %H:%M:%S') if r['created_at'] else '',
+            'profile_img': u['profile_img'] if u and u['profile_img'] else '',
+            'unread_count': unread_cnt
+        })
+
+    cursor.close()
+    conn.close()
+    return jsonify({'status': 'success', 'conversations': conversations})
+
+@app.route('/api/dm/<partner>', methods=['GET'])
+def get_dm_messages(partner):
+    if 'username' not in session:
+        return jsonify({'status': 'error', 'message': '로그인이 필요합니다.'}), 401
+
+    me = session['username']
+    conn = get_db_connection()
+    cursor = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+
+    cursor.execute('UPDATE direct_messages SET is_read = TRUE WHERE sender = %s AND receiver = %s;', (partner, me))
+    conn.commit()
+
+    cursor.execute('''
+        SELECT id, sender, receiver, message, is_read, created_at
+        FROM direct_messages
+        WHERE (sender = %s AND receiver = %s) OR (sender = %s AND receiver = %s)
+        ORDER BY id ASC;
+    ''', (me, partner, partner, me))
+    rows = cursor.fetchall()
+
+    messages = [{
+        'id': r['id'],
+        'sender': r['sender'],
+        'receiver': r['receiver'],
+        'message': r['message'],
+        'created_at': r['created_at'].strftime('%H:%M') if r['created_at'] else ''
+    } for r in rows]
+
+    cursor.close()
+    conn.close()
+    return jsonify({'status': 'success', 'messages': messages})
+
+@app.route('/api/dm/<partner>', methods=['POST'])
+def send_dm_message(partner):
+    if 'username' not in session:
+        return jsonify({'status': 'error', 'message': '로그인이 필요합니다.'}), 401
+
+    me = session['username']
+    data = request.json
+    msg = data.get('message', '').strip()
+
+    if not msg:
+        return jsonify({'status': 'error', 'message': '메시지를 입력해 주세요.'}), 400
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    now_kst = get_kst_now()
+
+    cursor.execute('INSERT INTO direct_messages (sender, receiver, message, created_at) VALUES (%s, %s, %s, %s);', (me, partner, msg, now_kst))
+    create_notification(cursor, recipient=partner, actor=me, notif_type='dm')
+    
+    conn.commit()
+    cursor.close()
+    conn.close()
+    return jsonify({'status': 'success'})
+
+# --- 🔖 북마크 (저장하기) APIs ---
+@app.route('/api/posts/<int:post_id>/bookmark', methods=['POST'])
+def toggle_bookmark(post_id):
+    if 'username' not in session:
+        return jsonify({'status': 'error', 'message': '로그인이 필요합니다.'}), 401
+
+    username = session['username']
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    cursor.execute('SELECT 1 FROM bookmarks WHERE post_id = %s AND username = %s;', (post_id, username))
+    bookmarked = cursor.fetchone()
+
+    if bookmarked:
+        cursor.execute('DELETE FROM bookmarks WHERE post_id = %s AND username = %s;', (post_id, username))
+        is_bookmarked = False
+    else:
+        cursor.execute('INSERT INTO bookmarks (post_id, username, created_at) VALUES (%s, %s, %s);', (post_id, username, get_kst_now()))
+        is_bookmarked = True
+
+    conn.commit()
+    cursor.close()
+    conn.close()
+    return jsonify({'status': 'success', 'is_bookmarked': is_bookmarked})
+
+@app.route('/api/users/<username>/bookmarks', methods=['GET'])
+def get_user_bookmarks(username):
+    if session.get('username') != username and not is_admin():
+        return jsonify({'status': 'error', 'message': '비공개 정보입니다.'}), 403
+
+    conn = get_db_connection()
+    cursor = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+    query = '''
+        SELECT p.id, p.title, p.content, p.image_url, p.likes, p.is_video, p.created_at 
+        FROM posts p
+        JOIN bookmarks b ON p.id = b.post_id
+        WHERE b.username = %s
+        ORDER BY b.id DESC;
+    '''
+    cursor.execute(query, (username,))
+    rows = cursor.fetchall()
+    cursor.close()
+    conn.close()
+
+    posts = []
+    for r in rows:
+        raw_img = r['image_url'] or ''
+        image_urls = []
+        if raw_img:
+            if raw_img.startswith('['):
+                try: image_urls = json.loads(raw_img)
+                except: image_urls = [raw_img]
+            else: image_urls = [raw_img]
+
+        posts.append({
+            'id': r['id'],
+            'title': r['title'] or '',
+            'content': r['content'],
+            'image_url': image_urls[0] if image_urls else '',
+            'image_urls': image_urls,
+            'is_video': r['is_video'],
+            'likes': r['likes'],
+            'created_at': r['created_at'].strftime('%Y-%m-%d %H:%M:%S') if r['created_at'] else ''
+        })
+
+    return jsonify({'status': 'success', 'posts': posts})
+
+# --- 🔒 비공개 계정 & 팔로우 승인제 APIs ---
+@app.route('/api/profile-privacy', methods=['POST'])
+def toggle_profile_privacy():
+    if 'username' not in session:
+        return jsonify({'status': 'error', 'message': '로그인이 필요합니다.'}), 401
+
+    data = request.json
+    is_private = bool(data.get('is_private', False))
+    username = session['username']
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute('UPDATE users SET is_private = %s WHERE username = %s;', (is_private, username))
+    conn.commit()
+    cursor.close()
+    conn.close()
+
+    return jsonify({'status': 'success', 'is_private': is_private})
+
+@app.route('/api/follow-requests', methods=['GET'])
+def get_follow_requests():
+    if 'username' not in session:
+        return jsonify({'status': 'error', 'message': '로그인이 필요합니다.'}), 401
+
+    me = session['username']
+    conn = get_db_connection()
+    cursor = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+
+    cursor.execute('''
+        SELECT fr.id, fr.requester, u.profile_img, fr.created_at
+        FROM follow_requests fr
+        LEFT JOIN users u ON fr.requester = u.username
+        WHERE fr.target = %s
+        ORDER BY fr.id DESC;
+    ''', (me,))
+    rows = cursor.fetchall()
+    cursor.close()
+    conn.close()
+
+    requests_list = [{
+        'id': r['id'],
+        'requester': r['requester'],
+        'profile_img': r['profile_img'] or '',
+        'created_at': r['created_at'].strftime('%Y-%m-%d %H:%M:%S') if r['created_at'] else ''
+    } for r in rows]
+
+    return jsonify({'status': 'success', 'requests': requests_list})
+
+@app.route('/api/follow-requests/<requester>/<action>', methods=['POST'])
+def handle_follow_request(requester, action):
+    if 'username' not in session:
+        return jsonify({'status': 'error', 'message': '로그인이 필요합니다.'}), 401
+
+    me = session['username']
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    cursor.execute('DELETE FROM follow_requests WHERE requester = %s AND target = %s;', (requester, me))
+    
+    if action == 'accept':
+        cursor.execute('INSERT INTO follows (follower, following) VALUES (%s, %s);', (requester, me))
+        create_notification(cursor, recipient=requester, actor=me, notif_type='follow_accept')
+
+    conn.commit()
+    cursor.close()
+    conn.close()
+    return jsonify({'status': 'success'})
+
+# --- 🎬 숏폼 릴스 API ---
+@app.route('/api/reels', methods=['GET'])
+def get_reels():
+    conn = get_db_connection()
+    cursor = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+    cursor.execute('''
+        SELECT p.id, p.username, p.content, p.image_url, p.likes, p.created_at, u.profile_img
+        FROM posts p
+        LEFT JOIN users u ON p.username = u.username
+        WHERE p.is_video = TRUE
+        ORDER BY p.id DESC;
+    ''')
+    rows = cursor.fetchall()
+
+    user = session.get('username')
+    reels = []
+    for r in rows:
+        liked = False
+        if user:
+            cursor.execute('SELECT 1 FROM post_likes WHERE post_id = %s AND username = %s;', (r['id'], user))
+            liked = bool(cursor.fetchone())
+
+        raw_img = r['image_url'] or ''
+        video_url = ''
+        if raw_img.startswith('['):
+            try: video_url = json.loads(raw_img)[0]
+            except: video_url = raw_img
+        else: video_url = raw_img
+
+        reels.append({
+            'id': r['id'],
+            'username': r['username'],
+            'content': r['content'],
+            'video_url': video_url,
+            'likes': r['likes'],
+            'profile_img': r['profile_img'] or '',
+            'is_liked': liked
+        })
+
+    cursor.close()
+    conn.close()
+    return jsonify({'status': 'success', 'reels': reels})
+
+# --- #️⃣ 해시태그 게시물 조회 API ---
+@app.route('/api/posts/tag/<tag>', methods=['GET'])
+def get_tag_posts(tag):
+    conn = get_db_connection()
+    cursor = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+    pattern = f"%#{tag}%"
+    cursor.execute('SELECT id, title, content, image_url, likes, is_video, created_at FROM posts WHERE content ILIKE %s ORDER BY id DESC;', (pattern,))
+    rows = cursor.fetchall()
+    cursor.close()
+    conn.close()
+
+    posts = []
+    for r in rows:
+        raw_img = r['image_url'] or ''
+        image_urls = []
+        if raw_img:
+            if raw_img.startswith('['):
+                try: image_urls = json.loads(raw_img)
+                except: image_urls = [raw_img]
+            else: image_urls = [raw_img]
+
+        posts.append({
+            'id': r['id'],
+            'title': r['title'] or '',
+            'content': r['content'],
+            'image_url': image_urls[0] if image_urls else '',
+            'is_video': r['is_video'],
+            'likes': r['likes'],
+            'created_at': r['created_at'].strftime('%Y-%m-%d %H:%M:%S') if r['created_at'] else ''
+        })
+
+    return jsonify({'status': 'success', 'tag': tag, 'posts': posts})
+
 # 🔔 알림 목록 조회 API
 @app.route('/api/notifications', methods=['GET'])
 def get_notifications():
@@ -197,7 +555,7 @@ def get_notifications():
         LEFT JOIN users u ON n.actor = u.username
         WHERE n.recipient = %s
         ORDER BY n.id DESC
-        LIMIT 20;
+        LIMIT 25;
     ''', (username,))
     rows = cursor.fetchall()
 
@@ -219,10 +577,8 @@ def get_notifications():
 
     cursor.close()
     conn.close()
-
     return jsonify({'status': 'success', 'notifications': notifications, 'unread_count': unread_count})
 
-# 🔔 알림 읽음 처리 API
 @app.route('/api/notifications/read', methods=['POST'])
 def mark_notifications_read():
     if 'username' not in session:
@@ -238,23 +594,22 @@ def mark_notifications_read():
 
     return jsonify({'status': 'success'})
 
-# 🔍 유저 & 게시글 통합 검색 API
+# 🔍 유저 & 게시글 & 해시태그 통합 검색 API
 @app.route('/api/search', methods=['GET'])
 def search_all():
     query = request.args.get('q', '').strip()
-    if not query or len(query) < 1:
+    if not query:
         return jsonify({'status': 'success', 'users': [], 'posts': []})
 
     conn = get_db_connection()
     cursor = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
-
     search_pattern = f"%{query}%"
 
     cursor.execute('SELECT username, profile_img, bio FROM users WHERE username ILIKE %s ORDER BY id DESC LIMIT 5;', (search_pattern,))
     user_rows = cursor.fetchall()
     users = [{'username': r['username'], 'profile_img': r['profile_img'] or '', 'bio': r['bio'] or ''} for r in user_rows]
 
-    cursor.execute('SELECT p.id, p.username, p.content, p.image_url, u.profile_img FROM posts p LEFT JOIN users u ON p.username = u.username WHERE p.content ILIKE %s ORDER BY p.id DESC LIMIT 5;', (search_pattern,))
+    cursor.execute('SELECT p.id, p.username, p.content, p.image_url, p.is_video, u.profile_img FROM posts p LEFT JOIN users u ON p.username = u.username WHERE p.content ILIKE %s ORDER BY p.id DESC LIMIT 5;', (search_pattern,))
     post_rows = cursor.fetchall()
     posts = []
     for r in post_rows:
@@ -262,134 +617,27 @@ def search_all():
         image_urls = []
         if raw_img:
             if raw_img.startswith('['):
-                try:
-                    image_urls = json.loads(raw_img)
-                except:
-                    image_urls = [raw_img]
-            else:
-                image_urls = [raw_img]
+                try: image_urls = json.loads(raw_img)
+                except: image_urls = [raw_img]
+            else: image_urls = [raw_img]
 
         posts.append({
             'id': r['id'],
             'username': r['username'],
             'content': r['content'],
             'image_url': image_urls[0] if image_urls else '',
+            'is_video': r['is_video'],
             'profile_img': r['profile_img'] or ''
         })
 
     cursor.close()
     conn.close()
-
     return jsonify({'status': 'success', 'users': users, 'posts': posts})
-
-# --- 👑 Admin APIs ---
-@app.route('/api/admin/stats', methods=['GET'])
-def get_admin_stats():
-    if not is_admin():
-        return jsonify({'status': 'error', 'message': '권한이 없습니다.'}), 403
-
-    conn = get_db_connection()
-    cursor = conn.cursor()
-
-    cursor.execute('SELECT COUNT(*) FROM users;')
-    user_cnt = cursor.fetchone()[0]
-
-    cursor.execute('SELECT COUNT(*) FROM posts;')
-    post_cnt = cursor.fetchone()[0]
-
-    cursor.execute('SELECT COUNT(*) FROM comments;')
-    comment_cnt = cursor.fetchone()[0]
-
-    cutoff_time = get_kst_now() - timedelta(hours=24)
-    cursor.execute('SELECT COUNT(*) FROM stories WHERE created_at >= %s;', (cutoff_time,))
-    story_cnt = cursor.fetchone()[0]
-
-    cursor.close()
-    conn.close()
-    return jsonify({
-        'status': 'success',
-        'stats': {
-            'users': user_cnt,
-            'posts': post_cnt,
-            'comments': comment_cnt,
-            'stories': story_cnt
-        }
-    })
-
-@app.route('/api/admin/users', methods=['GET'])
-def get_admin_users():
-    if not is_admin():
-        return jsonify({'status': 'error', 'message': '권한이 없습니다.'}), 403
-
-    conn = get_db_connection()
-    cursor = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
-    cursor.execute('SELECT id, username, email, profile_img FROM users ORDER BY id DESC;')
-    rows = cursor.fetchall()
-    cursor.close()
-    conn.close()
-
-    users = [{'id': r['id'], 'username': r['username'], 'email': r['email'], 'profile_img': r['profile_img'] or ''} for r in rows]
-    return jsonify({'status': 'success', 'users': users})
-
-@app.route('/api/admin/users/<username>', methods=['DELETE'])
-def delete_admin_user(username):
-    if not is_admin():
-        return jsonify({'status': 'error', 'message': '권한이 없습니다.'}), 403
-
-    if username == 'admin':
-        return jsonify({'status': 'error', 'message': '관리자 계정은 삭제할 수 없습니다.'}), 400
-
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    cursor.execute('DELETE FROM users WHERE username = %s;', (username,))
-    cursor.execute('DELETE FROM posts WHERE username = %s;', (username,))
-    cursor.execute('DELETE FROM comments WHERE username = %s;', (username,))
-    cursor.execute('DELETE FROM stories WHERE username = %s;', (username,))
-    cursor.execute('DELETE FROM follows WHERE follower = %s OR following = %s;', (username, username))
-    cursor.execute('DELETE FROM notifications WHERE recipient = %s OR actor = %s;', (username, username))
-    conn.commit()
-    cursor.close()
-    conn.close()
-
-    return jsonify({'status': 'success'})
-
-@app.route('/api/admin/posts/<int:post_id>', methods=['DELETE'])
-def delete_admin_post(post_id):
-    if not is_admin():
-        return jsonify({'status': 'error', 'message': '권한이 없습니다.'}), 403
-
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    cursor.execute('DELETE FROM posts WHERE id = %s;', (post_id,))
-    cursor.execute('DELETE FROM comments WHERE post_id = %s;', (post_id,))
-    cursor.execute('DELETE FROM post_likes WHERE post_id = %s;', (post_id,))
-    cursor.execute('DELETE FROM notifications WHERE post_id = %s;', (post_id,))
-    conn.commit()
-    cursor.close()
-    conn.close()
-
-    return jsonify({'status': 'success'})
-
-@app.route('/api/admin/stories/<int:story_id>', methods=['DELETE'])
-def delete_admin_story(story_id):
-    if not is_admin():
-        return jsonify({'status': 'error', 'message': '권한이 없습니다.'}), 403
-
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    cursor.execute('DELETE FROM stories WHERE id = %s;', (story_id,))
-    cursor.execute('DELETE FROM story_views WHERE story_id = %s;', (story_id,))
-    conn.commit()
-    cursor.close()
-    conn.close()
-
-    return jsonify({'status': 'success'})
 
 # --- 📰 뉴스 API ---
 @app.route('/api/news', methods=['GET'])
 def get_hot_news():
     now = get_kst_now()
-    
     if NEWS_CACHE['updated_at'] and (now - NEWS_CACHE['updated_at']) < timedelta(hours=1):
         return jsonify({'status': 'success', 'articles': NEWS_CACHE['articles'], 'cached': True})
 
@@ -400,7 +648,6 @@ def get_hot_news():
         with urllib.request.urlopen(req) as response:
             xml_data = response.read()
             root = ET.fromstring(xml_data)
-            
             for item in root.findall('./channel/item')[:5]:
                 title = item.find('title').text if item.find('title') is not None else ''
                 link = item.find('link').text if item.find('link') is not None else '#'
@@ -410,16 +657,15 @@ def get_hot_news():
 
     NEWS_CACHE['updated_at'] = now
     NEWS_CACHE['articles'] = articles
-
     return jsonify({'status': 'success', 'articles': articles, 'cached': False})
 
-# --- 🔐 Auth & User APIs ---
+# --- 🔐 User & Profile APIs ---
 @app.route('/api/me', methods=['GET'])
 def get_me():
     if 'username' in session:
         conn = get_db_connection()
         cursor = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
-        cursor.execute('SELECT username, name, email, profile_img, bio FROM users WHERE username = %s;', (session['username'],))
+        cursor.execute('SELECT username, name, email, profile_img, bio, is_private FROM users WHERE username = %s;', (session['username'],))
         row = cursor.fetchone()
         cursor.close()
         conn.close()
@@ -431,6 +677,7 @@ def get_me():
                 'email': row['email'] or '',
                 'profile_img': row['profile_img'] or '',
                 'bio': row['bio'] or '',
+                'is_private': bool(row['is_private']),
                 'is_admin': row['username'] == 'admin'
             })
     return jsonify({'logged_in': False, 'is_admin': False})
@@ -439,7 +686,7 @@ def get_me():
 def get_user_profile(username):
     conn = get_db_connection()
     cursor = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
-    cursor.execute('SELECT username, name, email, profile_img, bio FROM users WHERE username = %s;', (username,))
+    cursor.execute('SELECT username, name, email, profile_img, bio, is_private FROM users WHERE username = %s;', (username,))
     row = cursor.fetchone()
 
     if not row:
@@ -454,13 +701,20 @@ def get_user_profile(username):
     following_count = cursor.fetchone()[0]
 
     is_following = False
+    is_requested = False
     me = session.get('username')
     if me:
         cursor.execute('SELECT 1 FROM follows WHERE follower = %s AND following = %s;', (me, username))
         is_following = bool(cursor.fetchone())
 
+        cursor.execute('SELECT 1 FROM follow_requests WHERE requester = %s AND target = %s;', (me, username))
+        is_requested = bool(cursor.fetchone())
+
     cursor.close()
     conn.close()
+
+    is_private = bool(row['is_private'])
+    can_view_content = (not is_private) or (me == username) or is_following or (me == 'admin')
 
     return jsonify({
         'status': 'success',
@@ -470,9 +724,12 @@ def get_user_profile(username):
             'email': row['email'] or '',
             'profile_img': row['profile_img'] or '',
             'bio': row['bio'] or '',
+            'is_private': is_private,
             'follower_count': follower_count,
             'following_count': following_count,
-            'is_following': is_following
+            'is_following': is_following,
+            'is_requested': is_requested,
+            'can_view_content': can_view_content
         }
     })
 
@@ -483,7 +740,6 @@ def update_profile_bio():
 
     data = request.json
     bio = data.get('bio', '').strip()
-
     if len(bio) > 30:
         return jsonify({'status': 'error', 'message': '자기소개는 30글자 이내로 입력해 주세요.'}), 400
 
@@ -494,7 +750,6 @@ def update_profile_bio():
     conn.commit()
     cursor.close()
     conn.close()
-
     return jsonify({'status': 'success', 'bio': bio})
 
 @app.route('/api/profile-image', methods=['POST'])
@@ -520,7 +775,6 @@ def update_profile_image():
             conn.commit()
             cursor.close()
             conn.close()
-
             return jsonify({'status': 'success', 'profile_img': image_url})
         except Exception as e:
             return jsonify({'status': 'error', 'message': f'이미지 업로드 실패: {str(e)}'}), 500
@@ -544,7 +798,6 @@ def signup():
         cursor.close()
         conn.close()
         
-        # 🔐 영구 로그인 적용
         session.permanent = True
         session['username'] = username
         session['name'] = username
@@ -566,7 +819,6 @@ def login():
     conn.close()
 
     if user:
-        # 🔐 영구 로그인 적용 (365일간 앱을 꺼도 유지)
         session.permanent = True
         session['username'] = user['username']
         session['name'] = user['username']
@@ -577,7 +829,6 @@ def login():
 def find_id():
     data = request.json
     email = data.get('email', '').strip()
-
     if not email:
         return jsonify({'status': 'error', 'message': '이메일 주소를 입력해 주세요.'}), 400
 
@@ -617,7 +868,6 @@ def reset_password():
     conn.commit()
     cursor.close()
     conn.close()
-
     return jsonify({'status': 'success'})
 
 @app.route('/api/change-password', methods=['POST'])
@@ -647,7 +897,6 @@ def change_password():
     conn.commit()
     cursor.close()
     conn.close()
-
     return jsonify({'status': 'success'})
 
 @app.route('/api/change-username', methods=['POST'])
@@ -665,9 +914,6 @@ def change_username():
     if not new_username:
         return jsonify({'status': 'error', 'message': '새로운 아이디를 입력해 주세요.'}), 400
 
-    if new_username == current_username:
-        return jsonify({'status': 'error', 'message': '현재 아이디와 동일합니다.'}), 400
-
     conn = get_db_connection()
     cursor = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
 
@@ -677,34 +923,17 @@ def change_username():
         conn.close()
         return jsonify({'status': 'error', 'message': '이미 다른 사용자가 사용 중인 아이디입니다.'}), 400
 
-    cursor.execute('SELECT username_updated_at FROM users WHERE username = %s;', (current_username,))
-    user_row = cursor.fetchone()
-    now_kst = get_kst_now()
-
-    if user_row and user_row['username_updated_at']:
-        last_updated = user_row['username_updated_at']
-        if last_updated.tzinfo is None:
-            last_updated = last_updated.replace(tzinfo=timezone.utc) + timedelta(hours=9)
-        
-        time_diff = now_kst - last_updated
-        if time_diff.days < 30:
-            remaining_days = 30 - time_diff.days
-            cursor.close()
-            conn.close()
-            return jsonify({
-                'status': 'error', 
-                'message': f'아이디는 30일에 한 번만 변경할 수 있습니다. (다시 변경 가능까지: 약 {remaining_days}일 남음)'
-            }), 400
-
     try:
-        cursor.execute('UPDATE users SET username = %s, name = %s, username_updated_at = %s WHERE username = %s;', (new_username, new_username, now_kst, current_username))
+        cursor.execute('UPDATE users SET username = %s, name = %s WHERE username = %s;', (new_username, new_username, current_username))
         cursor.execute('UPDATE posts SET username = %s WHERE username = %s;', (new_username, current_username))
         cursor.execute('UPDATE comments SET username = %s WHERE username = %s;', (new_username, current_username))
         cursor.execute('UPDATE stories SET username = %s WHERE username = %s;', (new_username, current_username))
         cursor.execute('UPDATE follows SET follower = %s WHERE follower = %s;', (new_username, current_username))
         cursor.execute('UPDATE follows SET following = %s WHERE following = %s;', (new_username, current_username))
         cursor.execute('UPDATE post_likes SET username = %s WHERE username = %s;', (new_username, current_username))
-        cursor.execute('UPDATE story_views SET username = %s WHERE username = %s;', (new_username, current_username))
+        cursor.execute('UPDATE bookmarks SET username = %s WHERE username = %s;', (new_username, current_username))
+        cursor.execute('UPDATE direct_messages SET sender = %s WHERE sender = %s;', (new_username, current_username))
+        cursor.execute('UPDATE direct_messages SET receiver = %s WHERE receiver = %s;', (new_username, current_username))
         cursor.execute('UPDATE notifications SET recipient = %s WHERE recipient = %s;', (new_username, current_username))
         cursor.execute('UPDATE notifications SET actor = %s WHERE actor = %s;', (new_username, current_username))
 
@@ -720,7 +949,7 @@ def change_username():
         conn.rollback()
         cursor.close()
         conn.close()
-        return jsonify({'status': 'error', 'message': f'아이디 변경 중 오류가 발생했습니다: {str(e)}'}), 500
+        return jsonify({'status': 'error', 'message': f'아이디 변경 중 오류: {str(e)}'}), 500
 
 @app.route('/api/delete-account', methods=['POST'])
 def delete_account():
@@ -733,9 +962,6 @@ def delete_account():
 
     data = request.json
     password = data.get('password', '').strip()
-
-    if not password:
-        return jsonify({'status': 'error', 'message': '비밀번호를 입력해 주세요.'}), 400
 
     conn = get_db_connection()
     cursor = conn.cursor()
@@ -752,11 +978,12 @@ def delete_account():
     cursor.execute('DELETE FROM comments WHERE username = %s;', (username,))
     cursor.execute('DELETE FROM stories WHERE username = %s;', (username,))
     cursor.execute('DELETE FROM follows WHERE follower = %s OR following = %s;', (username, username))
+    cursor.execute('DELETE FROM follow_requests WHERE requester = %s OR target = %s;', (username, username))
     cursor.execute('DELETE FROM post_likes WHERE username = %s;', (username,))
-    cursor.execute('DELETE FROM story_views WHERE username = %s;', (username,))
+    cursor.execute('DELETE FROM bookmarks WHERE username = %s;', (username,))
+    cursor.execute('DELETE FROM direct_messages WHERE sender = %s OR receiver = %s;', (username, username))
     cursor.execute('DELETE FROM notifications WHERE recipient = %s OR actor = %s;', (username, username))
     conn.commit()
-
     cursor.close()
     conn.close()
     session.clear()
@@ -768,7 +995,7 @@ def logout():
     session.clear()
     return jsonify({'status': 'success'})
 
-# --- 🤝 Follow APIs ---
+# --- 🤝 Follow APIs (비공개 승인제 연동) ---
 @app.route('/api/follow/<target_username>', methods=['POST'])
 def toggle_follow(target_username):
     if 'username' not in session:
@@ -779,18 +1006,35 @@ def toggle_follow(target_username):
         return jsonify({'status': 'error', 'message': '자기 자신은 팔로우할 수 없습니다.'}), 400
 
     conn = get_db_connection()
-    cursor = conn.cursor()
+    cursor = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+
+    cursor.execute('SELECT is_private FROM users WHERE username = %s;', (target_username,))
+    target_user = cursor.fetchone()
+    is_target_private = target_user['is_private'] if target_user else False
 
     cursor.execute('SELECT 1 FROM follows WHERE follower = %s AND following = %s;', (me, target_username))
-    row = cursor.fetchone()
+    is_following = bool(cursor.fetchone())
 
-    if row:
+    cursor.execute('SELECT 1 FROM follow_requests WHERE requester = %s AND target = %s;', (me, target_username))
+    is_requested = bool(cursor.fetchone())
+
+    result_status = 'none'
+
+    if is_following:
         cursor.execute('DELETE FROM follows WHERE follower = %s AND following = %s;', (me, target_username))
-        is_following = False
+        result_status = 'unfollowed'
+    elif is_requested:
+        cursor.execute('DELETE FROM follow_requests WHERE requester = %s AND target = %s;', (me, target_username))
+        result_status = 'canceled_request'
     else:
-        cursor.execute('INSERT INTO follows (follower, following) VALUES (%s, %s);', (me, target_username))
-        is_following = True
-        create_notification(cursor, recipient=target_username, actor=me, notif_type='follow')
+        if is_target_private:
+            cursor.execute('INSERT INTO follow_requests (requester, target, created_at) VALUES (%s, %s, %s);', (me, target_username, get_kst_now()))
+            create_notification(cursor, recipient=target_username, actor=me, notif_type='follow_request')
+            result_status = 'requested'
+        else:
+            cursor.execute('INSERT INTO follows (follower, following) VALUES (%s, %s);', (me, target_username))
+            create_notification(cursor, recipient=target_username, actor=me, notif_type='follow')
+            result_status = 'following'
 
     conn.commit()
 
@@ -799,7 +1043,11 @@ def toggle_follow(target_username):
     cursor.close()
     conn.close()
 
-    return jsonify({'status': 'success', 'is_following': is_following, 'follower_count': follower_count})
+    return jsonify({
+        'status': 'success',
+        'result_status': result_status,
+        'follower_count': follower_count
+    })
 
 @app.route('/api/users/<username>/followers', methods=['GET'])
 def get_followers(username):
@@ -821,7 +1069,7 @@ def get_following(username):
     conn.close()
     return jsonify({'status': 'success', 'users': [r[0] for r in rows]})
 
-# --- ☁️ Upload API ---
+# --- ☁️ Media Upload API (이미지 + 동영상) ---
 @app.route('/api/upload', methods=['POST'])
 def upload_file():
     if 'username' not in session:
@@ -830,22 +1078,29 @@ def upload_file():
     if 'files' in request.files:
         files = request.files.getlist('files')
         image_urls = []
+        is_video = False
         for file in files:
             if file and file.filename != '':
                 try:
-                    upload_result = cloudinary.uploader.upload(file, folder="woongstagram/posts")
+                    mimetype = file.content_type or ''
+                    resource_type = "video" if mimetype.startswith('video') else "image"
+                    if resource_type == 'video': is_video = True
+                    
+                    upload_result = cloudinary.uploader.upload(file, folder="woongstagram/posts", resource_type=resource_type)
                     image_urls.append(upload_result.get('secure_url'))
                 except Exception as e:
                     return jsonify({'status': 'error', 'message': f'클라우드 업로드 실패: {str(e)}'}), 500
-        return jsonify({'status': 'success', 'image_urls': image_urls, 'image_url': image_urls[0] if image_urls else ''})
+        return jsonify({'status': 'success', 'image_urls': image_urls, 'image_url': image_urls[0] if image_urls else '', 'is_video': is_video})
 
     if 'file' in request.files:
         file = request.files['file']
         if file and file.filename != '':
             try:
-                upload_result = cloudinary.uploader.upload(file, folder="woongstagram/posts")
+                mimetype = file.content_type or ''
+                resource_type = "video" if mimetype.startswith('video') else "image"
+                upload_result = cloudinary.uploader.upload(file, folder="woongstagram/posts", resource_type=resource_type)
                 image_url = upload_result.get('secure_url')
-                return jsonify({'status': 'success', 'image_url': image_url, 'image_urls': [image_url]})
+                return jsonify({'status': 'success', 'image_url': image_url, 'image_urls': [image_url], 'is_video': resource_type == 'video'})
             except Exception as e:
                 return jsonify({'status': 'error', 'message': f'클라우드 업로드 실패: {str(e)}'}), 500
 
@@ -887,15 +1142,13 @@ def get_recommendations():
     if len(recommendations) < 3:
         exclude_users = [current_user, 'admin'] if current_user else ['admin']
         exclude_users.extend([r['username'] for r in recommendations])
-        
         placeholders = ', '.join(['%s'] * len(exclude_users)) if exclude_users else "''"
-        query_general = f'''
+        
+        cursor.execute(f'''
             SELECT username, name, profile_img FROM users 
             WHERE username NOT IN ({placeholders})
             LIMIT %s;
-        '''
-        params = list(exclude_users) + [3 - len(recommendations)]
-        cursor.execute(query_general, params)
+        ''', list(exclude_users) + [3 - len(recommendations)])
         general_users = cursor.fetchall()
 
         for u in general_users:
@@ -952,7 +1205,6 @@ def create_story():
         return jsonify({'status': 'error', 'message': '로그인이 필요합니다.'}), 401
 
     data = request.json
-    title = data.get('title', '').strip()
     desc = data.get('desc', '').strip()
     image_url = data.get('image_url', '').strip()
 
@@ -964,12 +1216,11 @@ def create_story():
 
     conn = get_db_connection()
     cursor = conn.cursor()
-    cursor.execute('INSERT INTO stories (username, title, desc_text, image_url, created_at) VALUES (%s, %s, %s, %s, %s);', 
-                   (username, title, desc, image_url, now_kst))
+    cursor.execute('INSERT INTO stories (username, desc_text, image_url, created_at) VALUES (%s, %s, %s, %s);', 
+                   (username, desc, image_url, now_kst))
     conn.commit()
     cursor.close()
     conn.close()
-
     return jsonify({'status': 'success'})
 
 @app.route('/api/stories/<int:story_id>', methods=['DELETE'])
@@ -982,11 +1233,6 @@ def delete_user_story(story_id):
     cursor.execute('SELECT username FROM stories WHERE id = %s;', (story_id,))
     row = cursor.fetchone()
 
-    if not row:
-        cursor.close()
-        conn.close()
-        return jsonify({'status': 'error', 'message': '스토리를 찾을 수 없습니다.'}), 404
-
     if not is_admin() and row[0] != session['username']:
         cursor.close()
         conn.close()
@@ -997,7 +1243,6 @@ def delete_user_story(story_id):
     conn.commit()
     cursor.close()
     conn.close()
-
     return jsonify({'status': 'success'})
 
 @app.route('/api/stories/<int:story_id>/view', methods=['POST'])
@@ -1008,13 +1253,10 @@ def mark_story_viewed(story_id):
     username = session['username']
     conn = get_db_connection()
     cursor = conn.cursor()
-
     try:
         cursor.execute('INSERT INTO story_views (story_id, username) VALUES (%s, %s);', (story_id, username))
         conn.commit()
-    except psycopg2.IntegrityError:
-        pass
-
+    except psycopg2.IntegrityError: pass
     cursor.close()
     conn.close()
     return jsonify({'status': 'success'})
@@ -1024,7 +1266,12 @@ def mark_story_viewed(story_id):
 def get_posts():
     conn = get_db_connection()
     cursor = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
-    cursor.execute('SELECT p.id, p.username, p.title, p.content, p.image_url, p.likes, p.created_at, u.profile_img FROM posts p LEFT JOIN users u ON p.username = u.username ORDER BY p.id DESC;')
+    cursor.execute('''
+        SELECT p.id, p.username, p.title, p.content, p.image_url, p.is_video, p.likes, p.created_at, u.profile_img, u.is_private 
+        FROM posts p 
+        LEFT JOIN users u ON p.username = u.username 
+        ORDER BY p.id DESC;
+    ''')
     rows = cursor.fetchall()
 
     user = session.get('username')
@@ -1032,20 +1279,21 @@ def get_posts():
     for r in rows:
         post_id = r['id']
         liked = False
+        bookmarked = False
         if user:
             cursor.execute('SELECT 1 FROM post_likes WHERE post_id = %s AND username = %s;', (post_id, user))
             liked = bool(cursor.fetchone())
+
+            cursor.execute('SELECT 1 FROM bookmarks WHERE post_id = %s AND username = %s;', (post_id, user))
+            bookmarked = bool(cursor.fetchone())
 
         raw_img = r['image_url'] or ''
         image_urls = []
         if raw_img:
             if raw_img.startswith('['):
-                try:
-                    image_urls = json.loads(raw_img)
-                except:
-                    image_urls = [raw_img]
-            else:
-                image_urls = [raw_img]
+                try: image_urls = json.loads(raw_img)
+                except: image_urls = [raw_img]
+            else: image_urls = [raw_img]
 
         posts.append({
             'id': post_id,
@@ -1054,10 +1302,12 @@ def get_posts():
             'content': r['content'],
             'image_url': image_urls[0] if image_urls else '',
             'image_urls': image_urls,
+            'is_video': r['is_video'],
             'likes': r['likes'],
             'created_at': r['created_at'].strftime('%Y-%m-%d %H:%M:%S') if r['created_at'] else '',
             'profile_img': r['profile_img'] or '',
-            'is_liked': liked
+            'is_liked': liked,
+            'is_bookmarked': bookmarked
         })
     cursor.close()
     conn.close()
@@ -1067,7 +1317,7 @@ def get_posts():
 def get_single_post(post_id):
     conn = get_db_connection()
     cursor = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
-    cursor.execute('SELECT p.id, p.username, p.title, p.content, p.image_url, p.likes, p.created_at, u.profile_img FROM posts p LEFT JOIN users u ON p.username = u.username WHERE p.id = %s;', (post_id,))
+    cursor.execute('SELECT p.id, p.username, p.title, p.content, p.image_url, p.is_video, p.likes, p.created_at, u.profile_img FROM posts p LEFT JOIN users u ON p.username = u.username WHERE p.id = %s;', (post_id,))
     r = cursor.fetchone()
 
     if not r:
@@ -1077,9 +1327,12 @@ def get_single_post(post_id):
 
     user = session.get('username')
     liked = False
+    bookmarked = False
     if user:
         cursor.execute('SELECT 1 FROM post_likes WHERE post_id = %s AND username = %s;', (post_id, user))
         liked = bool(cursor.fetchone())
+        cursor.execute('SELECT 1 FROM bookmarks WHERE post_id = %s AND username = %s;', (post_id, user))
+        bookmarked = bool(cursor.fetchone())
 
     cursor.close()
     conn.close()
@@ -1088,12 +1341,9 @@ def get_single_post(post_id):
     image_urls = []
     if raw_img:
         if raw_img.startswith('['):
-            try:
-                image_urls = json.loads(raw_img)
-            except:
-                image_urls = [raw_img]
-        else:
-            image_urls = [raw_img]
+            try: image_urls = json.loads(raw_img)
+            except: image_urls = [raw_img]
+        else: image_urls = [raw_img]
 
     return jsonify({
         'status': 'success',
@@ -1104,10 +1354,12 @@ def get_single_post(post_id):
             'content': r['content'],
             'image_url': image_urls[0] if image_urls else '',
             'image_urls': image_urls,
+            'is_video': r['is_video'],
             'likes': r['likes'],
             'created_at': r['created_at'].strftime('%Y-%m-%d %H:%M:%S') if r['created_at'] else '',
             'profile_img': r['profile_img'] or '',
-            'is_liked': liked
+            'is_liked': liked,
+            'is_bookmarked': bookmarked
         }
     })
 
@@ -1117,9 +1369,7 @@ def update_user_post(post_id):
         return jsonify({'status': 'error', 'message': '로그인이 필요합니다.'}), 401
 
     data = request.json
-    title = data.get('title', '').strip()
     content = data.get('content', '').strip()
-
     if not content:
         return jsonify({'status': 'error', 'message': '내용을 입력해 주세요.'}), 400
 
@@ -1128,21 +1378,16 @@ def update_user_post(post_id):
     cursor.execute('SELECT username FROM posts WHERE id = %s;', (post_id,))
     row = cursor.fetchone()
 
-    if not row:
-        cursor.close()
-        conn.close()
-        return jsonify({'status': 'error', 'message': '게시글을 찾을 수 없습니다.'}), 404
-
     if not is_admin() and row[0] != session['username']:
         cursor.close()
         conn.close()
         return jsonify({'status': 'error', 'message': '수정 권한이 없습니다.'}), 403
 
-    cursor.execute('UPDATE posts SET title = %s, content = %s WHERE id = %s;', (title, content, post_id))
+    cursor.execute('UPDATE posts SET content = %s WHERE id = %s;', (content, post_id))
+    parse_and_notify_mentions(cursor, content, session['username'], post_id)
     conn.commit()
     cursor.close()
     conn.close()
-
     return jsonify({'status': 'success'})
 
 @app.route('/api/posts/<int:post_id>', methods=['DELETE'])
@@ -1155,11 +1400,6 @@ def delete_user_post(post_id):
     cursor.execute('SELECT username FROM posts WHERE id = %s;', (post_id,))
     row = cursor.fetchone()
 
-    if not row:
-        cursor.close()
-        conn.close()
-        return jsonify({'status': 'error', 'message': '게시글을 찾을 수 없습니다.'}), 404
-
     if not is_admin() and row[0] != session['username']:
         cursor.close()
         conn.close()
@@ -1168,18 +1408,18 @@ def delete_user_post(post_id):
     cursor.execute('DELETE FROM posts WHERE id = %s;', (post_id,))
     cursor.execute('DELETE FROM comments WHERE post_id = %s;', (post_id,))
     cursor.execute('DELETE FROM post_likes WHERE post_id = %s;', (post_id,))
+    cursor.execute('DELETE FROM bookmarks WHERE post_id = %s;', (post_id,))
     cursor.execute('DELETE FROM notifications WHERE post_id = %s;', (post_id,))
     conn.commit()
     cursor.close()
     conn.close()
-
     return jsonify({'status': 'success'})
 
 @app.route('/api/posts/user/<username>', methods=['GET'])
 def get_user_posts(username):
     conn = get_db_connection()
     cursor = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
-    cursor.execute('SELECT id, title, content, image_url, likes, created_at FROM posts WHERE username = %s ORDER BY id DESC;', (username,))
+    cursor.execute('SELECT id, title, content, image_url, is_video, likes, created_at FROM posts WHERE username = %s ORDER BY id DESC;', (username,))
     rows = cursor.fetchall()
     cursor.close()
     conn.close()
@@ -1190,12 +1430,9 @@ def get_user_posts(username):
         image_urls = []
         if raw_img:
             if raw_img.startswith('['):
-                try:
-                    image_urls = json.loads(raw_img)
-                except:
-                    image_urls = [raw_img]
-            else:
-                image_urls = [raw_img]
+                try: image_urls = json.loads(raw_img)
+                except: image_urls = [raw_img]
+            else: image_urls = [raw_img]
 
         posts.append({
             'id': r['id'],
@@ -1203,10 +1440,10 @@ def get_user_posts(username):
             'content': r['content'],
             'image_url': image_urls[0] if image_urls else '',
             'image_urls': image_urls,
+            'is_video': r['is_video'],
             'likes': r['likes'],
             'created_at': r['created_at'].strftime('%Y-%m-%d %H:%M:%S') if r['created_at'] else ''
         })
-
     return jsonify({'status': 'success', 'posts': posts})
 
 @app.route('/api/users/<username>/liked-posts', methods=['GET'])
@@ -1217,7 +1454,7 @@ def get_user_liked_posts(username):
     conn = get_db_connection()
     cursor = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
     query = '''
-        SELECT p.id, p.title, p.content, p.image_url, p.likes, p.created_at 
+        SELECT p.id, p.title, p.content, p.image_url, p.is_video, p.likes, p.created_at 
         FROM posts p
         JOIN post_likes pl ON p.id = pl.post_id
         WHERE pl.username = %s
@@ -1234,12 +1471,9 @@ def get_user_liked_posts(username):
         image_urls = []
         if raw_img:
             if raw_img.startswith('['):
-                try:
-                    image_urls = json.loads(raw_img)
-                except:
-                    image_urls = [raw_img]
-            else:
-                image_urls = [raw_img]
+                try: image_urls = json.loads(raw_img)
+                except: image_urls = [raw_img]
+            else: image_urls = [raw_img]
 
         posts.append({
             'id': r['id'],
@@ -1247,54 +1481,10 @@ def get_user_liked_posts(username):
             'content': r['content'],
             'image_url': image_urls[0] if image_urls else '',
             'image_urls': image_urls,
+            'is_video': r['is_video'],
             'likes': r['likes'],
             'created_at': r['created_at'].strftime('%Y-%m-%d %H:%M:%S') if r['created_at'] else ''
         })
-
-    return jsonify({'status': 'success', 'posts': posts})
-
-@app.route('/api/users/<username>/commented-posts', methods=['GET'])
-def get_user_commented_posts(username):
-    if session.get('username') != username and not is_admin():
-        return jsonify({'status': 'error', 'message': '비공개 정보입니다.'}), 403
-
-    conn = get_db_connection()
-    cursor = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
-    query = '''
-        SELECT DISTINCT p.id, p.title, p.content, p.image_url, p.likes, p.created_at 
-        FROM posts p
-        JOIN comments c ON p.id = c.post_id
-        WHERE c.username = %s
-        ORDER BY p.id DESC;
-    '''
-    cursor.execute(query, (username,))
-    rows = cursor.fetchall()
-    cursor.close()
-    conn.close()
-
-    posts = []
-    for r in rows:
-        raw_img = r['image_url'] or ''
-        image_urls = []
-        if raw_img:
-            if raw_img.startswith('['):
-                try:
-                    image_urls = json.loads(raw_img)
-                except:
-                    image_urls = [raw_img]
-            else:
-                image_urls = [raw_img]
-
-        posts.append({
-            'id': r['id'],
-            'title': r['title'] or '',
-            'content': r['content'],
-            'image_url': image_urls[0] if image_urls else '',
-            'image_urls': image_urls,
-            'likes': r['likes'],
-            'created_at': r['created_at'].strftime('%Y-%m-%d %H:%M:%S') if r['created_at'] else ''
-        })
-
     return jsonify({'status': 'success', 'posts': posts})
 
 @app.route('/api/posts', methods=['POST'])
@@ -1303,15 +1493,15 @@ def create_post():
         return jsonify({'status': 'error', 'message': '로그인이 필요합니다.'}), 401
 
     data = request.json
-    title = data.get('title', '').strip()
     content = data.get('content', '').strip()
     image_urls = data.get('image_urls', [])
+    is_video = bool(data.get('is_video', False))
 
     if not image_urls and data.get('image_url'):
         image_urls = [data.get('image_url')]
 
-    if not content:
-        return jsonify({'status': 'error', 'message': '내용을 입력해 주세요.'}), 400
+    if not content and not image_urls:
+        return jsonify({'status': 'error', 'message': '내용이나 사진/동영상을 등록해 주세요.'}), 400
 
     username = session['username']
     image_url_db = json.dumps(image_urls) if image_urls else ''
@@ -1319,12 +1509,15 @@ def create_post():
 
     conn = get_db_connection()
     cursor = conn.cursor()
-    cursor.execute('INSERT INTO posts (username, title, content, image_url, created_at) VALUES (%s, %s, %s, %s, %s);', 
-                   (username, title, content, image_url_db, now_kst))
+    cursor.execute('INSERT INTO posts (username, content, image_url, is_video, created_at) VALUES (%s, %s, %s, %s, %s) RETURNING id;', 
+                   (username, content, image_url_db, is_video, now_kst))
+    new_post_id = cursor.fetchone()[0]
+
+    parse_and_notify_mentions(cursor, content, username, new_post_id)
+
     conn.commit()
     cursor.close()
     conn.close()
-
     return jsonify({'status': 'success'})
 
 @app.route('/api/posts/<int:post_id>/like', methods=['POST'])
@@ -1409,6 +1602,8 @@ def add_comment():
 
     if post_owner:
         create_notification(cursor, recipient=post_owner, actor=username, notif_type='comment', post_id=post_id)
+
+    parse_and_notify_mentions(cursor, content, username, post_id)
 
     conn.commit()
     cursor.close()
