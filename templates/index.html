@@ -29,8 +29,6 @@
         @keyframes progress { from { width: 0%; } to { width: 100%; } }
         .animate-progress { animation: progress 5s linear forwards; }
         body { -webkit-text-size-adjust: none; touch-action: manipulation; }
-        .pwa-install-banner { animation: slideUp 0.4s ease-out forwards; }
-        @keyframes slideUp { from { transform: translateY(100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
     </style>
 </head>
 <body class="bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 font-sans antialiased min-h-screen flex flex-col justify-between selection:bg-pink-500 selection:text-white transition-colors duration-200 pb-16 md:pb-0" onclick="handleOutsideClicks(event)">
@@ -38,6 +36,7 @@
     <!-- 🔝 상단 헤더 -->
     <header class="border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 sticky top-0 z-40 w-full transition-colors">
         <div class="max-w-5xl mx-auto px-3 sm:px-4 h-14 flex items-center justify-between gap-2 sm:gap-4 relative">
+            <!-- 로고 -->
             <div onclick="location.href='/'" class="text-xl sm:text-2xl font-black italic cursor-pointer font-serif text-slate-900 dark:text-white select-none shrink-0">
                 Woongstagram
             </div>
@@ -56,7 +55,7 @@
                 </div>
             </div>
 
-            <!-- 상단 우측 아이콘 (알림 & DM / PC 전용 프로필 및 관리자) -->
+            <!-- 상단 우측 아이콘 (알림 & DM) -->
             <div class="flex items-center gap-3 sm:gap-4 text-lg text-slate-800 dark:text-slate-200 shrink-0">
                 <!-- 🔔 알림 버튼 -->
                 <div class="relative">
@@ -84,6 +83,7 @@
                     <span id="dmBadge" class="hidden absolute top-0 right-0 bg-blue-500 text-white text-[8px] font-bold w-3.5 h-3.5 rounded-full flex items-center justify-center">0</span>
                 </button>
 
+                <!-- 👤 PC 화면 전용 상단 프로필/관리자 버튼 -->
                 <a href="/admin" id="headerAdminBtn" class="hidden md:block text-red-500 hover:text-red-700 transition p-1" title="관리자">
                     <i class="fa-solid fa-key"></i>
                 </a>
@@ -153,42 +153,7 @@
         <a href="/profile" id="bottomProfileLink" class="p-2 hover:text-blue-500"><i class="fa-regular fa-user"></i></a>
     </nav>
 
-    <!-- 🛠️ PWA 설치 유도 배너 (안드로이드) -->
-    <div id="pwaInstallBanner" class="hidden fixed bottom-14 sm:bottom-4 left-4 right-4 bg-slate-900/95 text-white p-4 rounded-2xl shadow-2xl z-50 flex items-center justify-between gap-3 pwa-install-banner">
-        <div class="flex items-center gap-3">
-            <img src="/static/img/icon-192.png" class="w-10 h-10 rounded-xl border border-slate-700">
-            <div class="flex-1 text-xs">
-                <p class="font-bold text-sm">Woongstagram 앱 설치</p>
-                <p class="text-slate-300">홈 화면에 추가하여 앱처럼 즐겨보세요!</p>
-            </div>
-        </div>
-        <div class="flex items-center gap-2">
-            <button onclick="closePwaBanner()" class="px-3 py-2 text-slate-300 text-xs hover:text-white">나중에</button>
-            <button onclick="installPwaApp()" class="px-4 py-2 bg-blue-500 text-white text-xs font-bold rounded-lg transition hover:bg-blue-600">설치</button>
-        </div>
-    </div>
-
-    <!-- 🛠️ iOS 전용 설치 안내 모달 -->
-    <div id="iosInstallModal" class="hidden fixed inset-0 bg-black/70 z-50 flex items-end justify-center p-4">
-        <div class="bg-white dark:bg-slate-900 w-full max-w-sm rounded-t-2xl p-6 shadow-2xl relative border border-slate-200 dark:border-slate-800">
-            <button onclick="closeIosInstallModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600">
-                <i class="fa-solid fa-xmark text-lg"></i>
-            </button>
-            <div class="text-center mb-5">
-                <img src="/static/img/icon-192.png" class="w-16 h-16 rounded-2xl mx-auto border border-slate-200 mb-3">
-                <h2 class="text-xl font-bold">웅스타그램 iOS 앱 설치</h2>
-                <p class="text-xs text-slate-500 mt-1">아이폰에서 더 편하게 즐겨보세요!</p>
-            </div>
-            <div class="space-y-4 text-sm text-slate-700 dark:text-slate-300 leading-relaxed bg-slate-50 dark:bg-slate-800 p-4 rounded-xl border border-slate-100 dark:border-slate-700">
-                <p class="flex items-center gap-3"><span class="w-6 h-6 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-bold">1</span> 하단 사파리 바에서 <i class="fa-solid fa-arrow-up-from-square text-blue-500 text-lg mx-1"></i> (공유) 터치</p>
-                <p class="flex items-center gap-3"><span class="w-6 h-6 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-bold">2</span> 메뉴에서 <strong class="font-bold">[홈 화면에 추가]</strong> 터치</p>
-                <p class="flex items-center gap-3"><span class="w-6 h-6 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-bold">3</span> 우측 상단 <strong class="text-blue-500 font-bold">[추가]</strong> 터치 완료!</p>
-            </div>
-            <button onclick="closeIosInstallModal()" class="w-full mt-5 py-2.5 bg-blue-500 hover:bg-blue-600 text-white font-bold rounded-lg transition">확인했습니다</button>
-        </div>
-    </div>
-
-    <!-- 🔍 게시글 상세 보기 모달 -->
+    <!-- 🔍 게시글 상세 보기 팝업 모달 -->
     <div id="postDetailModal" class="fixed inset-0 bg-black/70 z-50 hidden flex items-center justify-center p-3 sm:p-4">
         <div class="bg-white dark:bg-slate-900 w-full max-w-2xl max-h-[85vh] rounded-2xl overflow-hidden shadow-2xl relative flex flex-col sm:flex-row border border-slate-200 dark:border-slate-800">
             <button onclick="closePostDetailModal()" class="absolute top-3 right-3 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 z-10 p-1 bg-white/80 dark:bg-slate-800/80 rounded-full"><i class="fa-solid fa-xmark text-lg"></i></button>
@@ -206,21 +171,6 @@
                     <input type="text" id="modalCommentInput" placeholder="댓글 달기..." class="flex-1 text-xs outline-none bg-transparent text-slate-800 dark:text-slate-200 placeholder-slate-400">
                     <button id="modalCommentSubmitBtn" class="text-blue-500 font-semibold text-xs ml-2 hover:text-blue-700">게시</button>
                 </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- ✏️ 게시글 수정 모달 -->
-    <div id="editPostModal" class="fixed inset-0 bg-black/60 z-50 hidden flex items-center justify-center p-4">
-        <div class="bg-white dark:bg-slate-900 w-full max-w-md rounded-2xl p-6 shadow-2xl relative border border-slate-200 dark:border-slate-800">
-            <button onclick="closeEditPostModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600">
-                <i class="fa-solid fa-xmark text-lg"></i>
-            </button>
-            <h3 class="text-sm font-bold text-center border-b border-slate-100 dark:border-slate-800 pb-3 mb-4 text-slate-900 dark:text-white">게시물 수정하기</h3>
-            <div class="space-y-3 text-xs">
-                <input type="hidden" id="editPostId">
-                <textarea id="editPostContentInput" rows="4" placeholder="문구 수정..." class="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-lg outline-none focus:border-slate-400 bg-transparent text-slate-900 dark:text-white resize-none"></textarea>
-                <button onclick="submitEditPost()" class="w-full py-2.5 bg-blue-500 hover:bg-blue-600 text-white font-bold rounded-lg transition">수정 완료</button>
             </div>
         </div>
     </div>
@@ -267,7 +217,7 @@
             <h3 class="text-sm font-bold text-center border-b border-slate-100 dark:border-slate-800 pb-3 mb-4 text-slate-900 dark:text-white">새 게시물 만들기</h3>
             <div class="space-y-3 text-xs">
                 <div class="border border-slate-200 dark:border-slate-700 rounded-lg p-2.5 bg-slate-50 dark:bg-slate-800 flex flex-col gap-1">
-                    <span class="text-[11px] font-semibold text-slate-600 dark:text-slate-300">사진 / 동영상 선택 (최대 5개)</span>
+                    <span class="text-[11px] font-semibold text-slate-600 dark:text-slate-300">사진 / 동영상 선택</span>
                     <input type="file" id="postFileInput" accept="image/*,video/*" multiple onchange="handleMultipleFileSelect(this, 'post')" class="text-xs text-slate-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-600 hover:file:bg-blue-100">
                 </div>
                 <div id="postCroppedPreviewArea" class="hidden py-2">
@@ -298,37 +248,24 @@
         </div>
     </div>
 
-    <!-- ✂️ 이미지 크로퍼 모달 (1:1, 9:16, 자유 비율 + 줌 / 회전 완벽 복원) -->
+    <!-- ✂️ 이미지 크로퍼 모달 -->
     <div id="cropperModal" class="fixed inset-0 bg-black/80 z-50 hidden flex items-center justify-center p-4">
         <div class="bg-white dark:bg-slate-900 w-full max-w-lg rounded-2xl overflow-hidden shadow-2xl relative flex flex-col max-h-[90vh]">
             <div class="p-4 border-b border-slate-100 dark:border-slate-800 font-bold text-center text-xs text-slate-900 dark:text-white flex justify-between items-center">
-                <span id="cropperModalTitle">사진 편집 (1 / 1)</span>
+                <span id="cropperModalTitle">사진 편집</span>
                 <button onclick="closeCropperModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
             </div>
             <div class="p-4 bg-slate-900 flex-1 overflow-hidden flex items-center justify-center max-h-[400px]">
                 <img id="cropperTargetImage" class="max-w-full max-h-full block">
             </div>
-            <div class="p-3 bg-slate-50 dark:bg-slate-800 border-t border-slate-100 dark:border-slate-700 flex items-center justify-between text-xs">
-                <div class="flex items-center gap-2">
-                    <button onclick="setAspectRatio(1)" class="px-2.5 py-1 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded font-bold text-[11px]">1:1</button>
-                    <button onclick="setAspectRatio(9/16)" class="px-2.5 py-1 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded font-bold text-[11px]">9:16</button>
-                    <button onclick="setAspectRatio(NaN)" class="px-2.5 py-1 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded font-bold text-[11px]">자유</button>
-                </div>
-                <div class="flex items-center gap-2 text-slate-700 dark:text-slate-300">
-                    <button onclick="cropperZoom(0.1)" class="p-1.5 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded"><i class="fa-solid fa-magnifying-glass-plus"></i></button>
-                    <button onclick="cropperZoom(-0.1)" class="p-1.5 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded"><i class="fa-solid fa-magnifying-glass-minus"></i></button>
-                    <button onclick="cropperRotate(-90)" class="p-1.5 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded"><i class="fa-solid fa-rotate-left"></i></button>
-                    <button onclick="cropperRotate(90)" class="p-1.5 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded"><i class="fa-solid fa-rotate-right"></i></button>
-                </div>
-            </div>
             <div class="p-3 bg-white dark:bg-slate-900 flex gap-2">
                 <button onclick="closeCropperModal()" class="w-1/2 py-2 bg-slate-100 dark:bg-slate-800 font-semibold text-xs rounded-lg">취소</button>
-                <button onclick="applyCroppedImage()" class="w-1/2 py-2 bg-blue-500 hover:bg-blue-600 text-white font-bold text-xs rounded-lg" id="cropperApplyBtn">다음 사진 / 적용</button>
+                <button onclick="applyCroppedImage()" class="w-1/2 py-2 bg-blue-500 hover:bg-blue-600 text-white font-bold text-xs rounded-lg" id="cropperApplyBtn">적용</button>
             </div>
         </div>
     </div>
 
-    <!-- 1. 로그인 / 가입 / 아이디찾기 / 비밀번호재설정 모달 -->
+    <!-- 1. 로그인 모달 -->
     <div id="authModal" class="fixed inset-0 bg-black/60 z-50 hidden flex items-center justify-center p-4">
         <div class="bg-white dark:bg-slate-900 w-full max-w-sm rounded-2xl p-6 shadow-2xl relative border border-slate-200 dark:border-slate-800">
             <button onclick="closeAuthModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600">
@@ -338,53 +275,17 @@
                 <h2 class="text-3xl font-black font-serif italic mb-1 tracking-tight text-slate-900 dark:text-white">Woongstagram</h2>
                 <p class="text-xs text-slate-500" id="authModalSubtitle">Woongstagram에 로그인하세요.</p>
             </div>
-
-            <!-- 1) 로그인 폼 -->
             <div id="loginFormArea" class="space-y-2.5 text-xs">
                 <input type="text" id="loginUsername" placeholder="사용자 이름 (아이디)" class="w-full px-3 py-2.5 border border-slate-200 dark:border-slate-700 rounded-lg outline-none bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white">
-                <div class="relative">
-                    <input type="password" id="loginPassword" placeholder="비밀번호" class="w-full px-3 py-2.5 border border-slate-200 dark:border-slate-700 rounded-lg outline-none bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white">
-                    <i onclick="togglePasswordVisibility('loginPassword', this)" class="fa-regular fa-eye absolute right-3 top-3 text-slate-400 cursor-pointer"></i>
-                </div>
+                <input type="password" id="loginPassword" placeholder="비밀번호" class="w-full px-3 py-2.5 border border-slate-200 dark:border-slate-700 rounded-lg outline-none bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white">
                 <button onclick="handleLoginSubmit()" class="w-full py-2.5 bg-blue-500 hover:bg-blue-600 text-white font-bold rounded-lg transition shadow-sm mt-2">로그인</button>
-                <div class="flex items-center justify-center gap-3 pt-2 text-[11px] text-slate-400">
-                    <button onclick="switchAuthView('findId')" class="hover:underline">아이디 찾기</button>
-                    <span>•</span>
-                    <button onclick="switchAuthView('resetPw')" class="hover:underline">비밀번호 재설정</button>
-                </div>
             </div>
-
-            <!-- 2) 회원가입 폼 -->
             <div id="signupFormArea" class="space-y-2.5 text-xs hidden">
                 <input type="text" id="signupUsername" placeholder="사용자 이름 (아이디)" class="w-full px-3 py-2.5 border border-slate-200 dark:border-slate-700 rounded-lg outline-none bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white">
                 <input type="email" id="signupEmail" placeholder="이메일 주소" class="w-full px-3 py-2.5 border border-slate-200 dark:border-slate-700 rounded-lg outline-none bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white">
-                <div class="relative">
-                    <input type="password" id="signupPassword" placeholder="비밀번호" class="w-full px-3 py-2.5 border border-slate-200 dark:border-slate-700 rounded-lg outline-none bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white">
-                    <i onclick="togglePasswordVisibility('signupPassword', this)" class="fa-regular fa-eye absolute right-3 top-3 text-slate-400 cursor-pointer"></i>
-                </div>
+                <input type="password" id="signupPassword" placeholder="비밀번호" class="w-full px-3 py-2.5 border border-slate-200 dark:border-slate-700 rounded-lg outline-none bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white">
                 <button onclick="handleSignupSubmit()" class="w-full py-2.5 bg-blue-500 hover:bg-blue-600 text-white font-bold rounded-lg transition shadow-sm mt-2">가입하기</button>
             </div>
-
-            <!-- 3) 아이디 찾기 폼 -->
-            <div id="findIdFormArea" class="space-y-2.5 text-xs hidden">
-                <p class="text-[11px] text-slate-500 mb-2">가입 시 등록했던 이메일 주소를 입력해 주세요.</p>
-                <input type="email" id="findIdEmail" placeholder="이메일 주소" class="w-full px-3 py-2.5 border border-slate-200 dark:border-slate-700 rounded-lg outline-none bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white">
-                <button onclick="handleFindIdSubmit()" class="w-full py-2.5 bg-blue-500 hover:bg-blue-600 text-white font-bold rounded-lg transition shadow-sm mt-2">아이디 찾기</button>
-                <div id="findIdResult" class="hidden p-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-center font-bold text-blue-600 text-xs"></div>
-            </div>
-
-            <!-- 4) 비밀번호 재설정 폼 -->
-            <div id="resetPwFormArea" class="space-y-2.5 text-xs hidden">
-                <p class="text-[11px] text-slate-500 mb-2">아이디와 이메일을 입력한 후 새 비밀번호를 설정하세요.</p>
-                <input type="text" id="resetPwUsername" placeholder="사용자 이름 (아이디)" class="w-full px-3 py-2.5 border border-slate-200 dark:border-slate-700 rounded-lg outline-none bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white">
-                <input type="email" id="resetPwEmail" placeholder="등록된 이메일 주소" class="w-full px-3 py-2.5 border border-slate-200 dark:border-slate-700 rounded-lg outline-none bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white">
-                <div class="relative">
-                    <input type="password" id="resetPwNewPassword" placeholder="새로운 비밀번호" class="w-full px-3 py-2.5 border border-slate-200 dark:border-slate-700 rounded-lg outline-none bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white">
-                    <i onclick="togglePasswordVisibility('resetPwNewPassword', this)" class="fa-regular fa-eye absolute right-3 top-3 text-slate-400 cursor-pointer"></i>
-                </div>
-                <button onclick="handleResetPwSubmit()" class="w-full py-2.5 bg-blue-500 hover:bg-blue-600 text-white font-bold rounded-lg transition shadow-sm mt-2">비밀번호 변경하기</button>
-            </div>
-
             <div class="mt-5 pt-4 border-t border-slate-100 dark:border-slate-800 text-center text-xs text-slate-500">
                 <span id="authToggleText">계정이 없으신가요?</span>
                 <button onclick="toggleAuthMode()" id="authToggleBtn" class="text-blue-500 font-bold ml-1 hover:underline">가입하기</button>
@@ -396,9 +297,9 @@
     <div id="storyModal" class="fixed inset-0 bg-black/90 z-50 hidden flex items-center justify-center">
         <button onclick="closeStoryModal()" class="absolute top-5 right-5 text-white text-2xl hover:text-slate-400 z-50"><i class="fa-solid fa-xmark"></i></button>
         <div class="w-full max-w-sm h-[580px] bg-slate-900 rounded-2xl overflow-hidden relative flex flex-col justify-between shadow-2xl border border-slate-800">
-            <div class="p-4 z-10 bg-gradient-to-b from-black/80 to-transparent flex items-center justify-between">
+            <div class="p-4 z-10 bg-gradient-to-b from-black/80 to-transparent">
+                <div class="w-full bg-white/30 h-1 rounded-full mb-3 overflow-hidden"><div id="storyProgress" class="bg-white h-full w-0"></div></div>
                 <span id="storyUser" class="font-bold text-white text-xs">username</span>
-                <button id="storyDeleteBtn" class="hidden text-red-400 hover:text-red-500 text-xs font-bold" title="삭제"><i class="fa-solid fa-trash-can"></i> 삭제</button>
             </div>
             <div id="storyBg" class="absolute inset-0 flex flex-col items-center justify-end text-white p-6 pb-16 text-center bg-cover bg-center">
                 <p id="storyDesc" class="text-lg font-bold text-white drop-shadow"></p>
@@ -414,7 +315,6 @@
         let activeDmPartner = null;
         let searchTimer = null;
         let storyTimer = null;
-        let deferredPrompt = null;
 
         let cropperInstance = null;
         let currentCropMode = null;
@@ -461,44 +361,16 @@
             loadHotNews();
             setInterval(loadNotifications, 10000);
 
-            if ('serviceWorker' in navigator) {
-                navigator.serviceWorker.register('/service-worker.js').catch(err => console.log('SW Fail', err));
-            }
-
             const urlParams = new URLSearchParams(window.location.search);
             const dmTarget = urlParams.get('dm');
-            if (dmTarget) setTimeout(() => openDmModal(dmTarget), 300);
+            if (dmTarget) {
+                setTimeout(() => openDmModal(dmTarget), 300);
+            }
             const postIdTarget = urlParams.get('post');
-            if (postIdTarget) setTimeout(() => openPostDetailModal(postIdTarget), 300);
-        });
-
-        window.addEventListener('beforeinstallprompt', (e) => {
-            e.preventDefault();
-            deferredPrompt = e;
-            if (!localStorage.getItem('pwa_install_closed')) {
-                document.getElementById('pwaInstallBanner').classList.remove('hidden');
+            if (postIdTarget) {
+                setTimeout(() => openPostDetailModal(postIdTarget), 300);
             }
         });
-
-        function installPwaApp() {
-            if (deferredPrompt) {
-                deferredPrompt.prompt();
-                deferredPrompt.userChoice.then((res) => {
-                    if (res.outcome === 'accepted') closePwaBanner();
-                    deferredPrompt = null;
-                });
-            } else {
-                const isIos = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-                if (isIos) {
-                    closePwaBanner();
-                    document.getElementById('iosInstallModal').classList.remove('hidden');
-                } else {
-                    alert('브라우저 우측 상단 메뉴(⋮)에서 [앱 설치]를 눌러주세요.');
-                }
-            }
-        }
-        function closePwaBanner() { document.getElementById('pwaInstallBanner').classList.add('hidden'); localStorage.setItem('pwa_install_closed', 'true'); }
-        function closeIosInstallModal() { document.getElementById('iosInstallModal').classList.add('hidden'); }
 
         function formatFormattedText(text) {
             if (!text) return '';
@@ -579,30 +451,10 @@
                 if (post.is_video && images.length > 0) {
                     mediaHtml = `<video src="${escapeHtml(images[0])}" controls playsinline class="w-full max-h-[450px] bg-black"></video>`;
                 } else if (images.length > 0) {
-                    if (images.length === 1) {
-                        mediaHtml = `<img src="${escapeHtml(images[0])}" class="w-full max-h-[450px] object-cover border-y border-slate-100 dark:border-slate-800">`;
-                    } else {
-                        const slides = images.map((img, idx) => `
-                            <div class="w-full flex-shrink-0" style="display: ${idx === 0 ? 'block' : 'none'};" data-slide="${idx}">
-                                <img src="${escapeHtml(img)}" class="w-full max-h-[450px] object-cover border-y border-slate-100 dark:border-slate-800">
-                            </div>
-                        `).join('');
-                        const dots = images.map((_, idx) => `
-                            <span class="w-1.5 h-1.5 rounded-full ${idx === 0 ? 'bg-blue-500' : 'bg-slate-300 dark:bg-slate-600'} transition-all" data-dot="${idx}"></span>
-                        `).join('');
-                        mediaHtml = `
-                            <div class="relative group select-none overflow-hidden" id="slider-${post.id}" data-current="0" data-total="${images.length}">
-                                <div class="flex transition-transform duration-300">${slides}</div>
-                                <button onclick="slidePost(${post.id}, -1)" class="absolute left-2 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-black/50 text-white flex items-center justify-center hover:bg-black/70 shadow"><i class="fa-solid fa-chevron-left text-xs"></i></button>
-                                <button onclick="slidePost(${post.id}, 1)" class="absolute right-2 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-black/50 text-white flex items-center justify-center hover:bg-black/70 shadow"><i class="fa-solid fa-chevron-right text-xs"></i></button>
-                                <div class="absolute bottom-3 left-1/2 -translate-x-1/2 flex items-center gap-1.5 bg-black/30 px-2 py-1 rounded-full">${dots}</div>
-                            </div>
-                        `;
-                    }
+                    mediaHtml = `<img src="${escapeHtml(images[0])}" class="w-full max-h-[450px] object-cover border-y border-slate-100 dark:border-slate-800">`;
                 }
 
                 const avatar = post.profile_img ? `<img src="${post.profile_img}" class="w-full h-full object-cover">` : getDefaultAvatar("text-xs");
-                const canManage = currentUser && (currentUser === post.username || isAdminUser);
 
                 article.innerHTML = `
                     <div class="p-3 flex items-center justify-between border-b border-slate-100 dark:border-slate-800">
@@ -610,12 +462,6 @@
                             <a href="/profile/${post.username}" class="w-8 h-8 rounded-full overflow-hidden border border-slate-200 dark:border-slate-700 shrink-0">${avatar}</a>
                             <a href="/profile/${post.username}" class="text-xs font-semibold hover:underline">@${escapeHtml(post.username)}</a>
                         </div>
-                        ${canManage ? `
-                            <div class="flex items-center gap-2">
-                                <button onclick="openEditPostModal(${post.id}, '${escapeHtml(post.content)}')" class="text-slate-400 hover:text-blue-500 text-xs" title="수정"><i class="fa-solid fa-pen"></i></button>
-                                <button onclick="deletePost(${post.id})" class="text-slate-400 hover:text-red-500 text-xs" title="삭제"><i class="fa-solid fa-trash-can"></i></button>
-                            </div>
-                        ` : ''}
                     </div>
                     ${mediaHtml}
                     <div class="p-3 text-xs">
@@ -643,20 +489,7 @@
             });
         }
 
-        function slidePost(postId, direction) {
-            const slider = document.getElementById(`slider-${postId}`);
-            if (!slider) return;
-            let current = parseInt(slider.getAttribute('data-current'));
-            const total = parseInt(slider.getAttribute('data-total'));
-            let next = current + direction;
-            if (next < 0) next = total - 1;
-            if (next >= total) next = 0;
-
-            slider.querySelectorAll('[data-slide]').forEach((s, idx) => { s.style.display = (idx === next) ? 'block' : 'none'; });
-            slider.querySelectorAll('[data-dot]').forEach((d, idx) => { d.className = `w-1.5 h-1.5 rounded-full ${idx === next ? 'bg-blue-500' : 'bg-slate-300 dark:bg-slate-600'} transition-all`; });
-            slider.setAttribute('data-current', next);
-        }
-
+        // ❤️ 실시간 좋아요
         function toggleLike(e, postId) {
             if (e) e.stopPropagation();
             if (!currentUser) { openAuthModal(); return; }
@@ -672,6 +505,7 @@
                 });
         }
 
+        // 🔖 북마크 토글
         function toggleBookmark(e, postId, icon) {
             if (e) e.stopPropagation();
             if (!currentUser) { alert('로그인이 필요합니다.'); openAuthModal(); return; }
@@ -684,46 +518,25 @@
                 });
         }
 
-        function openEditPostModal(id, content) {
-            document.getElementById('editPostId').value = id;
-            document.getElementById('editPostContentInput').value = content;
-            document.getElementById('editPostModal').classList.remove('hidden');
-        }
-        function closeEditPostModal() { document.getElementById('editPostModal').classList.add('hidden'); }
-        function submitEditPost() {
-            const id = document.getElementById('editPostId').value;
-            const content = document.getElementById('editPostContentInput').value.trim();
-            if (!content) return;
-            fetch(`/api/posts/${id}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ content })
-            }).then(res => res.json()).then(d => {
-                if (d.status === 'success') { closeEditPostModal(); loadPosts(); }
-                else alert(d.message);
-            });
-        }
-
-        function deletePost(postId) {
-            if (!confirm('정말로 이 게시글을 삭제하시겠습니까?')) return;
-            fetch(`/api/posts/${postId}`, { method: 'DELETE' })
-                .then(res => res.json())
-                .then(data => { if (data.status === 'success') loadPosts(); });
-        }
-
+        // 🔍 실시간 검색창 로직
         function handleSearchInput(v) {
             clearTimeout(searchTimer);
             const drop = document.getElementById('searchResultsDropdown');
             const uBox = document.getElementById('searchUserResults');
             const pBox = document.getElementById('searchPostResults');
 
-            if (!v.trim()) { drop.classList.add('hidden'); return; }
+            if (!v.trim()) {
+                drop.classList.add('hidden');
+                return;
+            }
 
             searchTimer = setTimeout(() => {
                 fetch(`/api/search?q=${encodeURIComponent(v.trim())}`)
                     .then(res => res.json())
                     .then(data => {
-                        uBox.innerHTML = ''; pBox.innerHTML = '';
+                        uBox.innerHTML = ''; 
+                        pBox.innerHTML = '';
+
                         let hasResults = false;
 
                         if (data.users && data.users.length > 0) {
@@ -753,18 +566,26 @@
                             data.posts.forEach(p => {
                                 const div = document.createElement('div');
                                 div.className = "p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded cursor-pointer truncate";
-                                div.onclick = () => { drop.classList.add('hidden'); openPostDetailModal(p.id); };
+                                div.onclick = () => {
+                                    drop.classList.add('hidden');
+                                    openPostDetailModal(p.id);
+                                };
                                 div.innerHTML = `<p class="font-semibold truncate">${escapeHtml(p.content)}</p><span class="text-[9px] text-slate-400">@${escapeHtml(p.username)}</span>`;
                                 pBox.appendChild(div);
                             });
                         }
 
-                        if (hasResults) drop.classList.remove('hidden');
-                        else { uBox.innerHTML = '<div class="p-3 text-center text-slate-400 text-xs">검색 결과가 없습니다.</div>'; drop.classList.remove('hidden'); }
+                        if (hasResults) {
+                            drop.classList.remove('hidden');
+                        } else {
+                            uBox.innerHTML = '<div class="p-3 text-center text-slate-400 text-xs">검색 결과가 없습니다.</div>';
+                            drop.classList.remove('hidden');
+                        }
                     });
             }, 200);
         }
 
+        // 📸 스토리 모달 및 사진 업로드 연동
         function openCreateStoryModal() { 
             if (!currentUser) { openAuthModal(); return; } 
             document.getElementById('createStoryModal').classList.remove('hidden'); 
@@ -782,8 +603,13 @@
             const btn = document.getElementById('submitStoryBtn');
             let imageUrl = '';
 
-            if (!desc && !storyCroppedBlob) { alert('스토리 사진이나 문구를 입력해 주세요.'); return; }
-            btn.disabled = true; btn.innerText = '올리는 중...';
+            if (!desc && !storyCroppedBlob) {
+                alert('스토리 사진이나 문구를 입력해 주세요.');
+                return;
+            }
+
+            btn.disabled = true;
+            btn.innerText = '올리는 중...';
 
             try {
                 if (storyCroppedBlob) {
@@ -791,21 +617,31 @@
                     formData.append('file', storyCroppedBlob, 'story.jpg');
                     const uploadRes = await fetch('/api/upload', { method: 'POST', body: formData });
                     const uploadData = await uploadRes.json();
-                    if (uploadData.status === 'success') imageUrl = uploadData.image_url;
-                    else throw new Error(uploadData.message);
+                    if (uploadData.status === 'success') {
+                        imageUrl = uploadData.image_url;
+                    } else {
+                        throw new Error(uploadData.message || '이미지 업로드 실패');
+                    }
                 }
+
                 const res = await fetch('/api/stories', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ desc: desc, image_url: imageUrl })
                 });
                 const d = await res.json();
-                if (d.status === 'success') { closeCreateStoryModal(); loadStories(); }
-                else alert(d.message);
+                if (d.status === 'success') {
+                    closeCreateStoryModal();
+                    loadStories();
+                } else {
+                    alert(d.message || '스토리 등록 실패');
+                }
             } catch (err) {
-                alert('스토리 등록 오류: ' + (err.message || err));
+                console.error(err);
+                alert('스토리 등록 중 오류가 발생했습니다: ' + (err.message || err));
             } finally {
-                btn.disabled = false; btn.innerText = '스토리 올리기';
+                btn.disabled = false;
+                btn.innerText = '스토리 올리기';
             }
         }
 
@@ -819,6 +655,7 @@
                         const item = document.createElement('div');
                         item.className = "flex flex-col items-center gap-1 min-w-[56px] sm:min-w-[64px] cursor-pointer group shrink-0";
                         item.onclick = () => showStory(s);
+                        
                         const ringClass = s.is_viewed ? 'story-viewed' : 'story-ring';
                         item.innerHTML = `
                             <div class="w-12 h-12 sm:w-14 sm:h-14 rounded-full p-[2px] ${ringClass} transition group-hover:scale-105">
@@ -843,22 +680,16 @@
                 bg.style.backgroundImage = 'none';
                 bg.className = "absolute inset-0 flex flex-col items-center justify-center text-white p-8 text-center bg-gradient-to-br from-pink-500 to-rose-600";
             }
-            const delBtn = document.getElementById('storyDeleteBtn');
-            if (currentUser && (currentUser === s.username || isAdminUser)) {
-                delBtn.classList.remove('hidden');
-                delBtn.onclick = () => deleteStory(s.id);
-            } else delBtn.classList.add('hidden');
-
             document.getElementById('storyModal').classList.remove('hidden');
             clearTimeout(storyTimer);
             storyTimer = setTimeout(() => closeStoryModal(), 5000);
         }
-        function closeStoryModal() { document.getElementById('storyModal').classList.add('hidden'); clearTimeout(storyTimer); }
-        function deleteStory(storyId) {
-            if (!confirm('정말로 이 스토리를 삭제하시겠습니까?')) return;
-            fetch(`/api/stories/${storyId}`, { method: 'DELETE' }).then(() => { closeStoryModal(); loadStories(); });
+        function closeStoryModal() { 
+            document.getElementById('storyModal').classList.add('hidden'); 
+            clearTimeout(storyTimer);
         }
 
+        // ✂️ 크롭 및 파일 선택 공통 처리
         function handleMultipleFileSelect(input, mode) {
             if (!input.files || input.files.length === 0) return;
             currentCropMode = mode;
@@ -875,7 +706,9 @@
                 if (currentCropMode === 'story' && storyCroppedBlob) {
                     document.getElementById('storyPreviewImg').src = URL.createObjectURL(storyCroppedBlob);
                     document.getElementById('storyPreviewArea').classList.remove('hidden');
-                } else if (currentCropMode === 'post') updatePostPreviewArea();
+                } else if (currentCropMode === 'post') {
+                    updatePostPreviewArea();
+                }
                 return;
             }
             const file = pendingFiles[currentFileIndex];
@@ -889,8 +722,6 @@
             reader.onload = (e) => {
                 const img = document.getElementById('cropperTargetImage');
                 img.src = e.target.result;
-                document.getElementById('cropperModalTitle').innerText = `사진 편집 (${currentFileIndex + 1} / ${pendingFiles.length})`;
-                document.getElementById('cropperApplyBtn').innerText = (currentFileIndex === pendingFiles.length - 1) ? '적용하기' : '다음 사진';
                 document.getElementById('cropperModal').classList.remove('hidden');
                 if (cropperInstance) cropperInstance.destroy();
                 const ratio = currentCropMode === 'story' ? 9/16 : 1;
@@ -898,10 +729,6 @@
             };
             reader.readAsDataURL(file);
         }
-
-        function setAspectRatio(r) { if (cropperInstance) cropperInstance.setAspectRatio(r); }
-        function cropperZoom(delta) { if (cropperInstance) cropperInstance.zoom(delta); }
-        function cropperRotate(deg) { if (cropperInstance) cropperInstance.rotate(deg); }
 
         function updatePostPreviewArea() {
             const list = document.getElementById('postPreviewList');
@@ -928,9 +755,10 @@
                 else storyCroppedBlob = b;
                 currentFileIndex++;
                 processNextFile();
-            }, 'image/jpeg', 0.9);
+            }, 'image/jpeg', 0.85);
         }
 
+        // 📝 게시물 작성
         function openCreatePostModal() { if(!currentUser){openAuthModal();return;} document.getElementById('createPostModal').classList.remove('hidden'); }
         function closeCreatePostModal() { 
             document.getElementById('createPostModal').classList.add('hidden'); 
@@ -946,8 +774,13 @@
             let imageUrls = [];
             let isVideo = false;
 
-            if (!content && postCroppedBlobs.length === 0) { alert('사진이나 글 내용을 입력해 주세요.'); return; }
-            btn.disabled = true; btn.innerText = '공유 중...';
+            if (!content && postCroppedBlobs.length === 0) {
+                alert('사진이나 글 내용을 입력해 주세요.');
+                return;
+            }
+
+            btn.disabled = true;
+            btn.innerText = '공유 중...';
 
             try {
                 if (postCroppedBlobs.length > 0) {
@@ -958,8 +791,12 @@
                     });
                     const res = await fetch('/api/upload', { method: 'POST', body: formData });
                     const d = await res.json();
-                    if (d.status === 'success') { imageUrls = d.image_urls || [d.image_url]; isVideo = d.is_video; }
-                    else throw new Error(d.message);
+                    if (d.status === 'success') {
+                        imageUrls = d.image_urls || [d.image_url];
+                        isVideo = d.is_video;
+                    } else {
+                        throw new Error(d.message || '업로드 실패');
+                    }
                 }
 
                 const res = await fetch('/api/posts', {
@@ -968,15 +805,22 @@
                     body: JSON.stringify({ content, image_urls: imageUrls, is_video: isVideo })
                 });
                 const d = await res.json();
-                if (d.status === 'success') { closeCreatePostModal(); loadPosts(); }
-                else alert(d.message);
+                if (d.status === 'success') {
+                    closeCreatePostModal();
+                    loadPosts();
+                } else {
+                    alert(d.message || '게시글 등록 실패');
+                }
             } catch (err) {
-                alert('게시글 등록 오류: ' + (err.message || err));
+                console.error(err);
+                alert('게시글 등록 중 오류가 발생했습니다: ' + (err.message || err));
             } finally {
-                btn.disabled = false; btn.innerText = '공유하기';
+                btn.disabled = false;
+                btn.innerText = '공유하기';
             }
         }
 
+        // 🔍 게시글 상세 보기 모달
         function openPostDetailModal(postId) {
             fetch(`/api/posts/${postId}`)
                 .then(res => res.json())
@@ -984,8 +828,11 @@
                     if (data.status === 'success') {
                         const post = data.post;
                         const avatarBox = document.getElementById('modalUserAvatar');
-                        if (post.profile_img) avatarBox.innerHTML = `<img src="${post.profile_img}" class="w-full h-full object-cover">`;
-                        else avatarBox.innerHTML = getDefaultAvatar("text-xs");
+                        if (post.profile_img) {
+                            avatarBox.innerHTML = `<img src="${post.profile_img}" class="w-full h-full object-cover">`;
+                        } else {
+                            avatarBox.innerHTML = getDefaultAvatar("text-xs");
+                        }
 
                         document.getElementById('modalUsername').innerText = `@${post.username}`;
                         document.getElementById('modalUsername').href = `/profile/${post.username}`;
@@ -1010,7 +857,10 @@
                     }
                 });
         }
-        function closePostDetailModal() { document.getElementById('postDetailModal').classList.add('hidden'); }
+
+        function closePostDetailModal() {
+            document.getElementById('postDetailModal').classList.add('hidden');
+        }
 
         function loadModalComments(postId) {
             fetch(`/api/comments/${postId}`)
@@ -1032,15 +882,22 @@
             if (!currentUser) { openAuthModal(); return; }
             const input = document.getElementById('modalCommentInput');
             if (!input.value.trim()) return;
+
             fetch('/api/comments', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ post_id: postId, content: input.value.trim() })
-            }).then(res => res.json()).then(data => {
-                if (data.status === 'success') { loadModalComments(postId); input.value = ''; }
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    loadModalComments(postId);
+                    input.value = '';
+                }
             });
         }
 
+        // 💬 DM 모달 제어
         function openDmModal(partner = null) {
             if (!currentUser) { alert('로그인이 필요합니다.'); openAuthModal(); return; }
             document.getElementById('dmModal').classList.remove('hidden');
@@ -1120,13 +977,18 @@
             const input = document.getElementById('dmMessageInput');
             const msg = input.value.trim();
             if (!msg) return;
+
             fetch(`/api/dm/${encodeURIComponent(activeDmPartner)}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ message: msg })
-            }).then(() => { input.value = ''; loadDmMessages(activeDmPartner); });
+            }).then(() => {
+                input.value = '';
+                loadDmMessages(activeDmPartner);
+            });
         }
 
+        // 🎬 릴스 모달
         function openReelsModal() {
             fetch('/api/reels').then(res => res.json()).then(data => {
                 const container = document.getElementById('reelsContainer');
@@ -1141,25 +1003,22 @@
                         </div>
                     `;
                     document.getElementById('reelsModal').classList.remove('hidden');
-                } else alert('등록된 릴스 동영상이 없습니다.');
+                } else {
+                    alert('등록된 릴스 동영상이 없습니다.');
+                }
             });
         }
         function closeReelsModal() { document.getElementById('reelsModal').classList.add('hidden'); }
 
+        // 💬 댓글 작성 및 로드
         function loadComments(postId) {
             fetch(`/api/comments/${postId}`).then(res => res.json()).then(data => {
                 const list = document.getElementById(`commentList-${postId}`);
                 list.innerHTML = '';
                 data.comments.forEach(c => {
-                    const item = document.createElement('div');
-                    item.className = "flex items-center justify-between group py-0.5";
-                    item.innerHTML = `
-                        <p><a href="/profile/${c.username}" class="font-semibold mr-1 hover:underline">@${escapeHtml(c.username)}</a> ${formatFormattedText(c.content)}</p>
-                        ${(currentUser === c.username || isAdminUser) ? `
-                            <button onclick="deleteComment(${c.id}, ${postId})" class="text-slate-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition px-1" title="삭제"><i class="fa-solid fa-xmark text-xs"></i></button>
-                        ` : ''}
-                    `;
-                    list.appendChild(item);
+                    const p = document.createElement('p');
+                    p.innerHTML = `<a href="/profile/${c.username}" class="font-semibold mr-1">@${escapeHtml(c.username)}</a> ${formatFormattedText(c.content)}`;
+                    list.appendChild(p);
                 });
             });
         }
@@ -1175,19 +1034,18 @@
             }).then(() => { input.value = ''; loadComments(postId); });
         }
 
-        function deleteComment(commentId, postId) {
-            fetch(`/api/comments/${commentId}`, { method: 'DELETE' }).then(() => loadComments(postId));
-        }
-
         function focusComment(id) { document.getElementById(`commentInput-${id}`).focus(); }
 
+        // 🔔 알림
         function loadNotifications() {
             if (!currentUser) return;
             fetch('/api/notifications').then(res => res.json()).then(data => {
                 if (data.status === 'success') {
                     const badge = document.getElementById('notifBadge');
-                    if (data.unread_count > 0) { badge.innerText = data.unread_count; badge.classList.remove('hidden'); }
-                    else badge.classList.add('hidden');
+                    if (data.unread_count > 0) {
+                        badge.innerText = data.unread_count;
+                        badge.classList.remove('hidden');
+                    } else badge.classList.add('hidden');
 
                     const list = document.getElementById('notifList');
                     list.innerHTML = '';
@@ -1201,8 +1059,7 @@
                         else if (n.type === 'follow_accept') text = '님이 팔로우 요청을 수락했습니다. 🎉';
                         
                         const div = document.createElement('div');
-                        div.className = "p-1.5 rounded text-[11px] hover:bg-slate-50 dark:hover:bg-slate-800 cursor-pointer";
-                        div.onclick = () => { if (n.post_id) openPostDetailModal(n.post_id); else window.location.href = `/profile/${n.actor}`; };
+                        div.className = "p-1.5 rounded text-[11px]";
                         div.innerHTML = `<strong>@${escapeHtml(n.actor)}</strong> ${text}`;
                         list.appendChild(div);
                     });
@@ -1255,46 +1112,14 @@
             if (search && !search.contains(e.target)) search.classList.add('hidden');
         }
 
-        function openAuthModal() { document.getElementById('authModal').classList.remove('hidden'); switchAuthView('login'); }
+        // 로그인 / 회원가입
+        function openAuthModal() { document.getElementById('authModal').classList.remove('hidden'); }
         function closeAuthModal() { document.getElementById('authModal').classList.add('hidden'); }
-        
-        function switchAuthView(view) {
-            currentAuthView = view;
-            const subtitle = document.getElementById('authModalSubtitle');
-            const toggleText = document.getElementById('authToggleText');
-            const toggleBtn = document.getElementById('authToggleBtn');
-
-            document.getElementById('loginFormArea').classList.add('hidden');
-            document.getElementById('signupFormArea').classList.add('hidden');
-            document.getElementById('findIdFormArea').classList.add('hidden');
-            document.getElementById('resetPwFormArea').classList.add('hidden');
-            document.getElementById('findIdResult').classList.add('hidden');
-
-            if (view === 'login') {
-                document.getElementById('loginFormArea').classList.remove('hidden');
-                subtitle.innerText = 'Woongstagram에 로그인하세요.';
-                toggleText.innerText = '계정이 없으신가요?';
-                toggleBtn.innerText = '가입하기';
-            } else if (view === 'signup') {
-                document.getElementById('signupFormArea').classList.remove('hidden');
-                subtitle.innerText = '사진과 동영상을 공유해 보세요.';
-                toggleText.innerText = '계정이 있으신가요?';
-                toggleBtn.innerText = '로그인';
-            } else if (view === 'findId') {
-                document.getElementById('findIdFormArea').classList.remove('hidden');
-                subtitle.innerText = '아이디 찾기';
-                toggleText.innerText = '아이디가 기억나셨나요?';
-                toggleBtn.innerText = '로그인';
-            } else if (view === 'resetPw') {
-                document.getElementById('resetPwFormArea').classList.remove('hidden');
-                subtitle.innerText = '비밀번호 재설정';
-                toggleText.innerText = '비밀번호가 기억나셨나요?';
-                toggleBtn.innerText = '로그인';
-            }
-        }
-
         function toggleAuthMode() {
-            switchAuthView(currentAuthView === 'signup' ? 'login' : 'signup');
+            currentAuthView = currentAuthView === 'login' ? 'signup' : 'login';
+            document.getElementById('loginFormArea').classList.toggle('hidden', currentAuthView !== 'login');
+            document.getElementById('signupFormArea').classList.toggle('hidden', currentAuthView !== 'signup');
+            document.getElementById('authToggleBtn').innerText = currentAuthView === 'login' ? '가입하기' : '로그인';
         }
 
         function handleLoginSubmit() {
@@ -1310,45 +1135,6 @@
             const p = document.getElementById('signupPassword').value.trim();
             fetch('/api/signup', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ username: u, email: e, password: p }) })
                 .then(res => res.json()).then(d => { if(d.status==='success') location.reload(); else alert(d.message); });
-        }
-
-        function handleFindIdSubmit() {
-            const email = document.getElementById('findIdEmail').value.trim();
-            if (!email) return;
-            fetch('/api/find-id', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ email }) })
-                .then(res => res.json()).then(d => {
-                    const resBox = document.getElementById('findIdResult');
-                    if (d.status === 'success') {
-                        resBox.innerText = `가입된 아이디: ${d.usernames.map(u => '@' + u).join(', ')}`;
-                        resBox.classList.remove('hidden');
-                    } else alert(d.message);
-                });
-        }
-
-        function handleResetPwSubmit() {
-            const username = document.getElementById('resetPwUsername').value.trim();
-            const email = document.getElementById('resetPwEmail').value.trim();
-            const new_password = document.getElementById('resetPwNewPassword').value.trim();
-            if (!username || !email || !new_password) return;
-            fetch('/api/reset-password', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ username, email, new_password })
-            }).then(res => res.json()).then(d => {
-                if (d.status === 'success') { alert('비밀번호가 재설정되었습니다! 로그인해 주세요.'); switchAuthView('login'); }
-                else alert(d.message);
-            });
-        }
-
-        function togglePasswordVisibility(inputId, icon) {
-            const input = document.getElementById(inputId);
-            if (input.type === 'password') {
-                input.type = 'text';
-                icon.className = 'fa-regular fa-eye-slash absolute right-3 top-3 text-slate-400 cursor-pointer';
-            } else {
-                input.type = 'password';
-                icon.className = 'fa-regular fa-eye absolute right-3 top-3 text-slate-400 cursor-pointer';
-            }
         }
 
         function loadHotNews() {
