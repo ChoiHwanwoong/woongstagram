@@ -35,14 +35,14 @@
 
     <!-- 🔝 상단 헤더 -->
     <header class="border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 sticky top-0 z-40 w-full transition-colors">
-        <div class="max-w-5xl mx-auto px-3 sm:px-4 h-14 flex items-center justify-between gap-2 sm:gap-4 relative">
+        <div class="max-w-5xl mx-auto px-3 sm:px-4 h-14 flex items-center justify-between gap-3 relative">
             <!-- 로고 -->
             <div onclick="location.href='/'" class="text-xl sm:text-2xl font-black italic cursor-pointer font-serif text-slate-900 dark:text-white select-none shrink-0">
                 Woongstagram
             </div>
 
             <!-- 🔍 실시간 검색창 -->
-            <div class="relative flex-1 max-w-[150px] sm:max-w-xs mx-auto" onclick="event.stopPropagation()">
+            <div class="relative flex-1 max-w-[140px] sm:max-w-xs mx-auto" onclick="event.stopPropagation()">
                 <div class="relative">
                     <input type="text" id="searchInput" oninput="handleSearchInput(this.value)" placeholder="검색" class="w-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg pl-7 pr-2 py-1 text-xs outline-none focus:bg-white dark:focus:bg-slate-900 focus:border-slate-400 transition text-slate-900 dark:text-slate-100 placeholder:text-slate-400">
                     <i class="fa-solid fa-magnifying-glass absolute left-2.5 top-2 text-slate-400 text-[10px] sm:text-xs"></i>
@@ -55,9 +55,29 @@
                 </div>
             </div>
 
-            <!-- 상단 우측 아이콘 (알림 & DM) -->
-            <div class="flex items-center gap-3 sm:gap-4 text-lg text-slate-800 dark:text-slate-200 shrink-0">
-                <!-- 🔔 알림 버튼 -->
+            <!-- 상단 우측 아이콘 그룹 (PC에서는 전체 노출, 모바일에서는 하트/DM만 노출) -->
+            <div class="flex items-center gap-2 sm:gap-4 text-base sm:text-lg text-slate-800 dark:text-slate-200 shrink-0">
+                <!-- PC 전용: 홈 -->
+                <a href="/" class="hidden md:inline-block p-1 hover:text-slate-500 transition" title="홈">
+                    <i class="fa-solid fa-house"></i>
+                </a>
+
+                <!-- PC 전용: 릴스 -->
+                <button onclick="openReelsModal()" class="hidden md:inline-block p-1 hover:text-pink-500 transition" title="릴스">
+                    <i class="fa-solid fa-clapperboard"></i>
+                </button>
+
+                <!-- PC 전용: 새 게시물 작성 -->
+                <button onclick="openCreatePostModal()" class="hidden md:inline-block p-1 hover:text-blue-500 transition" title="새 게시물">
+                    <i class="fa-square-plus fa-regular text-xl"></i>
+                </button>
+
+                <!-- PC 전용: 다크모드 -->
+                <button onclick="toggleDarkMode()" class="hidden md:inline-block p-1 hover:text-amber-500 transition" title="테마 변경">
+                    <i id="themeIconPC" class="fa-regular fa-moon"></i>
+                </button>
+
+                <!-- 🔔 알림 버튼 (PC/모바일 공통) -->
                 <div class="relative">
                     <button onclick="toggleNotificationDropdown(event)" class="relative p-1.5 hover:text-slate-500 transition flex items-center" title="알림">
                         <i class="fa-regular fa-heart"></i>
@@ -77,17 +97,17 @@
                     </div>
                 </div>
 
-                <!-- 💬 DM 버튼 -->
+                <!-- 💬 DM 버튼 (PC/모바일 공통) -->
                 <button onclick="openDmModal()" class="relative p-1.5 hover:text-blue-500 transition" title="메시지">
                     <i class="fa-regular fa-paper-plane"></i>
                     <span id="dmBadge" class="hidden absolute top-0 right-0 bg-blue-500 text-white text-[8px] font-bold w-3.5 h-3.5 rounded-full flex items-center justify-center">0</span>
                 </button>
 
-                <!-- 👤 PC 화면 전용 상단 프로필/관리자 버튼 -->
-                <a href="/admin" id="headerAdminBtn" class="hidden md:block text-red-500 hover:text-red-700 transition p-1" title="관리자">
+                <!-- PC 전용: 관리자 / 내 프로필 -->
+                <a href="/admin" id="headerAdminBtn" class="hidden text-red-500 hover:text-red-700 transition p-1" title="관리자">
                     <i class="fa-solid fa-key"></i>
                 </a>
-                <a href="/profile" id="headerProfileBtn" class="hidden md:block hover:text-slate-500 transition p-1" title="프로필">
+                <a href="/profile" id="headerProfileBtn" class="hidden md:inline-block hover:text-slate-500 transition p-1" title="프로필">
                     <i class="fa-regular fa-user"></i>
                 </a>
             </div>
@@ -144,7 +164,7 @@
 
     </main>
 
-    <!-- 📱 모바일 하단 전용 내비게이션 바 -->
+    <!-- 📱 모바일 하단 전용 내비게이션 바 (모바일에서만 보임) -->
     <nav class="fixed bottom-0 left-0 right-0 h-12 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 z-40 flex items-center justify-around text-lg text-slate-800 dark:text-slate-200 md:hidden">
         <a href="/" class="p-2 text-slate-900 dark:text-white"><i class="fa-solid fa-house"></i></a>
         <button onclick="openReelsModal()" class="p-2 hover:text-pink-500"><i class="fa-solid fa-clapperboard"></i></button>
@@ -207,7 +227,7 @@
         </div>
     </div>
 
-    <!-- 📸 스토리 작성 모달 (사진 파일 선택 및 9:16 크롭 완벽 연동) -->
+    <!-- 📸 스토리 작성 모달 -->
     <div id="createStoryModal" class="fixed inset-0 bg-black/60 z-50 hidden flex items-center justify-center p-4">
         <div class="bg-white dark:bg-slate-900 w-full max-w-md rounded-2xl p-6 shadow-2xl relative border border-slate-200 dark:border-slate-800">
             <button onclick="closeCreateStoryModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
@@ -306,28 +326,33 @@
         }
 
         function initTheme() {
-            if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            const isDark = localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches);
+            if (isDark) {
                 document.documentElement.classList.add('dark');
-                const tMob = document.getElementById('themeIconMobile');
-                if (tMob) tMob.className = 'fa-regular fa-sun';
             } else {
                 document.documentElement.classList.remove('dark');
-                const tMob = document.getElementById('themeIconMobile');
-                if (tMob) tMob.className = 'fa-regular fa-moon';
             }
+            updateThemeIcons(isDark);
+        }
+
+        function updateThemeIcons(isDark) {
+            const iconPC = document.getElementById('themeIconPC');
+            const iconMob = document.getElementById('themeIconMobile');
+            const iconClass = isDark ? 'fa-regular fa-sun' : 'fa-regular fa-moon';
+            if (iconPC) iconPC.className = iconClass;
+            if (iconMob) iconMob.className = iconClass;
         }
 
         function toggleDarkMode() {
-            if (document.documentElement.classList.contains('dark')) {
+            const isDark = document.documentElement.classList.contains('dark');
+            if (isDark) {
                 document.documentElement.classList.remove('dark');
                 localStorage.theme = 'light';
-                const tMob = document.getElementById('themeIconMobile');
-                if (tMob) tMob.className = 'fa-regular fa-moon';
+                updateThemeIcons(false);
             } else {
                 document.documentElement.classList.add('dark');
                 localStorage.theme = 'dark';
-                const tMob = document.getElementById('themeIconMobile');
-                if (tMob) tMob.className = 'fa-regular fa-sun';
+                updateThemeIcons(true);
             }
         }
 
@@ -372,9 +397,12 @@
                 .then(res => res.json())
                 .then(data => {
                     const card = document.getElementById('profileCard');
+                    const adminBtn = document.getElementById('headerAdminBtn');
+                    
                     if (data.logged_in) {
                         currentUser = data.username;
                         isAdminUser = data.is_admin;
+                        if (isAdminUser && adminBtn) adminBtn.classList.remove('hidden');
                         loadNotifications();
                         loadFollowRequests();
 
@@ -390,6 +418,7 @@
                         `;
                     } else {
                         currentUser = null;
+                        if (adminBtn) adminBtn.classList.add('hidden');
                         card.innerHTML = `
                             <p class="text-xs text-slate-500 mb-3">로그인하여 친구들과 사진을 공유해 보세요.</p>
                             <button onclick="openAuthModal()" class="w-full py-2 bg-blue-500 hover:bg-blue-600 text-white text-xs font-bold rounded-lg">로그인 / 회원가입</button>
@@ -463,7 +492,6 @@
             });
         }
 
-        // ❤️ 실시간 좋아요 (페이지 새로고침 없이 즉시 반영)
         function toggleLike(e, postId) {
             e.stopPropagation();
             if (!currentUser) { openAuthModal(); return; }
@@ -479,7 +507,6 @@
                 });
         }
 
-        // 🔖 북마크 토글
         function toggleBookmark(e, postId, icon) {
             e.stopPropagation();
             if (!currentUser) { alert('로그인이 필요합니다.'); openAuthModal(); return; }
@@ -492,7 +519,6 @@
                 });
         }
 
-        // 🔍 실시간 검색창 로직 (유저 + 게시글/해시태그 결과 완벽 연동)
         function handleSearchInput(v) {
             clearTimeout(searchTimer);
             const drop = document.getElementById('searchResultsDropdown');
@@ -559,7 +585,6 @@
             }, 200);
         }
 
-        // 📸 스토리 모달 및 사진 업로드 연동
         function openCreateStoryModal() { 
             if (!currentUser) { openAuthModal(); return; } 
             document.getElementById('createStoryModal').classList.remove('hidden'); 
@@ -660,7 +685,6 @@
             clearTimeout(storyTimer);
         }
 
-        // ✂️ 크롭 및 파일 선택 공통 처리
         function handleMultipleFileSelect(input, mode) {
             if (!input.files || input.files.length === 0) return;
             currentCropMode = mode;
@@ -714,7 +738,6 @@
             }, 'image/jpeg', 0.9);
         }
 
-        // 📝 게시물 작성
         function openCreatePostModal() { if(!currentUser){openAuthModal();return;} document.getElementById('createPostModal').classList.remove('hidden'); }
         function closeCreatePostModal() { 
             document.getElementById('createPostModal').classList.add('hidden'); 
@@ -762,7 +785,6 @@
             }
         }
 
-        // 💬 DM 모달 제어
         function openDmModal(partner = null) {
             if (!currentUser) { alert('로그인이 필요합니다.'); openAuthModal(); return; }
             document.getElementById('dmModal').classList.remove('hidden');
@@ -853,7 +875,6 @@
             });
         }
 
-        // 🎬 릴스 모달
         function openReelsModal() {
             fetch('/api/reels').then(res => res.json()).then(data => {
                 const container = document.getElementById('reelsContainer');
@@ -875,7 +896,6 @@
         }
         function closeReelsModal() { document.getElementById('reelsModal').classList.add('hidden'); }
 
-        // 💬 댓글 작성 및 로드
         function loadComments(postId) {
             fetch(`/api/comments/${postId}`).then(res => res.json()).then(data => {
                 const list = document.getElementById(`commentList-${postId}`);
@@ -901,7 +921,6 @@
 
         function focusComment(id) { document.getElementById(`commentInput-${id}`).focus(); }
 
-        // 🔔 알림
         function loadNotifications() {
             if (!currentUser) return;
             fetch('/api/notifications').then(res => res.json()).then(data => {
@@ -977,7 +996,6 @@
             if (search && !search.contains(e.target)) search.classList.add('hidden');
         }
 
-        // 로그인 / 회원가입
         function openAuthModal() { document.getElementById('authModal').classList.remove('hidden'); }
         function closeAuthModal() { document.getElementById('authModal').classList.add('hidden'); }
         function toggleAuthMode() {
