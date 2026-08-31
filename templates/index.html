@@ -518,7 +518,6 @@
             });
         }
 
-        // ❤️ 실시간 좋아요
         function toggleLike(e, postId) {
             if (e) e.stopPropagation();
             if (!currentUser) { openAuthModal(); return; }
@@ -534,7 +533,6 @@
                 });
         }
 
-        // 🔖 북마크 토글
         function toggleBookmark(e, postId, icon) {
             if (e) e.stopPropagation();
             if (!currentUser) { alert('로그인이 필요합니다.'); openAuthModal(); return; }
@@ -547,7 +545,6 @@
                 });
         }
 
-        // 🔍 실시간 검색창 로직
         function handleSearchInput(v) {
             clearTimeout(searchTimer);
             const drop = document.getElementById('searchResultsDropdown');
@@ -614,7 +611,6 @@
             }, 200);
         }
 
-        // 📸 스토리 모달 및 사진 업로드 연동
         function openCreateStoryModal() { 
             if (!currentUser) { openAuthModal(); return; } 
             document.getElementById('createStoryModal').classList.remove('hidden'); 
@@ -629,10 +625,11 @@
 
         async function submitNewStory() {
             const desc = document.getElementById('storyDescInput').value.trim();
+            const fileInput = document.getElementById('storyFileInput');
             const btn = document.getElementById('submitStoryBtn');
             let imageUrl = '';
 
-            if (!desc && !storyCroppedBlob) {
+            if (!desc && !storyCroppedBlob && (!fileInput.files || fileInput.files.length === 0)) {
                 alert('스토리 사진이나 문구를 입력해 주세요.');
                 return;
             }
@@ -641,11 +638,18 @@
             btn.innerText = '올리는 중...';
 
             try {
-                if (storyCroppedBlob) {
+                let uploadBlob = storyCroppedBlob;
+                if (!uploadBlob && fileInput.files && fileInput.files.length > 0) {
+                    uploadBlob = fileInput.files[0];
+                }
+
+                if (uploadBlob) {
                     const formData = new FormData();
-                    formData.append('file', storyCroppedBlob, 'story.jpg');
+                    formData.append('file', uploadBlob, 'story.jpg');
+                    
                     const uploadRes = await fetch('/api/upload', { method: 'POST', body: formData });
                     const uploadData = await uploadRes.json();
+                    
                     if (uploadData.status === 'success') {
                         imageUrl = uploadData.image_url;
                     } else {
@@ -658,6 +662,7 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ desc: desc, image_url: imageUrl })
                 });
+                
                 const d = await res.json();
                 if (d.status === 'success') {
                     closeCreateStoryModal();
@@ -667,7 +672,7 @@
                 }
             } catch (err) {
                 console.error(err);
-                alert('스토리 등록 중 오류가 발생했습니다: ' + (err.message || err));
+                alert(err.message || '스토리 등록 중 오류가 발생했습니다.');
             } finally {
                 btn.disabled = false;
                 btn.innerText = '스토리 올리기';
@@ -718,7 +723,6 @@
             clearTimeout(storyTimer);
         }
 
-        // ✂️ 크롭 및 파일 선택 공통 처리
         function handleMultipleFileSelect(input, mode) {
             if (!input.files || input.files.length === 0) return;
             currentCropMode = mode;
@@ -779,7 +783,7 @@
 
         function applyCroppedImage() {
             if (!cropperInstance) return;
-            cropperInstance.getCroppedCanvas({ maxWidth: 1080 }).toBlob(b => {
+            cropperInstance.getCroppedCanvas({ maxWidth: 1080, maxHeight: 1080 }).toBlob(b => {
                 if (currentCropMode === 'post') postCroppedBlobs.push(b);
                 else storyCroppedBlob = b;
                 currentFileIndex++;
@@ -787,7 +791,6 @@
             }, 'image/jpeg', 0.85);
         }
 
-        // 📝 게시물 작성
         function openCreatePostModal() { if(!currentUser){openAuthModal();return;} document.getElementById('createPostModal').classList.remove('hidden'); }
         function closeCreatePostModal() { 
             document.getElementById('createPostModal').classList.add('hidden'); 
@@ -799,11 +802,17 @@
 
         async function submitNewPost() {
             const content = document.getElementById('postContentInput').value.trim();
+            const fileInput = document.getElementById('postFileInput');
             const btn = document.getElementById('submitPostBtn');
             let imageUrls = [];
             let isVideo = false;
 
-            if (!content && postCroppedBlobs.length === 0) {
+            let filesToUpload = [...postCroppedBlobs];
+            if (filesToUpload.length === 0 && fileInput.files && fileInput.files.length > 0) {
+                filesToUpload = Array.from(fileInput.files);
+            }
+
+            if (!content && filesToUpload.length === 0) {
                 alert('사진이나 글 내용을 입력해 주세요.');
                 return;
             }
@@ -812,14 +821,17 @@
             btn.innerText = '공유 중...';
 
             try {
-                if (postCroppedBlobs.length > 0) {
+                if (filesToUpload.length > 0) {
                     const formData = new FormData();
-                    postCroppedBlobs.forEach((b, idx) => {
-                        const filename = (b.type && b.type.startsWith('video/')) ? `post_${idx}.mp4` : `post_${idx}.jpg`;
+                    filesToUpload.forEach((b, idx) => {
+                        const isVid = (b.type && b.type.startsWith('video/')) || (b.name && b.name.match(/\.(mp4|mov|avi|webm)$/i));
+                        const filename = isVid ? `post_${idx}.mp4` : `post_${idx}.jpg`;
                         formData.append('files', b, filename);
                     });
+                    
                     const res = await fetch('/api/upload', { method: 'POST', body: formData });
                     const d = await res.json();
+                    
                     if (d.status === 'success') {
                         imageUrls = d.image_urls || [d.image_url];
                         isVideo = d.is_video;
@@ -833,6 +845,7 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ content, image_urls: imageUrls, is_video: isVideo })
                 });
+                
                 const d = await res.json();
                 if (d.status === 'success') {
                     closeCreatePostModal();
@@ -842,14 +855,13 @@
                 }
             } catch (err) {
                 console.error(err);
-                alert('게시글 등록 중 오류가 발생했습니다: ' + (err.message || err));
+                alert(err.message || '게시글 등록 중 오류가 발생했습니다.');
             } finally {
                 btn.disabled = false;
                 btn.innerText = '공유하기';
             }
         }
 
-        // 🔍 게시글 상세 보기 모달
         function openPostDetailModal(postId) {
             fetch(`/api/posts/${postId}`)
                 .then(res => res.json())
@@ -926,7 +938,6 @@
             });
         }
 
-        // 💬 DM 모달 제어
         function openDmModal(partner = null) {
             if (!currentUser) { alert('로그인이 필요합니다.'); openAuthModal(); return; }
             document.getElementById('dmModal').classList.remove('hidden');
@@ -1017,7 +1028,6 @@
             });
         }
 
-        // 🎬 릴스 모달
         function openReelsModal() {
             fetch('/api/reels').then(res => res.json()).then(data => {
                 const container = document.getElementById('reelsContainer');
@@ -1039,7 +1049,6 @@
         }
         function closeReelsModal() { document.getElementById('reelsModal').classList.add('hidden'); }
 
-        // 💬 댓글 작성 및 로드
         function loadComments(postId) {
             fetch(`/api/comments/${postId}`).then(res => res.json()).then(data => {
                 const list = document.getElementById(`commentList-${postId}`);
@@ -1065,7 +1074,6 @@
 
         function focusComment(id) { document.getElementById(`commentInput-${id}`).focus(); }
 
-        // 🔔 알림
         function loadNotifications() {
             if (!currentUser) return;
             fetch('/api/notifications').then(res => res.json()).then(data => {
@@ -1141,7 +1149,6 @@
             if (search && !search.contains(e.target)) search.classList.add('hidden');
         }
 
-        // 🔐 인증 모달 뷰 전환 (로그인 / 회원가입 / 아이디 찾기 / 비밀번호 재설정)
         function openAuthModal() { 
             document.getElementById('authModal').classList.remove('hidden'); 
             switchAuthView('login');

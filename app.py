@@ -16,7 +16,7 @@ app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1)
 
 app.secret_key = os.environ.get('SECRET_KEY', 'super_secret_key_for_woongstagram_app_2026')
 
-# 🔐 50MB 대용량 허용 & 365일 영구 로그인 세션
+# 🔐 50MB 대용량 허용 & 365일 영구 세션
 app.config['MAX_CONTENT_LENGTH'] = 50 * 1024 * 1024
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=365)
 app.config['SESSION_COOKIE_SECURE'] = True
@@ -26,7 +26,9 @@ app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
 DEFAULT_DB_URL = "postgresql://neondb_owner:YOUR_PASSWORD@ep-xyz.region.aws.neon.tech/neondb?sslmode=require"
 DATABASE_URL = os.environ.get('DATABASE_URL', DEFAULT_DB_URL)
 
-cloudinary.config(secure=True)
+# 🛠️ Cloudinary 환경변수 직접 주입 (누락 방지)
+CLOUDINARY_URL = os.environ.get('CLOUDINARY_URL', 'cloudinary://777156499967142:fuugnC0w7tgErnuV143zYqbP4J8@ivbaolu5')
+cloudinary.config(cloudinary_url=CLOUDINARY_URL, secure=True)
 
 NEWS_CACHE = {
     'updated_at': None,
@@ -44,7 +46,6 @@ def init_db():
         conn = get_db_connection()
         cursor = conn.cursor()
         
-        # 1. users 테이블
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS users (
                 id SERIAL PRIMARY KEY,
@@ -62,7 +63,6 @@ def init_db():
         cursor.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS is_private BOOLEAN DEFAULT FALSE;")
         cursor.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS username_updated_at TIMESTAMP;")
 
-        # 2. posts 테이블
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS posts (
                 id SERIAL PRIMARY KEY,
@@ -77,7 +77,6 @@ def init_db():
         ''')
         cursor.execute("ALTER TABLE posts ADD COLUMN IF NOT EXISTS is_video BOOLEAN DEFAULT FALSE;")
 
-        # 3. comments 테이블
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS comments (
                 id SERIAL PRIMARY KEY,
@@ -88,7 +87,6 @@ def init_db():
             );
         ''')
 
-        # 4. post_likes 테이블
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS post_likes (
                 id SERIAL PRIMARY KEY,
@@ -98,7 +96,6 @@ def init_db():
             );
         ''')
 
-        # 5. bookmarks 테이블
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS bookmarks (
                 id SERIAL PRIMARY KEY,
@@ -109,7 +106,6 @@ def init_db():
             );
         ''')
 
-        # 6. stories 테이블
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS stories (
                 id SERIAL PRIMARY KEY,
@@ -121,7 +117,6 @@ def init_db():
             );
         ''')
 
-        # 7. story_views 테이블
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS story_views (
                 id SERIAL PRIMARY KEY,
@@ -131,7 +126,6 @@ def init_db():
             );
         ''')
 
-        # 8. follows 테이블
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS follows (
                 id SERIAL PRIMARY KEY,
@@ -141,7 +135,6 @@ def init_db():
             );
         ''')
 
-        # 9. follow_requests 테이블
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS follow_requests (
                 id SERIAL PRIMARY KEY,
@@ -152,7 +145,6 @@ def init_db():
             );
         ''')
 
-        # 10. direct_messages 테이블
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS direct_messages (
                 id SERIAL PRIMARY KEY,
@@ -164,7 +156,6 @@ def init_db():
             );
         ''')
 
-        # 11. notifications 테이블
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS notifications (
                 id SERIAL PRIMARY KEY,
@@ -276,7 +267,7 @@ def upload_file():
                 image_urls.append(upload_result.get('secure_url'))
             except Exception as e:
                 print("Cloudinary Upload Exception:", e)
-                return jsonify({'status': 'error', 'message': f'클라우드 업로드 실패: {str(e)}'}), 500
+                return jsonify({'status': 'error', 'message': f'이미지 업로드 실패: {str(e)}'}), 500
 
     return jsonify({
         'status': 'success', 
@@ -285,7 +276,7 @@ def upload_file():
         'is_video': is_video
     })
 
-# --- 🔍 아이디 찾기 & 비밀번호 재설정 & 계정 관리 APIs ---
+# --- 🔍 아이디/비밀번호 찾기 & 사용자 API ---
 @app.route('/api/find-id', methods=['POST'])
 def find_id():
     data = request.json or {}
