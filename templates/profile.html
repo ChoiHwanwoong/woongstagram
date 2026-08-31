@@ -127,14 +127,14 @@
         </div>
     </div>
 
-    <!-- 👥 팔로워/팔로잉 목록 팝업 모달 -->
+    <!-- 👥 팔로워/팔로잉 목록 팝업 모달 (프로필 사진 포함) -->
     <div id="followListModal" class="fixed inset-0 bg-black/60 z-50 hidden flex items-center justify-center p-4">
         <div class="bg-white dark:bg-slate-900 w-full max-w-sm h-96 rounded-2xl p-4 shadow-2xl relative flex flex-col border border-slate-200 dark:border-slate-800 text-xs">
             <div class="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
                 <span id="followListModalTitle" class="font-bold text-sm">팔로워 목록</span>
                 <button onclick="closeFollowModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
             </div>
-            <div id="followListContainer" class="flex-1 overflow-y-auto space-y-2 py-2"></div>
+            <div id="followListContainer" class="flex-1 overflow-y-auto space-y-2.5 py-3"></div>
         </div>
     </div>
 
@@ -410,7 +410,7 @@
             });
         }
 
-        // 👥 팔로워 / 팔로잉 목록 모달
+        // 👥 팔로워 / 팔로잉 목록 모달 (프로필 사진 포함)
         function openFollowModal(type) {
             const title = type === 'followers' ? '팔로워' : '팔로잉';
             document.getElementById('followListModalTitle').innerText = `${title} 목록`;
@@ -427,10 +427,14 @@
                         return;
                     }
                     d.users.forEach(u => {
+                        const avatarHtml = u.profile_img ? `<img src="${u.profile_img}" class="w-full h-full object-cover">` : getDefaultAvatar("text-xs");
                         const row = document.createElement('a');
-                        row.href = `/profile/${u}`;
-                        row.className = "flex items-center gap-2.5 p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition font-bold";
-                        row.innerHTML = `<div class="w-8 h-8 rounded-full overflow-hidden border border-slate-200 dark:border-slate-700 flex items-center justify-center">${getDefaultAvatar("text-xs")}</div><span>@${escapeHtml(u)}</span>`;
+                        row.href = `/profile/${u.username}`;
+                        row.className = "flex items-center gap-3 p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition font-bold";
+                        row.innerHTML = `
+                            <div class="w-9 h-9 rounded-full overflow-hidden border border-slate-200 dark:border-slate-700 shrink-0 flex items-center justify-center">${avatarHtml}</div>
+                            <span>@${escapeHtml(u.username)}</span>
+                        `;
                         container.appendChild(row);
                     });
                 });
