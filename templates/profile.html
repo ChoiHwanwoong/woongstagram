@@ -9,6 +9,10 @@
         tailwind.config = { darkMode: 'class' }
     </script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <!-- ✂️ Cropper.js (프로필 사진 편집용) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css"/>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
+
     <style>
         body { -webkit-text-size-adjust: none; touch-action: manipulation; }
     </style>
@@ -31,10 +35,15 @@
     <!-- Profile Main Section -->
     <main class="max-w-4xl mx-auto px-4 py-6 sm:py-8 w-full flex-1">
         <div id="profileHeader" class="flex flex-col sm:flex-row items-center sm:items-start gap-6 sm:gap-8 pb-6 sm:pb-8 border-b border-slate-200 dark:border-slate-800">
+            <!-- 프로필 사진 (클릭 시 사진 변경 가능) -->
             <div class="relative group shrink-0">
                 <div id="profileAvatarBox" class="w-24 h-24 sm:w-36 sm:h-36 rounded-full bg-slate-200 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 flex items-center justify-center font-bold shadow-md overflow-hidden">
                     <i class="fa-solid fa-user text-3xl sm:text-4xl text-slate-400"></i>
                 </div>
+                <button id="avatarEditOverlayBtn" onclick="document.getElementById('profileImgInput').click()" class="hidden absolute inset-0 bg-black/40 rounded-full text-white items-center justify-center text-xs font-semibold opacity-0 group-hover:opacity-100 transition">
+                    <i class="fa-solid fa-camera mr-1"></i> 변경
+                </button>
+                <input type="file" id="profileImgInput" accept="image/*" onchange="handleProfileImageSelect(this)" class="hidden">
             </div>
 
             <div class="flex flex-col gap-3 sm:gap-4 text-center sm:text-left flex-1 w-full">
@@ -86,18 +95,86 @@
         <a href="/profile" class="p-2 text-blue-500"><i class="fa-solid fa-user"></i></a>
     </nav>
 
-    <!-- ⚙️ 환경설정 모달 (비공개 전환 스위치 포함) -->
-    <div id="settingsModal" class="fixed inset-0 bg-black/60 z-50 hidden flex items-center justify-center p-4">
-        <div class="bg-white dark:bg-slate-900 w-full max-w-sm rounded-2xl overflow-hidden shadow-2xl relative text-center text-xs divide-y divide-slate-100 dark:divide-slate-800 border border-slate-200 dark:border-slate-800">
-            <div class="py-4 font-bold text-sm">환경설정</div>
-            
-            <div class="p-3.5 flex items-center justify-between px-6">
-                <span class="font-semibold flex items-center gap-2"><i class="fa-solid fa-lock text-slate-400"></i> 비공개 계정</span>
-                <input type="checkbox" id="privateAccountSwitch" onchange="togglePrivateSetting(this.checked)" class="w-4 h-4 cursor-pointer">
+    <!-- ⚙️ 통합 환경설정 모달 (다크모드 / 프로필변경 / 비공개 / 계정관리 / 탈퇴) -->
+    <div id="settingsModal" class="fixed inset-0 bg-black/60 z-50 hidden flex items-center justify-center p-4 overflow-y-auto">
+        <div class="bg-white dark:bg-slate-900 w-full max-w-sm rounded-2xl overflow-hidden shadow-2xl relative text-xs border border-slate-200 dark:border-slate-800 my-8">
+            <div class="p-4 border-b border-slate-100 dark:border-slate-800 font-bold text-center text-sm flex justify-between items-center">
+                <span>환경설정 및 계정 관리</span>
+                <button onclick="closeSettingsModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-base"></i></button>
             </div>
 
-            <button onclick="logout()" class="w-full py-3.5 text-red-500 font-semibold hover:bg-slate-50 dark:hover:bg-slate-800">로그아웃</button>
-            <button onclick="closeSettingsModal()" class="w-full py-3.5 text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800">닫기</button>
+            <div class="divide-y divide-slate-100 dark:divide-slate-800">
+                <!-- 🌓 테마 설정 (다크모드 / 라이트모드) -->
+                <div class="p-4 flex items-center justify-between">
+                    <span class="font-semibold flex items-center gap-2"><i class="fa-solid fa-circle-half-stroke text-slate-400"></i> 다크 모드 (검정 화면)</span>
+                    <input type="checkbox" id="darkModeSwitch" onchange="toggleDarkModeSetting(this.checked)" class="w-4 h-4 cursor-pointer">
+                </div>
+
+                <!-- 🔒 비공개 계정 전환 -->
+                <div class="p-4 flex items-center justify-between">
+                    <div>
+                        <span class="font-semibold flex items-center gap-2"><i class="fa-solid fa-lock text-slate-400"></i> 비공개 계정</span>
+                        <p class="text-[10px] text-slate-400 mt-0.5">승인된 팔로워만 내 피드를 볼 수 있습니다.</p>
+                    </div>
+                    <input type="checkbox" id="privateAccountSwitch" onchange="togglePrivateSetting(this.checked)" class="w-4 h-4 cursor-pointer">
+                </div>
+
+                <!-- 📝 자기소개 변경 -->
+                <div class="p-4 space-y-2">
+                    <label class="font-semibold flex items-center gap-2"><i class="fa-solid fa-pen text-slate-400"></i> 자기소개 수정 (30자 이내)</label>
+                    <div class="flex gap-2">
+                        <input type="text" id="editBioInput" maxlength="30" placeholder="자기소개 입력..." class="flex-1 px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-lg outline-none bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white">
+                        <button onclick="submitBioChange()" class="px-3 py-2 bg-blue-500 hover:bg-blue-600 text-white font-bold rounded-lg shrink-0">저장</button>
+                    </div>
+                </div>
+
+                <!-- 👤 아이디(사용자 이름) 변경 -->
+                <div class="p-4 space-y-2">
+                    <div>
+                        <label class="font-semibold flex items-center gap-2"><i class="fa-solid fa-user-tag text-slate-400"></i> 아이디 변경</label>
+                        <p class="text-[10px] text-slate-400 mt-0.5">아이디는 30일에 한 번만 변경 가능합니다.</p>
+                    </div>
+                    <div class="flex gap-2">
+                        <input type="text" id="editUsernameInput" placeholder="새 아이디 입력..." class="flex-1 px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-lg outline-none bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white">
+                        <button onclick="submitUsernameChange()" class="px-3 py-2 bg-blue-500 hover:bg-blue-600 text-white font-bold rounded-lg shrink-0">변경</button>
+                    </div>
+                </div>
+
+                <!-- 🔑 비밀번호 변경 -->
+                <div class="p-4 space-y-2">
+                    <label class="font-semibold flex items-center gap-2"><i class="fa-solid fa-key text-slate-400"></i> 비밀번호 변경</label>
+                    <input type="password" id="currentPwInput" placeholder="현재 비밀번호" class="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-lg outline-none bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white mb-1.5">
+                    <input type="password" id="newPwInput" placeholder="새 비밀번호" class="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-lg outline-none bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white mb-1.5">
+                    <button onclick="submitPasswordChange()" class="w-full py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 font-bold rounded-lg transition">비밀번호 변경 완료</button>
+                </div>
+
+                <!-- 🚪 로그아웃 -->
+                <button onclick="logout()" class="w-full p-4 text-center text-blue-500 font-bold hover:bg-slate-50 dark:hover:bg-slate-800">
+                    로그아웃
+                </button>
+
+                <!-- ⚠️ 계정 영구 삭제 (탈퇴) -->
+                <div class="p-4 space-y-2 bg-red-50/50 dark:bg-red-950/20">
+                    <label class="font-semibold text-red-600 dark:text-red-400 flex items-center gap-2"><i class="fa-solid fa-triangle-exclamation"></i> 회원 탈퇴 (계정 삭제)</label>
+                    <p class="text-[10px] text-slate-400">모든 게시글, 사진, 댓글 및 정보가 영구 삭제됩니다.</p>
+                    <input type="password" id="deleteAccountPwInput" placeholder="비밀번호 확인 후 탈퇴" class="w-full px-3 py-2 border border-red-200 dark:border-red-900/50 rounded-lg outline-none bg-white dark:bg-slate-900 text-slate-900 dark:text-white mb-1.5">
+                    <button onclick="submitDeleteAccount()" class="w-full py-2 bg-red-500 hover:bg-red-600 text-white font-bold rounded-lg transition">계정 영구 삭제하기</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ✂️ 프로필 사진 크롭 모달 -->
+    <div id="cropperModal" class="fixed inset-0 bg-black/80 z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-slate-900 w-full max-w-sm rounded-2xl overflow-hidden shadow-2xl relative flex flex-col max-h-[90vh]">
+            <div class="p-3 border-b border-slate-100 dark:border-slate-800 font-bold text-center text-xs">프로필 사진 자르기</div>
+            <div class="p-4 bg-slate-900 flex-1 overflow-hidden flex items-center justify-center max-h-[300px]">
+                <img id="cropperTargetImage" class="max-w-full max-h-full block">
+            </div>
+            <div class="p-3 bg-white dark:bg-slate-900 flex gap-2">
+                <button onclick="closeCropperModal()" class="w-1/2 py-2 bg-slate-100 dark:bg-slate-800 font-semibold text-xs rounded-lg">취소</button>
+                <button onclick="applyProfileCrop()" class="w-1/2 py-2 bg-blue-500 hover:bg-blue-600 text-white font-bold text-xs rounded-lg" id="profileCropApplyBtn">적용 및 업로드</button>
+            </div>
         </div>
     </div>
 
@@ -106,13 +183,34 @@
         const targetUserFromUrl = pathParts.length > 2 && pathParts[2] ? decodeURIComponent(pathParts[2]) : null;
         let currentProfileUser = null;
         let loggedInUser = null;
+        let cropperInstance = null;
+        let selectedProfileBlob = null;
 
         document.addEventListener("DOMContentLoaded", () => {
-            if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-                document.documentElement.classList.add('dark');
-            }
+            initThemeState();
             initProfile();
         });
+
+        function initThemeState() {
+            const isDark = localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches);
+            if (isDark) {
+                document.documentElement.classList.add('dark');
+                document.getElementById('darkModeSwitch').checked = true;
+            } else {
+                document.documentElement.classList.remove('dark');
+                document.getElementById('darkModeSwitch').checked = false;
+            }
+        }
+
+        function toggleDarkModeSetting(isDark) {
+            if (isDark) {
+                document.documentElement.classList.add('dark');
+                localStorage.theme = 'dark';
+            } else {
+                document.documentElement.classList.remove('dark');
+                localStorage.theme = 'light';
+            }
+        }
 
         async function initProfile() {
             const meRes = await fetch('/api/me');
@@ -132,6 +230,7 @@
             document.getElementById('followerCount').innerText = u.follower_count;
             document.getElementById('followingCount').innerText = u.following_count;
             document.getElementById('profileBio').innerText = u.bio || '';
+            document.getElementById('editBioInput').value = u.bio || '';
 
             const avatarBox = document.getElementById('profileAvatarBox');
             if (u.profile_img) {
@@ -145,12 +244,16 @@
 
             if (isMyProfile) {
                 document.getElementById('profileEmail').innerText = u.email;
+                document.getElementById('avatarEditOverlayBtn').classList.remove('hidden');
+                document.getElementById('avatarEditOverlayBtn').classList.add('flex');
                 document.getElementById('tabLikesBtn').classList.remove('hidden');
                 document.getElementById('tabBookmarksBtn').classList.remove('hidden');
                 document.getElementById('privateAccountSwitch').checked = u.is_private;
 
                 actionArea.innerHTML = `
-                    <button onclick="openSettingsModal()" class="p-2 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full text-base"><i class="fa-solid fa-gear"></i></button>
+                    <button onclick="openSettingsModal()" class="px-3.5 py-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-800 dark:text-white font-bold text-xs rounded-lg transition border border-slate-200 dark:border-slate-700 flex items-center gap-1.5">
+                        <i class="fa-solid fa-gear"></i> 환경설정
+                    </button>
                 `;
             } else {
                 let btnText = '팔로우';
@@ -164,7 +267,6 @@
                     btnClass = 'bg-slate-100 dark:bg-slate-800 text-slate-500 border border-slate-200 dark:border-slate-700';
                 }
 
-                // 💬 [메시지] 버튼 클릭 시 /?dm=상대아이디 로 이동하도록 설정
                 actionArea.innerHTML = `
                     <button onclick="handleFollowToggle('${escapeHtml(u.username)}', this)" class="px-4 py-1.5 font-bold text-xs rounded-lg transition ${btnClass}">${btnText}</button>
                     <a href="/?dm=${encodeURIComponent(u.username)}" class="px-4 py-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-800 dark:text-white font-bold text-xs rounded-lg transition border border-slate-200 dark:border-slate-700">메시지</a>
@@ -233,6 +335,120 @@
                     card.innerHTML = `<div class="p-2 text-[10px] text-center flex items-center justify-center h-full break-all">${escapeHtml(p.content)}</div>`;
                 }
                 grid.appendChild(card);
+            });
+        }
+
+        // 📷 프로필 사진 크롭 & 업로드
+        function handleProfileImageSelect(input) {
+            if (!input.files || input.files.length === 0) return;
+            const file = input.files[0];
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const img = document.getElementById('cropperTargetImage');
+                img.src = e.target.result;
+                document.getElementById('cropperModal').classList.remove('hidden');
+                if (cropperInstance) cropperInstance.destroy();
+                cropperInstance = new Cropper(img, { aspectRatio: 1, viewMode: 1 });
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function closeCropperModal() {
+            document.getElementById('cropperModal').classList.add('hidden');
+            if (cropperInstance) { cropperInstance.destroy(); cropperInstance = null; }
+            document.getElementById('profileImgInput').value = '';
+        }
+
+        function applyProfileCrop() {
+            if (!cropperInstance) return;
+            const btn = document.getElementById('profileCropApplyBtn');
+            btn.disabled = true;
+            btn.innerText = '업로드 중...';
+
+            cropperInstance.getCroppedCanvas({ width: 400, height: 400 }).toBlob(async (blob) => {
+                const formData = new FormData();
+                formData.append('file', blob, 'profile.jpg');
+                const res = await fetch('/api/profile-image', { method: 'POST', body: formData });
+                const data = await res.json();
+                btn.disabled = false;
+                btn.innerText = '적용 및 업로드';
+
+                if (data.status === 'success') {
+                    closeCropperModal();
+                    location.reload();
+                } else {
+                    alert(data.message || '사진 변경 실패');
+                }
+            }, 'image/jpeg', 0.9);
+        }
+
+        // 📝 자기소개 변경
+        function submitBioChange() {
+            const bio = document.getElementById('editBioInput').value.trim();
+            fetch('/api/profile-bio', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ bio: bio })
+            }).then(r => r.json()).then(d => {
+                if (d.status === 'success') {
+                    alert('자기소개가 변경되었습니다.');
+                    location.reload();
+                } else alert(d.message);
+            });
+        }
+
+        // 👤 아이디 변경
+        function submitUsernameChange() {
+            const newU = document.getElementById('editUsernameInput').value.trim();
+            if (!newU) { alert('새 아이디를 입력해 주세요.'); return; }
+            if (!confirm(`아이디를 @${newU}(으)로 변경하시겠습니까?\n(아이디는 변경 후 30일 동안 재변경 불가)`)) return;
+
+            fetch('/api/change-username', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ new_username: newU })
+            }).then(r => r.json()).then(d => {
+                if (d.status === 'success') {
+                    alert('아이디가 성공적으로 변경되었습니다!');
+                    window.location.href = `/profile/${d.new_username}`;
+                } else alert(d.message);
+            });
+        }
+
+        // 🔑 비밀번호 변경
+        function submitPasswordChange() {
+            const cur = document.getElementById('currentPwInput').value.trim();
+            const newP = document.getElementById('newPwInput').value.trim();
+            if (!cur || !newP) { alert('현재 비밀번호와 새 비밀번호를 모두 입력해 주세요.'); return; }
+
+            fetch('/api/change-password', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ current_password: cur, new_password: newP })
+            }).then(r => r.json()).then(d => {
+                if (d.status === 'success') {
+                    alert('비밀번호가 성공적으로 변경되었습니다!');
+                    document.getElementById('currentPwInput').value = '';
+                    document.getElementById('newPwInput').value = '';
+                } else alert(d.message);
+            });
+        }
+
+        // ⚠️ 계정 탈퇴
+        function submitDeleteAccount() {
+            const pw = document.getElementById('deleteAccountPwInput').value.trim();
+            if (!pw) { alert('탈퇴를 진행하려면 비밀번호를 입력해 주세요.'); return; }
+            if (!confirm('정말로 계정을 삭제하시겠습니까? 삭제된 데이터는 복구할 수 없습니다.')) return;
+
+            fetch('/api/delete-account', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ password: pw })
+            }).then(r => r.json()).then(d => {
+                if (d.status === 'success') {
+                    alert('계정이 삭제되었습니다. 이용해 주셔서 감사합니다.');
+                    window.location.href = '/';
+                } else alert(d.message);
             });
         }
 
