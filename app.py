@@ -16,7 +16,7 @@ app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1)
 
 app.secret_key = os.environ.get('SECRET_KEY', 'super_secret_key_for_woongstagram_app_2026')
 
-# 🔐 대용량 업로드(50MB) & 365일 영구 세션
+# 🔐 대용량 업로드(50MB) & 365일 영구 세션 설정
 app.config['MAX_CONTENT_LENGTH'] = 50 * 1024 * 1024
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=365)
 app.config['SESSION_COOKIE_SECURE'] = True
@@ -26,13 +26,17 @@ app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
 DEFAULT_DB_URL = "postgresql://neondb_owner:YOUR_PASSWORD@ep-xyz.region.aws.neon.tech/neondb?sslmode=require"
 DATABASE_URL = os.environ.get('DATABASE_URL', DEFAULT_DB_URL)
 
-# 🛠️ Cloudinary 계정 정보 직접 명시 (환경 변수 파싱 오류 100% 방지)
-cloudinary.config(
-    cloud_name=os.environ.get('CLOUDINARY_CLOUD_NAME', 'ivbaolu5'),
-    api_key=os.environ.get('CLOUDINARY_API_KEY', '777156499967142'),
-    api_secret=os.environ.get('CLOUDINARY_API_SECRET', 'fuugnC0w7tgErnuV143zYqbP4J8'),
-    secure=True
-)
+# ☁️ Cloudinary 환경변수 자동 연동 (CLOUDINARY_URL 우선 파싱)
+cloudinary_env_url = os.environ.get('CLOUDINARY_URL')
+if cloudinary_env_url:
+    cloudinary.config(cloudinary_url=cloudinary_env_url, secure=True)
+else:
+    cloudinary.config(
+        cloud_name=os.environ.get('CLOUDINARY_CLOUD_NAME'),
+        api_key=os.environ.get('CLOUDINARY_API_KEY'),
+        api_secret=os.environ.get('CLOUDINARY_API_SECRET'),
+        secure=True
+    )
 
 NEWS_CACHE = {
     'updated_at': None,
@@ -63,9 +67,10 @@ def init_db():
                 username_updated_at TIMESTAMP
             );
         ''')
-        cursor.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS bio VARCHAR(30) DEFAULT '';")
-        cursor.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS is_private BOOLEAN DEFAULT FALSE;")
-        cursor.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS username_updated_at TIMESTAMP;")
+
+        cursor.execute('ALTER TABLE users ADD COLUMN IF NOT EXISTS bio VARCHAR(30) DEFAULT \'\';')
+        cursor.execute('ALTER TABLE users ADD COLUMN IF NOT EXISTS is_private BOOLEAN DEFAULT FALSE;')
+        cursor.execute('ALTER TABLE users ADD COLUMN IF NOT EXISTS username_updated_at TIMESTAMP;')
 
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS posts (
@@ -79,7 +84,7 @@ def init_db():
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             );
         ''')
-        cursor.execute("ALTER TABLE posts ADD COLUMN IF NOT EXISTS is_video BOOLEAN DEFAULT FALSE;")
+        cursor.execute('ALTER TABLE posts ADD COLUMN IF NOT EXISTS is_video BOOLEAN DEFAULT FALSE;')
 
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS comments (
@@ -180,6 +185,14 @@ def init_db():
 
 init_db()
 
+@app.errorhandler(413)
+def request_entity_too_large(error):
+    return jsonify({'status': 'error', 'message': '파일 용량이 너무 큽니다. (최대 50MB)'}), 413
+
+@app.errorhandler(500)
+def internal_server_error(error):
+    return jsonify({'status': 'error', 'message': '서버 처리 중 오류가 발생했습니다.'}), 500
+
 def create_notification(cursor, recipient, actor, notif_type, post_id=None):
     if recipient == actor:
         return
@@ -271,191 +284,6 @@ def upload_file():
         'image_url': image_urls[0] if image_urls else '', 
         'is_video': is_video
     })
-
-# --- 🔍 아이디 찾기 & 비밀번호 재설정 & 계정 관리 APIs ---
-@app.route('/api/find-id', methods=['POST'])
-def find_id():
-    data = request.json or {}
-    email = data.get('email', '').strip()
-    if not email:
-        return jsonify({'status': 'error', 'message': '이메일 주소를 입력해 주세요.'}), 400
-
-    conn = get_db_connection()
-    cursor = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
-    cursor.execute('SELECT username FROM users WHERE email = %s;', (email,))
-    rows = cursor.fetchall()
-    cursor.close()
-    conn.close()
-
-    if rows:
-        usernames = [r['username'] for r in rows]
-        return jsonify({'status': 'success', 'usernames': usernames})
-    return jsonify({'status': 'error', 'message': '해당 이메일로 가입된 계정을 찾을 수 없습니다.'}), 404
-
-@app.route('/api/reset-password', methods=['POST'])
-def reset_password():
-    data = request.json or {}
-    username = data.get('username', '').strip()
-    email = data.get('email', '').strip()
-    new_password = data.get('new_password', '').strip()
-
-    if not username or not email or not new_password:
-        return jsonify({'status': 'error', 'message': '모든 필수 항목을 입력해 주세요.'}), 400
-
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    cursor.execute('SELECT id FROM users WHERE username = %s AND email = %s;', (username, email))
-    user = cursor.fetchone()
-
-    if not user:
-        cursor.close()
-        conn.close()
-        return jsonify({'status': 'error', 'message': '아이디와 이메일 정보가 일치하는 계정이 없습니다.'}), 404
-
-    cursor.execute('UPDATE users SET password = %s WHERE username = %s AND email = %s;', (new_password, username, email))
-    conn.commit()
-    cursor.close()
-    conn.close()
-    return jsonify({'status': 'success'})
-
-@app.route('/api/change-password', methods=['POST'])
-def change_password():
-    if 'username' not in session:
-        return jsonify({'status': 'error', 'message': '로그인이 필요합니다.'}), 401
-
-    data = request.json or {}
-    current_password = data.get('current_password', '').strip()
-    new_password = data.get('new_password', '').strip()
-
-    if not current_password or not new_password:
-        return jsonify({'status': 'error', 'message': '현재 비밀번호와 새 비밀번호를 모두 입력해 주세요.'}), 400
-
-    username = session['username']
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    cursor.execute('SELECT id FROM users WHERE username = %s AND password = %s;', (username, current_password))
-    user = cursor.fetchone()
-
-    if not user:
-        cursor.close()
-        conn.close()
-        return jsonify({'status': 'error', 'message': '현재 비밀번호가 올바르지 않습니다.'}), 400
-
-    cursor.execute('UPDATE users SET password = %s WHERE username = %s;', (new_password, username))
-    conn.commit()
-    cursor.close()
-    conn.close()
-    return jsonify({'status': 'success'})
-
-@app.route('/api/change-username', methods=['POST'])
-def change_username():
-    if 'username' not in session:
-        return jsonify({'status': 'error', 'message': '로그인이 필요합니다.'}), 401
-
-    current_username = session['username']
-    if current_username == 'admin':
-        return jsonify({'status': 'error', 'message': '관리자 계정의 아이디는 변경할 수 없습니다.'}), 400
-
-    data = request.json or {}
-    new_username = data.get('new_username', '').strip()
-
-    if not new_username:
-        return jsonify({'status': 'error', 'message': '새로운 아이디를 입력해 주세요.'}), 400
-
-    if new_username == current_username:
-        return jsonify({'status': 'error', 'message': '현재 아이디와 동일합니다.'}), 400
-
-    conn = get_db_connection()
-    cursor = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
-
-    cursor.execute('SELECT 1 FROM users WHERE username = %s;', (new_username,))
-    if cursor.fetchone():
-        cursor.close()
-        conn.close()
-        return jsonify({'status': 'error', 'message': '이미 다른 사용자가 사용 중인 아이디입니다.'}), 400
-
-    cursor.execute('SELECT username_updated_at FROM users WHERE username = %s;', (current_username,))
-    user_row = cursor.fetchone()
-    now_kst = get_kst_now()
-
-    if user_row and user_row['username_updated_at']:
-        last_updated = user_row['username_updated_at']
-        if last_updated.tzinfo is None:
-            last_updated = last_updated.replace(tzinfo=timezone.utc) + timedelta(hours=9)
-        time_diff = now_kst - last_updated
-        if time_diff.days < 30:
-            remaining_days = 30 - time_diff.days
-            cursor.close()
-            conn.close()
-            return jsonify({'status': 'error', 'message': f'아이디는 30일에 한 번만 변경할 수 있습니다. (약 {remaining_days}일 남음)'}), 400
-
-    try:
-        cursor.execute('UPDATE users SET username = %s, name = %s, username_updated_at = %s WHERE username = %s;', (new_username, new_username, now_kst, current_username))
-        cursor.execute('UPDATE posts SET username = %s WHERE username = %s;', (new_username, current_username))
-        cursor.execute('UPDATE comments SET username = %s WHERE username = %s;', (new_username, current_username))
-        cursor.execute('UPDATE stories SET username = %s WHERE username = %s;', (new_username, current_username))
-        cursor.execute('UPDATE follows SET follower = %s WHERE follower = %s;', (new_username, current_username))
-        cursor.execute('UPDATE follows SET following = %s WHERE following = %s;', (new_username, current_username))
-        cursor.execute('UPDATE follow_requests SET requester = %s WHERE requester = %s;', (new_username, current_username))
-        cursor.execute('UPDATE follow_requests SET target = %s WHERE target = %s;', (new_username, current_username))
-        cursor.execute('UPDATE post_likes SET username = %s WHERE username = %s;', (new_username, current_username))
-        cursor.execute('UPDATE bookmarks SET username = %s WHERE username = %s;', (new_username, current_username))
-        cursor.execute('UPDATE direct_messages SET sender = %s WHERE sender = %s;', (new_username, current_username))
-        cursor.execute('UPDATE direct_messages SET receiver = %s WHERE receiver = %s;', (new_username, current_username))
-        cursor.execute('UPDATE notifications SET recipient = %s WHERE recipient = %s;', (new_username, current_username))
-        cursor.execute('UPDATE notifications SET actor = %s WHERE actor = %s;', (new_username, current_username))
-
-        conn.commit()
-        session.permanent = True
-        session['username'] = new_username
-        session['name'] = new_username
-        cursor.close()
-        conn.close()
-        return jsonify({'status': 'success', 'new_username': new_username})
-    except Exception as e:
-        conn.rollback()
-        cursor.close()
-        conn.close()
-        return jsonify({'status': 'error', 'message': f'아이디 변경 중 오류: {str(e)}'}), 500
-
-@app.route('/api/delete-account', methods=['POST'])
-def delete_account():
-    if 'username' not in session:
-        return jsonify({'status': 'error', 'message': '로그인이 필요합니다.'}), 401
-
-    username = session['username']
-    if username == 'admin':
-        return jsonify({'status': 'error', 'message': '관리자 계정은 삭제할 수 없습니다.'}), 400
-
-    data = request.json or {}
-    password = data.get('password', '').strip()
-
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    cursor.execute('SELECT id FROM users WHERE username = %s AND password = %s;', (username, password))
-    user = cursor.fetchone()
-
-    if not user:
-        cursor.close()
-        conn.close()
-        return jsonify({'status': 'error', 'message': '비밀번호가 올바르지 않습니다.'}), 400
-
-    cursor.execute('DELETE FROM users WHERE username = %s;', (username,))
-    cursor.execute('DELETE FROM posts WHERE username = %s;', (username,))
-    cursor.execute('DELETE FROM comments WHERE username = %s;', (username,))
-    cursor.execute('DELETE FROM stories WHERE username = %s;', (username,))
-    cursor.execute('DELETE FROM follows WHERE follower = %s OR following = %s;', (username, username))
-    cursor.execute('DELETE FROM follow_requests WHERE requester = %s OR target = %s;', (username, username))
-    cursor.execute('DELETE FROM post_likes WHERE username = %s;', (username,))
-    cursor.execute('DELETE FROM bookmarks WHERE username = %s;', (username,))
-    cursor.execute('DELETE FROM direct_messages WHERE sender = %s OR receiver = %s;', (username, username))
-    cursor.execute('DELETE FROM notifications WHERE recipient = %s OR actor = %s;', (username, username))
-    conn.commit()
-    cursor.close()
-    conn.close()
-    session.clear()
-
-    return jsonify({'status': 'success'})
 
 # --- 💬 1:1 DM APIs ---
 @app.route('/api/dm/conversations', methods=['GET'])
@@ -554,7 +382,7 @@ def send_dm_message(partner):
     conn.close()
     return jsonify({'status': 'success'})
 
-# --- 🔖 북마크 APIs ---
+# --- 🔖 북마크 (저장하기) APIs ---
 @app.route('/api/posts/<int:post_id>/bookmark', methods=['POST'])
 def toggle_bookmark(post_id):
     if 'username' not in session:
@@ -758,7 +586,6 @@ def get_tag_posts(tag):
             'title': r['title'] or '',
             'content': r['content'],
             'image_url': image_urls[0] if image_urls else '',
-            'image_urls': image_urls,
             'is_video': r['is_video'],
             'likes': r['likes'],
             'created_at': r['created_at'].strftime('%Y-%m-%d %H:%M:%S') if r['created_at'] else ''
