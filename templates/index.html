@@ -293,7 +293,12 @@
                 <div class="w-full bg-white/30 h-1 rounded-full mb-3 overflow-hidden">
                     <div id="storyProgress" class="bg-white h-full w-0"></div>
                 </div>
-                <span id="storyUser" class="font-bold text-white text-xs">username</span>
+                <div class="flex items-center justify-between text-white text-xs">
+                    <div class="flex items-center gap-2">
+                        <span id="storyUser" class="font-bold">username</span>
+                        <span id="storyTimeAgo" class="text-white/60 text-[10px]">방금 전</span>
+                    </div>
+                </div>
             </div>
             <div id="storyBg" class="absolute inset-0 flex flex-col items-center justify-end text-white p-6 pb-16 text-center bg-cover bg-center">
                 <p id="storyDesc" class="text-lg font-bold text-white drop-shadow"></p>
@@ -366,6 +371,25 @@
                 setTimeout(() => openPostDetailModal(postIdTarget), 300);
             }
         });
+
+        // 🕒 '몇 분 전' 시간 계산 함수 복구
+        function timeAgo(dateString) {
+            if (!dateString) return '방금 전';
+            const formattedDate = dateString.replace(' ', 'T');
+            const past = new Date(formattedDate);
+            const now = new Date();
+            if (isNaN(past.getTime())) return '방금 전';
+
+            const diffInSeconds = Math.floor((now - past) / 1000);
+            if (diffInSeconds < 60) return '방금 전';
+            const diffInMinutes = Math.floor(diffInSeconds / 60);
+            if (diffInMinutes < 60) return `${diffInMinutes}분 전`;
+            const diffInHours = Math.floor(diffInMinutes / 60);
+            if (diffInHours < 24) return `${diffInHours}시간 전`;
+            const diffInDays = Math.floor(diffInHours / 24);
+            if (diffInDays < 7) return `${diffInDays}일 전`;
+            return `${past.getFullYear()}년 ${past.getMonth() + 1}월 ${past.getDate()}일`;
+        }
 
         function formatFormattedText(text) {
             if (!text) return '';
@@ -457,6 +481,7 @@
                             <a href="/profile/${post.username}" class="w-8 h-8 rounded-full overflow-hidden border border-slate-200 dark:border-slate-700 shrink-0">${avatar}</a>
                             <a href="/profile/${post.username}" class="text-xs font-semibold hover:underline">@${escapeHtml(post.username)}</a>
                         </div>
+                        <span class="text-[10px] text-slate-400">${timeAgo(post.created_at)}</span>
                     </div>
                     ${mediaHtml}
                     <div class="p-3 text-xs">
@@ -687,7 +712,7 @@
             document.getElementById('postCroppedPreviewArea').classList.remove('hidden');
         }
 
-        // 📸 스토리 모달 (5초 자동 소멸 및 읽음 상태 연동)
+        // 📸 스토리 모달 (5초 자동 소멸 및 읽음 상태 회색 링 연동)
         function openCreateStoryModal() { 
             if (!currentUser) { openAuthModal(); return; } 
             document.getElementById('createStoryModal').classList.remove('hidden'); 
