@@ -5,6 +5,7 @@ import psycopg2.extras
 import os
 import re
 import json
+import traceback
 import urllib.request
 import xml.etree.ElementTree as ET
 from datetime import datetime, timedelta, timezone
@@ -16,7 +17,6 @@ app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1)
 
 app.secret_key = os.environ.get('SECRET_KEY', 'super_secret_key_for_woongstagram_app_2026')
 
-# 🔐 대용량 업로드(50MB) & 365일 영구 세션 설정
 app.config['MAX_CONTENT_LENGTH'] = 50 * 1024 * 1024
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=365)
 app.config['SESSION_COOKIE_SECURE'] = True
@@ -26,17 +26,28 @@ app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
 DEFAULT_DB_URL = "postgresql://neondb_owner:YOUR_PASSWORD@ep-xyz.region.aws.neon.tech/neondb?sslmode=require"
 DATABASE_URL = os.environ.get('DATABASE_URL', DEFAULT_DB_URL)
 
-# ☁️ Cloudinary 환경변수 자동 연동 (CLOUDINARY_URL 우선 파싱)
-cloudinary_env_url = os.environ.get('CLOUDINARY_URL')
-if cloudinary_env_url:
-    cloudinary.config(cloudinary_url=cloudinary_env_url, secure=True)
-else:
+# ☁️ Cloudinary 환경 설정 함수
+def configure_cloudinary():
+    c_url = os.environ.get('CLOUDINARY_URL', '').strip()
+    if c_url:
+        match = re.match(r'cloudinary://([^:]+):([^@]+)@(.+)', c_url)
+        if match:
+            api_key, api_secret, cloud_name = match.groups()
+            cloudinary.config(
+                cloud_name=cloud_name,
+                api_key=api_key,
+                api_secret=api_secret,
+                secure=True
+            )
+            return
     cloudinary.config(
-        cloud_name=os.environ.get('CLOUDINARY_CLOUD_NAME'),
+        cloud_name=os.environ.get('CLOUDINARY_CLOUD_NAME', 'ivbaolu5'),
         api_key=os.environ.get('CLOUDINARY_API_KEY'),
         api_secret=os.environ.get('CLOUDINARY_API_SECRET'),
         secure=True
     )
+
+configure_cloudinary()
 
 NEWS_CACHE = {
     'updated_at': None,
@@ -185,14 +196,6 @@ def init_db():
 
 init_db()
 
-@app.errorhandler(413)
-def request_entity_too_large(error):
-    return jsonify({'status': 'error', 'message': '파일 용량이 너무 큽니다. (최대 50MB)'}), 413
-
-@app.errorhandler(500)
-def internal_server_error(error):
-    return jsonify({'status': 'error', 'message': '서버 처리 중 오류가 발생했습니다.'}), 500
-
 def create_notification(cursor, recipient, actor, notif_type, post_id=None):
     if recipient == actor:
         return
@@ -243,7 +246,7 @@ def admin_page():
         return "<script>alert('관리자 권한이 필요합니다.'); location.href='/';</script>"
     return render_template('admin.html')
 
-# --- ☁️ Media Upload API ---
+# --- ☁️ Media Upload API (에러 상세 반환) ---
 @app.route('/api/upload', methods=['POST'])
 def upload_file():
     if 'username' not in session:
@@ -258,6 +261,8 @@ def upload_file():
 
     if not files or all(f.filename == '' for f in files):
         return jsonify({'status': 'error', 'message': '선택된 파일이 없습니다.'}), 400
+
+    configure_cloudinary()
 
     for file in files:
         if file and file.filename != '':
@@ -275,8 +280,9 @@ def upload_file():
                 )
                 image_urls.append(upload_result.get('secure_url'))
             except Exception as e:
-                print("Cloudinary Upload Exception:", e)
-                return jsonify({'status': 'error', 'message': f'Cloudinary 업로드 실패: {str(e)}'}), 500
+                err_detail = traceback.format_exc()
+                print("Cloudinary Upload Exception:\n", err_detail)
+                return jsonify({'status': 'error', 'message': f'Cloudinary 업로드 에러: {str(e)}'}), 500
 
     return jsonify({
         'status': 'success', 
@@ -820,6 +826,7 @@ def update_profile_image():
 
     if file:
         try:
+            configure_cloudinary()
             upload_result = cloudinary.uploader.upload(file, folder="woongstagram/profiles")
             image_url = upload_result.get('secure_url')
 
