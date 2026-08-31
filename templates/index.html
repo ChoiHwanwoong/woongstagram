@@ -34,10 +34,9 @@
 </head>
 <body class="bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 font-sans antialiased min-h-screen flex flex-col justify-between selection:bg-pink-500 selection:text-white transition-colors duration-200 pb-16 md:pb-0" onclick="handleOutsideClicks(event)">
 
-    <!-- 🔝 상단 헤더 (인스타그램 완벽 정렬 스타일) -->
+    <!-- 🔝 상단 헤더 -->
     <header class="border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 sticky top-0 z-40 w-full transition-colors">
         <div class="max-w-5xl mx-auto px-4 h-14 flex items-center justify-between gap-4 relative">
-            <!-- 로고 -->
             <div onclick="location.href='/'" class="text-xl sm:text-2xl font-black italic cursor-pointer font-serif text-slate-900 dark:text-white select-none shrink-0">
                 Woongstagram
             </div>
@@ -54,9 +53,14 @@
                 </div>
             </div>
 
-            <!-- 상단 우측 아이콘 (알림, DM, 관리자(조건부), 프로필) -->
-            <div class="flex items-center gap-5 text-lg text-slate-800 dark:text-slate-200 shrink-0">
-                <!-- 🔔 알림 버튼 -->
+            <!-- 상단 우측 아이콘 (게시물 만들기, 릴스, 알림, DM, 관리자, 프로필) -->
+            <div class="flex items-center gap-4 sm:gap-5 text-lg text-slate-800 dark:text-slate-200 shrink-0">
+                <button onclick="openCreatePostModal()" class="hover:text-blue-500 transition" title="새 게시물 만들기">
+                    <i class="fa-regular fa-square-plus"></i>
+                </button>
+                <button onclick="openReelsModal()" class="hover:text-pink-500 transition" title="릴스 동영상 보기">
+                    <i class="fa-solid fa-clapperboard"></i>
+                </button>
                 <div class="relative">
                     <button onclick="toggleNotificationDropdown(event)" class="relative hover:text-slate-500 transition flex items-center" title="알림">
                         <i class="fa-regular fa-heart"></i>
@@ -74,19 +78,13 @@
                         <div id="notifList" class="space-y-2 pt-1"></div>
                     </div>
                 </div>
-
-                <!-- 💬 DM 버튼 -->
                 <button onclick="openDmModal()" class="relative hover:text-blue-500 transition" title="메시지">
                     <i class="fa-regular fa-paper-plane"></i>
                     <span id="dmBadge" class="hidden absolute -top-1 -right-1 bg-blue-500 text-white text-[8px] font-bold w-3.5 h-3.5 rounded-full flex items-center justify-center">0</span>
                 </button>
-
-                <!-- 🔑 관리자 버튼 (PC 전용 / 관리자일 때만 눈에 띄게 배치) -->
                 <a href="/admin" id="headerAdminBtn" class="hidden text-slate-600 dark:text-slate-300 hover:text-red-500 transition" title="관리자 페이지">
                     <i class="fa-solid fa-key"></i>
                 </a>
-
-                <!-- 👤 프로필 버튼 -->
                 <a href="/profile" class="hover:text-slate-500 transition" title="프로필">
                     <i class="fa-regular fa-user"></i>
                 </a>
@@ -136,7 +134,7 @@
         </aside>
     </main>
 
-    <!-- 모바일 하단 바 -->
+    <!-- 📱 모바일 하단 전용 내비게이션 바 -->
     <nav class="fixed bottom-0 left-0 right-0 h-12 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 z-40 flex items-center justify-around text-lg text-slate-800 dark:text-slate-200 md:hidden">
         <a href="/" class="p-2 text-slate-900 dark:text-white"><i class="fa-solid fa-house"></i></a>
         <button onclick="openReelsModal()" class="p-2 hover:text-pink-500"><i class="fa-solid fa-clapperboard"></i></button>
@@ -196,7 +194,7 @@
         <div id="reelsContainer" class="w-full max-w-sm h-[85vh] bg-slate-900 rounded-2xl overflow-hidden relative shadow-2xl border border-slate-800 flex items-center justify-center"></div>
     </div>
 
-    <!-- 📝 2. 게시물 작성 모달 -->
+    <!-- 📝 게시물 작성 모달 -->
     <div id="createPostModal" class="fixed inset-0 bg-black/60 z-50 hidden flex items-center justify-center p-4">
         <div class="bg-white dark:bg-slate-900 w-full max-w-md rounded-2xl p-6 shadow-2xl relative border border-slate-200 dark:border-slate-800">
             <button onclick="closeCreatePostModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
@@ -265,7 +263,7 @@
         </div>
     </div>
 
-    <!-- 1. 로그인 모달 -->
+    <!-- 로그인 모달 -->
     <div id="authModal" class="fixed inset-0 bg-black/60 z-50 hidden flex items-center justify-center p-4">
         <div class="bg-white dark:bg-slate-900 w-full max-w-sm rounded-2xl p-6 shadow-2xl relative border border-slate-200 dark:border-slate-800">
             <button onclick="closeAuthModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
@@ -291,7 +289,7 @@
         </div>
     </div>
 
-    <!-- 4. 스토리 뷰어 모달 (5초 자동 소멸 및 읽음 상태 연동) -->
+    <!-- 스토리 뷰어 모달 -->
     <div id="storyModal" class="fixed inset-0 bg-black/90 z-50 hidden flex items-center justify-center">
         <button onclick="closeStoryModal()" class="absolute top-5 right-5 text-white text-2xl hover:text-slate-400 z-50"><i class="fa-solid fa-xmark"></i></button>
         <div class="w-full max-w-sm h-[580px] bg-slate-900 rounded-2xl overflow-hidden relative flex flex-col justify-between shadow-2xl border border-slate-800">
@@ -378,7 +376,6 @@
             }
         });
 
-        // 🕒 '몇 분 전' 시간 계산 함수
         function timeAgo(dateString) {
             if (!dateString) return '방금 전';
             const formattedDate = dateString.replace(' ', 'T');
@@ -431,7 +428,6 @@
                         loadNotifications();
                         loadFollowRequests();
 
-                        // 🔑 관리자 계정일 때만 상단바에 열쇠 아이콘 노출
                         if (isAdminUser && adminBtn) {
                             adminBtn.classList.remove('hidden');
                         }
@@ -523,7 +519,6 @@
             });
         }
 
-        // ❤️ 실시간 좋아요
         function toggleLike(e, postId) {
             if (e) e.stopPropagation();
             if (!currentUser) { openAuthModal(); return; }
@@ -539,7 +534,6 @@
                 });
         }
 
-        // 🔖 북마크 토글
         function toggleBookmark(e, postId, icon) {
             if (e) e.stopPropagation();
             if (!currentUser) { alert('로그인이 필요합니다.'); openAuthModal(); return; }
@@ -552,7 +546,6 @@
                 });
         }
 
-        // 🔍 실시간 검색창 로직
         function handleSearchInput(v) {
             clearTimeout(searchTimer);
             const drop = document.getElementById('searchResultsDropdown');
@@ -619,7 +612,6 @@
             }, 200);
         }
 
-        // ✂️ 크롭 및 이미지 편집기 전용 함수들
         function setCropRatio(ratio) {
             if (cropperInstance) cropperInstance.setAspectRatio(ratio);
         }
@@ -726,7 +718,6 @@
             document.getElementById('postCroppedPreviewArea').classList.remove('hidden');
         }
 
-        // 📸 스토리 모달 (5초 자동 소멸 및 읽음 상태 링 연동)
         function openCreateStoryModal() { 
             if (!currentUser) { openAuthModal(); return; } 
             document.getElementById('createStoryModal').classList.remove('hidden'); 
@@ -847,7 +838,6 @@
             clearTimeout(storyTimer);
         }
 
-        // 📝 게시물 작성
         function openCreatePostModal() { if(!currentUser){openAuthModal();return;} document.getElementById('createPostModal').classList.remove('hidden'); }
         function closeCreatePostModal() { 
             document.getElementById('createPostModal').classList.add('hidden'); 
@@ -909,7 +899,6 @@
             }
         }
 
-        // 🔍 게시글 상세 보기 모달
         function openPostDetailModal(postId) {
             fetch(`/api/posts/${postId}`)
                 .then(res => res.json())
@@ -986,7 +975,6 @@
             });
         }
 
-        // 💬 DM 모달
         function openDmModal(partner = null) {
             if (!currentUser) { alert('로그인이 필요합니다.'); openAuthModal(); return; }
             document.getElementById('dmModal').classList.remove('hidden');
@@ -1077,7 +1065,6 @@
             });
         }
 
-        // 🎬 릴스 모달
         function openReelsModal() {
             fetch('/api/reels').then(res => res.json()).then(data => {
                 const container = document.getElementById('reelsContainer');
@@ -1099,7 +1086,6 @@
         }
         function closeReelsModal() { document.getElementById('reelsModal').classList.add('hidden'); }
 
-        // 💬 댓글 작성
         function loadComments(postId) {
             fetch(`/api/comments/${postId}`).then(res => res.json()).then(data => {
                 const list = document.getElementById(`commentList-${postId}`);
@@ -1125,7 +1111,6 @@
 
         function focusComment(id) { document.getElementById(`commentInput-${id}`).focus(); }
 
-        // 🔔 알림
         function loadNotifications() {
             if (!currentUser) return;
             fetch('/api/notifications').then(res => res.json()).then(data => {
@@ -1201,7 +1186,6 @@
             if (search && !search.contains(e.target)) search.classList.add('hidden');
         }
 
-        // 로그인 / 회원가입
         function openAuthModal() { document.getElementById('authModal').classList.remove('hidden'); }
         function closeAuthModal() { document.getElementById('authModal').classList.add('hidden'); }
         function toggleAuthMode() {
