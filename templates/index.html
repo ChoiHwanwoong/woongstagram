@@ -18,6 +18,7 @@
         tailwind.config = { darkMode: 'class' }
     </script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    
     <!-- ✂️ Cropper.js -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css"/>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
@@ -36,7 +37,6 @@
     <!-- 🔝 상단 헤더 -->
     <header class="border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 sticky top-0 z-40 w-full transition-colors">
         <div class="max-w-5xl mx-auto px-3 sm:px-4 h-14 flex items-center justify-between gap-2 sm:gap-4 relative">
-            <!-- 로고 -->
             <div onclick="location.href='/'" class="text-xl sm:text-2xl font-black italic cursor-pointer font-serif text-slate-900 dark:text-white select-none shrink-0">
                 Woongstagram
             </div>
@@ -47,23 +47,19 @@
                     <input type="text" id="searchInput" oninput="handleSearchInput(this.value)" placeholder="검색" class="w-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg pl-7 pr-2 py-1 text-xs outline-none focus:bg-white dark:focus:bg-slate-900 focus:border-slate-400 transition text-slate-900 dark:text-slate-100 placeholder:text-slate-400">
                     <i class="fa-solid fa-magnifying-glass absolute left-2.5 top-2 text-slate-400 text-[10px] sm:text-xs"></i>
                 </div>
-
-                <!-- 🔍 검색 결과 드롭다운 -->
                 <div id="searchResultsDropdown" class="hidden absolute top-10 -left-12 sm:left-0 w-64 sm:w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-2xl max-h-80 overflow-y-auto p-2 text-xs z-50 divide-y divide-slate-100 dark:divide-slate-800">
                     <div id="searchUserResults"></div>
                     <div id="searchPostResults"></div>
                 </div>
             </div>
 
-            <!-- 상단 우측 아이콘 (알림 & DM) -->
+            <!-- 상단 우측 아이콘 -->
             <div class="flex items-center gap-3 sm:gap-4 text-lg text-slate-800 dark:text-slate-200 shrink-0">
-                <!-- 🔔 알림 버튼 -->
                 <div class="relative">
                     <button onclick="toggleNotificationDropdown(event)" class="relative p-1.5 hover:text-slate-500 transition flex items-center" title="알림">
                         <i class="fa-regular fa-heart"></i>
                         <span id="notifBadge" class="hidden absolute top-0 right-0 bg-red-500 text-white text-[8px] font-bold w-3.5 h-3.5 rounded-full flex items-center justify-center">0</span>
                     </button>
-
                     <div id="notifDropdown" class="hidden absolute top-10 right-0 w-72 sm:w-80 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl max-h-96 overflow-y-auto p-3 text-xs z-50 divide-y divide-slate-100 dark:divide-slate-800" onclick="event.stopPropagation()">
                         <div class="font-bold text-slate-900 dark:text-white pb-2 mb-1 flex justify-between items-center text-xs">
                             <span>알림</span>
@@ -77,13 +73,11 @@
                     </div>
                 </div>
 
-                <!-- 💬 DM 버튼 -->
                 <button onclick="openDmModal()" class="relative p-1.5 hover:text-blue-500 transition" title="메시지">
                     <i class="fa-regular fa-paper-plane"></i>
                     <span id="dmBadge" class="hidden absolute top-0 right-0 bg-blue-500 text-white text-[8px] font-bold w-3.5 h-3.5 rounded-full flex items-center justify-center">0</span>
                 </button>
 
-                <!-- 👤 PC 화면 전용 상단 프로필/관리자 버튼 -->
                 <a href="/admin" id="headerAdminBtn" class="hidden md:block text-red-500 hover:text-red-700 transition p-1" title="관리자">
                     <i class="fa-solid fa-key"></i>
                 </a>
@@ -96,11 +90,8 @@
 
     <!-- Main Layout -->
     <main class="max-w-4xl mx-auto px-3 sm:px-4 py-4 sm:py-6 w-full flex-1 grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8">
-        
-        <!-- Feed Column (2 Cols) -->
         <section class="md:col-span-2 space-y-4 sm:space-y-6">
-            
-            <!-- Story Bar -->
+            <!-- 스토리 바 -->
             <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-3 sm:p-4 flex items-center gap-3 sm:gap-4 overflow-x-auto scrollbar-hide shadow-sm select-none">
                 <div onclick="openCreateStoryModal()" class="flex flex-col items-center gap-1 min-w-[56px] sm:min-w-[64px] cursor-pointer group shrink-0">
                     <div class="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-slate-100 dark:bg-slate-800 border-2 border-dashed border-slate-300 dark:border-slate-700 flex items-center justify-center text-slate-500 group-hover:border-blue-500 group-hover:text-blue-500 transition">
@@ -108,18 +99,16 @@
                     </div>
                     <span class="text-[10px] sm:text-[11px] font-semibold text-slate-600 dark:text-slate-400 truncate w-12 sm:w-14 text-center">내 스토리</span>
                 </div>
-
                 <div id="storiesContainer" class="flex items-center gap-3 sm:gap-4"></div>
             </div>
 
-            <!-- Feed Posts -->
+            <!-- 피드 포스트 -->
             <div id="postFeedContainer" class="space-y-4 sm:space-y-6"></div>
         </section>
 
-        <!-- Sidebar Column (데스크톱) -->
+        <!-- Sidebar -->
         <aside class="hidden md:block space-y-6">
             <div id="profileCard" class="bg-white dark:bg-slate-900 p-4 border border-slate-200 dark:border-slate-800 rounded-xl shadow-sm"></div>
-            
             <div id="recommendationCard" class="bg-white dark:bg-slate-900 p-4 border border-slate-200 dark:border-slate-800 rounded-xl shadow-sm">
                 <div class="flex items-center justify-between text-xs font-bold text-slate-900 dark:text-white mb-3">
                     <span>회원님을 위한 맞춤 추천</span>
@@ -127,7 +116,6 @@
                 </div>
                 <div id="recommendationList" class="space-y-3 text-xs"></div>
             </div>
-
             <div class="bg-white dark:bg-slate-900 p-4 border border-slate-200 dark:border-slate-800 rounded-xl shadow-sm">
                 <div class="flex items-center justify-between text-xs font-bold text-slate-900 dark:text-white mb-3">
                     <span class="flex items-center gap-1.5"><i class="fa-solid fa-newspaper text-blue-500"></i> 오늘의 주요 뉴스</span>
@@ -135,16 +123,14 @@
                 </div>
                 <div id="newsList" class="space-y-2.5 text-xs"></div>
             </div>
-
             <footer class="text-[11px] text-slate-400 leading-relaxed font-sans px-1">
                 소개 • 도움말 • 개인정보처리방침 • 약관
                 <p class="mt-3 text-slate-500">© 2026 WOONGSTAGRAM WEB APP</p>
             </footer>
         </aside>
-
     </main>
 
-    <!-- 📱 모바일 하단 전용 내비게이션 바 -->
+    <!-- 모바일 하단 바 -->
     <nav class="fixed bottom-0 left-0 right-0 h-12 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 z-40 flex items-center justify-around text-lg text-slate-800 dark:text-slate-200 md:hidden">
         <a href="/" class="p-2 text-slate-900 dark:text-white"><i class="fa-solid fa-house"></i></a>
         <button onclick="openReelsModal()" class="p-2 hover:text-pink-500"><i class="fa-solid fa-clapperboard"></i></button>
@@ -153,7 +139,7 @@
         <a href="/profile" id="bottomProfileLink" class="p-2 hover:text-blue-500"><i class="fa-regular fa-user"></i></a>
     </nav>
 
-    <!-- 🔍 게시글 상세 보기 팝업 모달 -->
+    <!-- 🔍 게시글 상세 보기 모달 -->
     <div id="postDetailModal" class="fixed inset-0 bg-black/70 z-50 hidden flex items-center justify-center p-3 sm:p-4">
         <div class="bg-white dark:bg-slate-900 w-full max-w-2xl max-h-[85vh] rounded-2xl overflow-hidden shadow-2xl relative flex flex-col sm:flex-row border border-slate-200 dark:border-slate-800">
             <button onclick="closePostDetailModal()" class="absolute top-3 right-3 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 z-10 p-1 bg-white/80 dark:bg-slate-800/80 rounded-full"><i class="fa-solid fa-xmark text-lg"></i></button>
@@ -185,11 +171,9 @@
                 </div>
                 <button onclick="closeDmModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
             </div>
-
             <div id="dmListView" class="flex-1 overflow-y-auto p-3 space-y-1">
                 <div id="dmConvContainer" class="space-y-1"></div>
             </div>
-
             <div id="dmChatView" class="hidden flex-1 flex flex-col justify-between bg-slate-50 dark:bg-slate-950 overflow-hidden">
                 <div id="dmMessagesContainer" class="flex-1 overflow-y-auto space-y-2 p-3 text-xs"></div>
                 <div class="p-2.5 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 flex items-center gap-2">
@@ -200,21 +184,17 @@
         </div>
     </div>
 
-    <!-- 🎬 릴스 전체 화면 모달 -->
+    <!-- 🎬 릴스 모달 -->
     <div id="reelsModal" class="fixed inset-0 bg-black/95 z-50 hidden flex items-center justify-center">
-        <button onclick="closeReelsModal()" class="absolute top-5 right-5 text-white text-2xl hover:text-slate-400 z-50">
-            <i class="fa-solid fa-xmark"></i>
-        </button>
+        <button onclick="closeReelsModal()" class="absolute top-5 right-5 text-white text-2xl hover:text-slate-400 z-50"><i class="fa-solid fa-xmark"></i></button>
         <div id="reelsContainer" class="w-full max-w-sm h-[85vh] bg-slate-900 rounded-2xl overflow-hidden relative shadow-2xl border border-slate-800 flex items-center justify-center"></div>
     </div>
 
     <!-- 📝 2. 게시물 작성 모달 -->
     <div id="createPostModal" class="fixed inset-0 bg-black/60 z-50 hidden flex items-center justify-center p-4">
         <div class="bg-white dark:bg-slate-900 w-full max-w-md rounded-2xl p-6 shadow-2xl relative border border-slate-200 dark:border-slate-800">
-            <button onclick="closeCreatePostModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600">
-                <i class="fa-solid fa-xmark text-lg"></i>
-            </button>
-            <h3 class="text-sm font-bold text-center border-b border-slate-100 dark:border-slate-800 pb-3 mb-4 text-slate-900 dark:text-white">새 게시물 만들기</h3>
+            <button onclick="closeCreatePostModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+            <h3 class="text-sm font-bold text-center border-b border-slate-100 dark:border-slate-800 pb-3 mb-4">새 게시물 만들기</h3>
             <div class="space-y-3 text-xs">
                 <div class="border border-slate-200 dark:border-slate-700 rounded-lg p-2.5 bg-slate-50 dark:bg-slate-800 flex flex-col gap-1">
                     <span class="text-[11px] font-semibold text-slate-600 dark:text-slate-300">사진 / 동영상 선택</span>
@@ -233,10 +213,10 @@
     <div id="createStoryModal" class="fixed inset-0 bg-black/60 z-50 hidden flex items-center justify-center p-4">
         <div class="bg-white dark:bg-slate-900 w-full max-w-md rounded-2xl p-6 shadow-2xl relative border border-slate-200 dark:border-slate-800">
             <button onclick="closeCreateStoryModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
-            <h3 class="text-sm font-bold text-center border-b border-slate-100 dark:border-slate-800 pb-3 mb-4 text-slate-900 dark:text-white">내 스토리 올리기 (24시간)</h3>
+            <h3 class="text-sm font-bold text-center border-b border-slate-100 dark:border-slate-800 pb-3 mb-4">내 스토리 올리기 (24시간)</h3>
             <div class="space-y-3 text-xs">
                 <div class="border border-slate-200 dark:border-slate-700 rounded-lg p-2.5 bg-slate-50 dark:bg-slate-800 flex flex-col gap-1">
-                    <span class="text-[11px] font-semibold text-slate-600 dark:text-slate-300">스토리 사진 선택 (선택사항)</span>
+                    <span class="text-[11px] font-semibold text-slate-600 dark:text-slate-300">스토리 사진 선택</span>
                     <input type="file" id="storyFileInput" accept="image/*" onchange="handleMultipleFileSelect(this, 'story')" class="text-xs text-slate-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:bg-pink-50 file:text-pink-600">
                 </div>
                 <div id="storyPreviewArea" class="hidden text-center py-1">
@@ -248,19 +228,33 @@
         </div>
     </div>
 
-    <!-- ✂️ 이미지 크로퍼 모달 -->
-    <div id="cropperModal" class="fixed inset-0 bg-black/80 z-50 hidden flex items-center justify-center p-4">
-        <div class="bg-white dark:bg-slate-900 w-full max-w-lg rounded-2xl overflow-hidden shadow-2xl relative flex flex-col max-h-[90vh]">
-            <div class="p-4 border-b border-slate-100 dark:border-slate-800 font-bold text-center text-xs text-slate-900 dark:text-white flex justify-between items-center">
-                <span id="cropperModalTitle">사진 편집</span>
+    <!-- ✂️ 고기능 이미지 크로퍼 & 편집 모달 -->
+    <div id="cropperModal" class="fixed inset-0 bg-black/85 z-50 hidden flex items-center justify-center p-3 sm:p-4">
+        <div class="bg-white dark:bg-slate-900 w-full max-w-lg rounded-2xl overflow-hidden shadow-2xl relative flex flex-col max-h-[92vh] border border-slate-200 dark:border-slate-800">
+            <div class="p-3 border-b border-slate-100 dark:border-slate-800 font-bold text-xs text-slate-900 dark:text-white flex justify-between items-center">
+                <span id="cropperModalTitle">사진 편집 (1 / 1)</span>
                 <button onclick="closeCropperModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
             </div>
-            <div class="p-4 bg-slate-900 flex-1 overflow-hidden flex items-center justify-center max-h-[400px]">
+            <div class="p-2 bg-black flex-1 overflow-hidden flex items-center justify-center min-h-[300px] max-h-[420px]">
                 <img id="cropperTargetImage" class="max-w-full max-h-full block">
             </div>
-            <div class="p-3 bg-white dark:bg-slate-900 flex gap-2">
-                <button onclick="closeCropperModal()" class="w-1/2 py-2 bg-slate-100 dark:bg-slate-800 font-semibold text-xs rounded-lg">취소</button>
-                <button onclick="applyCroppedImage()" class="w-1/2 py-2 bg-blue-500 hover:bg-blue-600 text-white font-bold text-xs rounded-lg" id="cropperApplyBtn">적용</button>
+            <div class="p-2.5 bg-slate-50 dark:bg-slate-800/80 border-t border-slate-100 dark:border-slate-800 flex flex-wrap items-center justify-between gap-2 text-xs">
+                <div class="flex items-center gap-1.5" id="cropperRatioGroup">
+                    <button onclick="setCropRatio(1)" class="px-2.5 py-1 bg-white dark:bg-slate-700 border rounded font-semibold text-[11px]">1:1</button>
+                    <button onclick="setCropRatio(4/5)" class="px-2.5 py-1 bg-white dark:bg-slate-700 border rounded font-semibold text-[11px]">4:5</button>
+                    <button onclick="setCropRatio(9/16)" class="px-2.5 py-1 bg-white dark:bg-slate-700 border rounded font-semibold text-[11px]">9:16</button>
+                    <button onclick="setCropRatio(NaN)" class="px-2.5 py-1 bg-white dark:bg-slate-700 border rounded font-semibold text-[11px]">자유</button>
+                </div>
+                <div class="flex items-center gap-1 text-slate-700 dark:text-slate-200">
+                    <button onclick="cropperZoom(0.1)" class="p-1.5 bg-white dark:bg-slate-700 border rounded"><i class="fa-solid fa-magnifying-glass-plus"></i></button>
+                    <button onclick="cropperZoom(-0.1)" class="p-1.5 bg-white dark:bg-slate-700 border rounded"><i class="fa-solid fa-magnifying-glass-minus"></i></button>
+                    <button onclick="cropperRotate(90)" class="p-1.5 bg-white dark:bg-slate-700 border rounded"><i class="fa-solid fa-rotate-right"></i></button>
+                    <button onclick="cropperFlip()" class="p-1.5 bg-white dark:bg-slate-700 border rounded"><i class="fa-solid fa-arrows-left-right"></i></button>
+                </div>
+            </div>
+            <div class="p-3 bg-white dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800 flex gap-2">
+                <button onclick="closeCropperModal()" class="w-1/3 py-2 bg-slate-100 dark:bg-slate-800 font-semibold text-xs rounded-lg">취소</button>
+                <button onclick="applyCroppedImage()" class="flex-1 py-2 bg-blue-500 hover:bg-blue-600 text-white font-bold text-xs rounded-lg transition" id="cropperApplyBtn">적용</button>
             </div>
         </div>
     </div>
@@ -268,9 +262,7 @@
     <!-- 1. 로그인 모달 -->
     <div id="authModal" class="fixed inset-0 bg-black/60 z-50 hidden flex items-center justify-center p-4">
         <div class="bg-white dark:bg-slate-900 w-full max-w-sm rounded-2xl p-6 shadow-2xl relative border border-slate-200 dark:border-slate-800">
-            <button onclick="closeAuthModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600">
-                <i class="fa-solid fa-xmark text-lg"></i>
-            </button>
+            <button onclick="closeAuthModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
             <div class="text-center mb-6">
                 <h2 class="text-3xl font-black font-serif italic mb-1 tracking-tight text-slate-900 dark:text-white">Woongstagram</h2>
                 <p class="text-xs text-slate-500" id="authModalSubtitle">Woongstagram에 로그인하세요.</p>
@@ -293,12 +285,14 @@
         </div>
     </div>
 
-    <!-- 4. 스토리 뷰어 모달 -->
+    <!-- 4. 스토리 뷰어 모달 (5초 자동 소멸 및 읽음 상태 연동) -->
     <div id="storyModal" class="fixed inset-0 bg-black/90 z-50 hidden flex items-center justify-center">
         <button onclick="closeStoryModal()" class="absolute top-5 right-5 text-white text-2xl hover:text-slate-400 z-50"><i class="fa-solid fa-xmark"></i></button>
         <div class="w-full max-w-sm h-[580px] bg-slate-900 rounded-2xl overflow-hidden relative flex flex-col justify-between shadow-2xl border border-slate-800">
             <div class="p-4 z-10 bg-gradient-to-b from-black/80 to-transparent">
-                <div class="w-full bg-white/30 h-1 rounded-full mb-3 overflow-hidden"><div id="storyProgress" class="bg-white h-full w-0"></div></div>
+                <div class="w-full bg-white/30 h-1 rounded-full mb-3 overflow-hidden">
+                    <div id="storyProgress" class="bg-white h-full w-0"></div>
+                </div>
                 <span id="storyUser" class="font-bold text-white text-xs">username</span>
             </div>
             <div id="storyBg" class="absolute inset-0 flex flex-col items-center justify-end text-white p-6 pb-16 text-center bg-cover bg-center">
@@ -322,6 +316,7 @@
         let currentFileIndex = 0;
         let postCroppedBlobs = [];
         let storyCroppedBlob = null;
+        let isFlippedX = false;
 
         function getDefaultAvatar(sizeClass = "text-base") {
             return `<div class="w-full h-full bg-slate-200 dark:bg-slate-700 text-slate-400 flex items-center justify-center"><i class="fa-solid fa-user ${sizeClass}"></i></div>`;
@@ -585,7 +580,114 @@
             }, 200);
         }
 
-        // 📸 스토리 모달 및 사진 업로드 연동
+        // ✂️ 크롭 및 이미지 편집기 전용 함수들
+        function setCropRatio(ratio) {
+            if (cropperInstance) cropperInstance.setAspectRatio(ratio);
+        }
+        function cropperZoom(delta) {
+            if (cropperInstance) cropperInstance.zoom(delta);
+        }
+        function cropperRotate(deg) {
+            if (cropperInstance) cropperInstance.rotate(deg);
+        }
+        function cropperFlip() {
+            if (!cropperInstance) return;
+            isFlippedX = !isFlippedX;
+            cropperInstance.scaleX(isFlippedX ? -1 : 1);
+        }
+
+        function handleMultipleFileSelect(input, mode) {
+            if (!input.files || input.files.length === 0) return;
+            currentCropMode = mode;
+            pendingFiles = Array.from(input.files);
+            currentFileIndex = 0;
+            isFlippedX = false;
+            
+            if (mode === 'post') postCroppedBlobs = [];
+            else storyCroppedBlob = null;
+            
+            processNextFile();
+        }
+
+        function processNextFile() {
+            if (currentFileIndex >= pendingFiles.length) {
+                closeCropperModal();
+                if (currentCropMode === 'story' && storyCroppedBlob) {
+                    document.getElementById('storyPreviewImg').src = URL.createObjectURL(storyCroppedBlob);
+                    document.getElementById('storyPreviewArea').classList.remove('hidden');
+                } else if (currentCropMode === 'post') {
+                    updatePostPreviewArea();
+                }
+                return;
+            }
+
+            const file = pendingFiles[currentFileIndex];
+            if (file.type.startsWith('video/')) {
+                postCroppedBlobs.push(file);
+                currentFileIndex++;
+                processNextFile();
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const img = document.getElementById('cropperTargetImage');
+                img.src = e.target.result;
+                
+                document.getElementById('cropperModalTitle').innerText = `사진 편집 (${currentFileIndex + 1} / ${pendingFiles.length})`;
+                document.getElementById('cropperApplyBtn').innerText = (currentFileIndex === pendingFiles.length - 1) ? '적용' : '다음 사진';
+                document.getElementById('cropperModal').classList.remove('hidden');
+
+                if (cropperInstance) {
+                    cropperInstance.destroy();
+                    cropperInstance = null;
+                }
+
+                const initialRatio = currentCropMode === 'story' ? 9/16 : 1;
+                cropperInstance = new Cropper(img, {
+                    aspectRatio: initialRatio,
+                    viewMode: 1,
+                    autoCropArea: 0.95,
+                    responsive: true
+                });
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function closeCropperModal() { 
+            document.getElementById('cropperModal').classList.add('hidden'); 
+            if (cropperInstance) { cropperInstance.destroy(); cropperInstance = null; }
+        }
+
+        function applyCroppedImage() {
+            if (!cropperInstance) return;
+            cropperInstance.getCroppedCanvas({ 
+                maxWidth: 1080,
+                maxHeight: 1920,
+                fillColor: '#fff'
+            }).toBlob(blob => {
+                if (currentCropMode === 'post') postCroppedBlobs.push(blob);
+                else storyCroppedBlob = blob;
+                
+                currentFileIndex++;
+                processNextFile();
+            }, 'image/jpeg', 0.88);
+        }
+
+        function updatePostPreviewArea() {
+            const list = document.getElementById('postPreviewList');
+            list.innerHTML = '';
+            postCroppedBlobs.forEach(blob => {
+                const url = URL.createObjectURL(blob);
+                const el = document.createElement(blob.type && blob.type.startsWith('video/') ? 'video' : 'img');
+                el.src = url;
+                el.className = "w-16 h-16 object-cover rounded-lg border border-slate-200 dark:border-slate-700 shrink-0";
+                list.appendChild(el);
+            });
+            document.getElementById('postCroppedPreviewArea').classList.remove('hidden');
+        }
+
+        // 📸 스토리 모달 (5초 자동 소멸 및 읽음 상태 연동)
         function openCreateStoryModal() { 
             if (!currentUser) { openAuthModal(); return; } 
             document.getElementById('createStoryModal').classList.remove('hidden'); 
@@ -616,18 +718,11 @@
                     const formData = new FormData();
                     formData.append('file', storyCroppedBlob, 'story.jpg');
                     const uploadRes = await fetch('/api/upload', { method: 'POST', body: formData });
-                    const resText = await uploadRes.text();
-                    let uploadData;
-                    try {
-                        uploadData = JSON.parse(resText);
-                    } catch(e) {
-                        throw new Error('서버 응답 오류 (로그인 상태를 확인해 주세요)');
-                    }
-                    
-                    if (uploadData.status === 'success') {
-                        imageUrl = uploadData.image_url;
+                    const d = await uploadRes.json();
+                    if (d.status === 'success') {
+                        imageUrl = d.image_url;
                     } else {
-                        throw new Error(uploadData.message || '이미지 업로드 실패');
+                        throw new Error(d.message || '업로드 실패');
                     }
                 }
 
@@ -636,14 +731,7 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ desc: desc, image_url: imageUrl })
                 });
-                const resText2 = await res.text();
-                let d;
-                try {
-                    d = JSON.parse(resText2);
-                } catch(e) {
-                    throw new Error('서버 응답 오류');
-                }
-
+                const d = await res.json();
                 if (d.status === 'success') {
                     closeCreateStoryModal();
                     loadStories();
@@ -651,7 +739,6 @@
                     alert(d.message || '스토리 등록 실패');
                 }
             } catch (err) {
-                console.error(err);
                 alert('스토리 등록 중 오류: ' + (err.message || err));
             } finally {
                 btn.disabled = false;
@@ -668,7 +755,7 @@
                         const avatar = s.profile_img ? `<img src="${s.profile_img}" class="w-full h-full object-cover">` : getDefaultAvatar("text-xs");
                         const item = document.createElement('div');
                         item.className = "flex flex-col items-center gap-1 min-w-[56px] sm:min-w-[64px] cursor-pointer group shrink-0";
-                        item.onclick = () => showStory(s);
+                        item.onclick = () => showStoryModal(item, s.id, s.username, s.desc, s.image_url, s.profile_img);
                         
                         const ringClass = s.is_viewed ? 'story-viewed' : 'story-ring';
                         item.innerHTML = `
@@ -683,93 +770,42 @@
             });
         }
 
-        function showStory(s) {
-            document.getElementById('storyUser').innerText = `@${s.username}`;
-            document.getElementById('storyDesc').innerText = s.desc || '';
+        function showStoryModal(el, storyId, username, desc, imageUrl, profileImg) {
+            if (currentUser) {
+                fetch(`/api/stories/${storyId}/view`, { method: 'POST' });
+            }
+
+            const ring = el.querySelector('.story-ring');
+            if (ring) { 
+                ring.classList.remove('story-ring'); 
+                ring.classList.add('story-viewed'); 
+            }
+
+            document.getElementById('storyUser').innerText = `@${username}`;
+            document.getElementById('storyDesc').innerText = desc || '';
             const bg = document.getElementById('storyBg');
-            if (s.image_url) {
-                bg.style.backgroundImage = `url('${s.image_url}')`;
+            if (imageUrl) {
+                bg.style.backgroundImage = `url('${imageUrl}')`;
                 bg.className = "absolute inset-0 flex flex-col items-center justify-end text-white p-6 pb-16 text-center bg-cover bg-center";
             } else {
                 bg.style.backgroundImage = 'none';
                 bg.className = "absolute inset-0 flex flex-col items-center justify-center text-white p-8 text-center bg-gradient-to-br from-pink-500 to-rose-600";
             }
-            document.getElementById('storyModal').classList.remove('hidden');
+
+            const modal = document.getElementById('storyModal');
+            const progress = document.getElementById('storyProgress');
+            modal.classList.remove('hidden');
+            progress.classList.remove('animate-progress');
+            void progress.offsetWidth;
+            progress.classList.add('animate-progress');
+
             clearTimeout(storyTimer);
             storyTimer = setTimeout(() => closeStoryModal(), 5000);
         }
+
         function closeStoryModal() { 
             document.getElementById('storyModal').classList.add('hidden'); 
             clearTimeout(storyTimer);
-        }
-
-        // ✂️ 크롭 및 파일 선택 공통 처리
-        function handleMultipleFileSelect(input, mode) {
-            if (!input.files || input.files.length === 0) return;
-            currentCropMode = mode;
-            pendingFiles = Array.from(input.files);
-            currentFileIndex = 0;
-            if (mode === 'post') postCroppedBlobs = [];
-            else storyCroppedBlob = null;
-            processNextFile();
-        }
-
-        function processNextFile() {
-            if (currentFileIndex >= pendingFiles.length) {
-                closeCropperModal();
-                if (currentCropMode === 'story' && storyCroppedBlob) {
-                    document.getElementById('storyPreviewImg').src = URL.createObjectURL(storyCroppedBlob);
-                    document.getElementById('storyPreviewArea').classList.remove('hidden');
-                } else if (currentCropMode === 'post') {
-                    updatePostPreviewArea();
-                }
-                return;
-            }
-            const file = pendingFiles[currentFileIndex];
-            if (file.type.startsWith('video/')) {
-                postCroppedBlobs.push(file);
-                currentFileIndex++;
-                processNextFile();
-                return;
-            }
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                const img = document.getElementById('cropperTargetImage');
-                img.src = e.target.result;
-                document.getElementById('cropperModal').classList.remove('hidden');
-                if (cropperInstance) cropperInstance.destroy();
-                const ratio = currentCropMode === 'story' ? 9/16 : 1;
-                cropperInstance = new Cropper(img, { aspectRatio: ratio, viewMode: 1 });
-            };
-            reader.readAsDataURL(file);
-        }
-
-        function updatePostPreviewArea() {
-            const list = document.getElementById('postPreviewList');
-            list.innerHTML = '';
-            postCroppedBlobs.forEach(blob => {
-                const url = URL.createObjectURL(blob);
-                const el = document.createElement(blob.type && blob.type.startsWith('video/') ? 'video' : 'img');
-                el.src = url;
-                el.className = "w-16 h-16 object-cover rounded-lg border border-slate-200 dark:border-slate-700 shrink-0";
-                list.appendChild(el);
-            });
-            document.getElementById('postCroppedPreviewArea').classList.remove('hidden');
-        }
-
-        function closeCropperModal() { 
-            document.getElementById('cropperModal').classList.add('hidden'); 
-            if (cropperInstance) { cropperInstance.destroy(); cropperInstance = null; }
-        }
-
-        function applyCroppedImage() {
-            if (!cropperInstance) return;
-            cropperInstance.getCroppedCanvas({ maxWidth: 1080 }).toBlob(b => {
-                if (currentCropMode === 'post') postCroppedBlobs.push(b);
-                else storyCroppedBlob = b;
-                currentFileIndex++;
-                processNextFile();
-            }, 'image/jpeg', 0.85);
         }
 
         // 📝 게시물 작성
@@ -804,14 +840,7 @@
                         formData.append('files', b, filename);
                     });
                     const res = await fetch('/api/upload', { method: 'POST', body: formData });
-                    const resText = await res.text();
-                    let d;
-                    try {
-                        d = JSON.parse(resText);
-                    } catch(e) {
-                        throw new Error('서버 업로드 응답 오류 (로그인 상태를 확인해 주세요)');
-                    }
-
+                    const d = await res.json();
                     if (d.status === 'success') {
                         imageUrls = d.image_urls || [d.image_url];
                         isVideo = d.is_video;
@@ -825,13 +854,7 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ content, image_urls: imageUrls, is_video: isVideo })
                 });
-                const resText2 = await res.text();
-                let d2;
-                try {
-                    d2 = JSON.parse(resText2);
-                } catch(e) {
-                    throw new Error('서버 게시글 등록 응답 오류');
-                }
+                const d2 = await res.json();
 
                 if (d2.status === 'success') {
                     closeCreatePostModal();
@@ -840,7 +863,6 @@
                     alert(d2.message || '게시글 등록 실패');
                 }
             } catch (err) {
-                console.error(err);
                 alert('게시글 등록 중 오류: ' + (err.message || err));
             } finally {
                 btn.disabled = false;
@@ -925,7 +947,7 @@
             });
         }
 
-        // 💬 DM 모달 제어
+        // 💬 DM 모달
         function openDmModal(partner = null) {
             if (!currentUser) { alert('로그인이 필요합니다.'); openAuthModal(); return; }
             document.getElementById('dmModal').classList.remove('hidden');
@@ -1038,7 +1060,7 @@
         }
         function closeReelsModal() { document.getElementById('reelsModal').classList.add('hidden'); }
 
-        // 💬 댓글 작성 및 로드
+        // 💬 댓글 작성
         function loadComments(postId) {
             fetch(`/api/comments/${postId}`).then(res => res.json()).then(data => {
                 const list = document.getElementById(`commentList-${postId}`);
