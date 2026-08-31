@@ -217,7 +217,7 @@
             <h3 class="text-sm font-bold text-center border-b border-slate-100 dark:border-slate-800 pb-3 mb-4 text-slate-900 dark:text-white">새 게시물 만들기</h3>
             <div class="space-y-3 text-xs">
                 <div class="border border-slate-200 dark:border-slate-700 rounded-lg p-2.5 bg-slate-50 dark:bg-slate-800 flex flex-col gap-1">
-                    <span class="text-[11px] font-semibold text-slate-600 dark:text-slate-300">사진 / 동영상 선택 (최대 5장)</span>
+                    <span class="text-[11px] font-semibold text-slate-600 dark:text-slate-300">사진 / 동영상 선택</span>
                     <input type="file" id="postFileInput" accept="image/*,video/*" multiple onchange="handleMultipleFileSelect(this, 'post')" class="text-xs text-slate-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-600 hover:file:bg-blue-100">
                 </div>
                 <div id="postCroppedPreviewArea" class="hidden py-2">
@@ -265,56 +265,27 @@
         </div>
     </div>
 
-    <!-- 🔐 1. 로그인 / 회원가입 / 아이디 찾기 / 비밀번호 재설정 통합 모달 -->
+    <!-- 1. 로그인 모달 -->
     <div id="authModal" class="fixed inset-0 bg-black/60 z-50 hidden flex items-center justify-center p-4">
         <div class="bg-white dark:bg-slate-900 w-full max-w-sm rounded-2xl p-6 shadow-2xl relative border border-slate-200 dark:border-slate-800">
             <button onclick="closeAuthModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600">
                 <i class="fa-solid fa-xmark text-lg"></i>
             </button>
-
             <div class="text-center mb-6">
                 <h2 class="text-3xl font-black font-serif italic mb-1 tracking-tight text-slate-900 dark:text-white">Woongstagram</h2>
                 <p class="text-xs text-slate-500" id="authModalSubtitle">Woongstagram에 로그인하세요.</p>
             </div>
-
-            <!-- 로그인 뷰 -->
             <div id="loginFormArea" class="space-y-2.5 text-xs">
                 <input type="text" id="loginUsername" placeholder="사용자 이름 (아이디)" class="w-full px-3 py-2.5 border border-slate-200 dark:border-slate-700 rounded-lg outline-none bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white">
                 <input type="password" id="loginPassword" placeholder="비밀번호" class="w-full px-3 py-2.5 border border-slate-200 dark:border-slate-700 rounded-lg outline-none bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white">
                 <button onclick="handleLoginSubmit()" class="w-full py-2.5 bg-blue-500 hover:bg-blue-600 text-white font-bold rounded-lg transition shadow-sm mt-2">로그인</button>
-                
-                <div class="flex items-center justify-center gap-3 pt-2 text-[11px] text-slate-400">
-                    <button onclick="switchAuthView('findId')" class="hover:text-slate-600 dark:hover:text-slate-200 hover:underline">아이디 찾기</button>
-                    <span>•</span>
-                    <button onclick="switchAuthView('resetPw')" class="hover:text-slate-600 dark:hover:text-slate-200 hover:underline">비밀번호 재설정</button>
-                </div>
             </div>
-
-            <!-- 회원가입 뷰 -->
             <div id="signupFormArea" class="space-y-2.5 text-xs hidden">
                 <input type="text" id="signupUsername" placeholder="사용자 이름 (아이디)" class="w-full px-3 py-2.5 border border-slate-200 dark:border-slate-700 rounded-lg outline-none bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white">
                 <input type="email" id="signupEmail" placeholder="이메일 주소" class="w-full px-3 py-2.5 border border-slate-200 dark:border-slate-700 rounded-lg outline-none bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white">
                 <input type="password" id="signupPassword" placeholder="비밀번호" class="w-full px-3 py-2.5 border border-slate-200 dark:border-slate-700 rounded-lg outline-none bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white">
                 <button onclick="handleSignupSubmit()" class="w-full py-2.5 bg-blue-500 hover:bg-blue-600 text-white font-bold rounded-lg transition shadow-sm mt-2">가입하기</button>
             </div>
-
-            <!-- 🔍 아이디 찾기 뷰 -->
-            <div id="findIdFormArea" class="space-y-2.5 text-xs hidden">
-                <p class="text-[11px] text-slate-500 mb-2">가입 시 등록했던 이메일 주소를 입력해 주세요.</p>
-                <input type="email" id="findIdEmail" placeholder="이메일 주소" class="w-full px-3 py-2.5 border border-slate-200 dark:border-slate-700 rounded-lg outline-none bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white">
-                <button onclick="handleFindIdSubmit()" class="w-full py-2.5 bg-blue-500 hover:bg-blue-600 text-white font-bold rounded-lg transition shadow-sm mt-2">아이디 찾기</button>
-                <div id="findIdResult" class="hidden p-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-center font-bold text-blue-600 dark:text-blue-400 text-xs"></div>
-            </div>
-
-            <!-- 🔑 비밀번호 재설정 뷰 -->
-            <div id="resetPwFormArea" class="space-y-2.5 text-xs hidden">
-                <p class="text-[11px] text-slate-500 mb-2">아이디와 가입 이메일을 입력한 후 새 비밀번호를 설정하세요.</p>
-                <input type="text" id="resetPwUsername" placeholder="사용자 이름 (아이디)" class="w-full px-3 py-2.5 border border-slate-200 dark:border-slate-700 rounded-lg outline-none bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white">
-                <input type="email" id="resetPwEmail" placeholder="등록된 이메일 주소" class="w-full px-3 py-2.5 border border-slate-200 dark:border-slate-700 rounded-lg outline-none bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white">
-                <input type="password" id="resetPwNewPassword" placeholder="새로운 비밀번호" class="w-full px-3 py-2.5 border border-slate-200 dark:border-slate-700 rounded-lg outline-none bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white">
-                <button onclick="handleResetPwSubmit()" class="w-full py-2.5 bg-blue-500 hover:bg-blue-600 text-white font-bold rounded-lg transition shadow-sm mt-2">비밀번호 변경하기</button>
-            </div>
-
             <div class="mt-5 pt-4 border-t border-slate-100 dark:border-slate-800 text-center text-xs text-slate-500">
                 <span id="authToggleText">계정이 없으신가요?</span>
                 <button onclick="toggleAuthMode()" id="authToggleBtn" class="text-blue-500 font-bold ml-1 hover:underline">가입하기</button>
@@ -518,6 +489,7 @@
             });
         }
 
+        // ❤️ 실시간 좋아요
         function toggleLike(e, postId) {
             if (e) e.stopPropagation();
             if (!currentUser) { openAuthModal(); return; }
@@ -533,6 +505,7 @@
                 });
         }
 
+        // 🔖 북마크 토글
         function toggleBookmark(e, postId, icon) {
             if (e) e.stopPropagation();
             if (!currentUser) { alert('로그인이 필요합니다.'); openAuthModal(); return; }
@@ -545,6 +518,7 @@
                 });
         }
 
+        // 🔍 실시간 검색창 로직
         function handleSearchInput(v) {
             clearTimeout(searchTimer);
             const drop = document.getElementById('searchResultsDropdown');
@@ -611,6 +585,7 @@
             }, 200);
         }
 
+        // 📸 스토리 모달 및 사진 업로드 연동
         function openCreateStoryModal() { 
             if (!currentUser) { openAuthModal(); return; } 
             document.getElementById('createStoryModal').classList.remove('hidden'); 
@@ -625,11 +600,10 @@
 
         async function submitNewStory() {
             const desc = document.getElementById('storyDescInput').value.trim();
-            const fileInput = document.getElementById('storyFileInput');
             const btn = document.getElementById('submitStoryBtn');
             let imageUrl = '';
 
-            if (!desc && !storyCroppedBlob && (!fileInput.files || fileInput.files.length === 0)) {
+            if (!desc && !storyCroppedBlob) {
                 alert('스토리 사진이나 문구를 입력해 주세요.');
                 return;
             }
@@ -638,17 +612,17 @@
             btn.innerText = '올리는 중...';
 
             try {
-                let uploadBlob = storyCroppedBlob;
-                if (!uploadBlob && fileInput.files && fileInput.files.length > 0) {
-                    uploadBlob = fileInput.files[0];
-                }
-
-                if (uploadBlob) {
+                if (storyCroppedBlob) {
                     const formData = new FormData();
-                    formData.append('file', uploadBlob, 'story.jpg');
-                    
+                    formData.append('file', storyCroppedBlob, 'story.jpg');
                     const uploadRes = await fetch('/api/upload', { method: 'POST', body: formData });
-                    const uploadData = await uploadRes.json();
+                    const resText = await uploadRes.text();
+                    let uploadData;
+                    try {
+                        uploadData = JSON.parse(resText);
+                    } catch(e) {
+                        throw new Error('서버 응답 오류 (로그인 상태를 확인해 주세요)');
+                    }
                     
                     if (uploadData.status === 'success') {
                         imageUrl = uploadData.image_url;
@@ -662,8 +636,14 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ desc: desc, image_url: imageUrl })
                 });
-                
-                const d = await res.json();
+                const resText2 = await res.text();
+                let d;
+                try {
+                    d = JSON.parse(resText2);
+                } catch(e) {
+                    throw new Error('서버 응답 오류');
+                }
+
                 if (d.status === 'success') {
                     closeCreateStoryModal();
                     loadStories();
@@ -672,7 +652,7 @@
                 }
             } catch (err) {
                 console.error(err);
-                alert(err.message || '스토리 등록 중 오류가 발생했습니다.');
+                alert('스토리 등록 중 오류: ' + (err.message || err));
             } finally {
                 btn.disabled = false;
                 btn.innerText = '스토리 올리기';
@@ -723,6 +703,7 @@
             clearTimeout(storyTimer);
         }
 
+        // ✂️ 크롭 및 파일 선택 공통 처리
         function handleMultipleFileSelect(input, mode) {
             if (!input.files || input.files.length === 0) return;
             currentCropMode = mode;
@@ -783,7 +764,7 @@
 
         function applyCroppedImage() {
             if (!cropperInstance) return;
-            cropperInstance.getCroppedCanvas({ maxWidth: 1080, maxHeight: 1080 }).toBlob(b => {
+            cropperInstance.getCroppedCanvas({ maxWidth: 1080 }).toBlob(b => {
                 if (currentCropMode === 'post') postCroppedBlobs.push(b);
                 else storyCroppedBlob = b;
                 currentFileIndex++;
@@ -791,6 +772,7 @@
             }, 'image/jpeg', 0.85);
         }
 
+        // 📝 게시물 작성
         function openCreatePostModal() { if(!currentUser){openAuthModal();return;} document.getElementById('createPostModal').classList.remove('hidden'); }
         function closeCreatePostModal() { 
             document.getElementById('createPostModal').classList.add('hidden'); 
@@ -802,17 +784,11 @@
 
         async function submitNewPost() {
             const content = document.getElementById('postContentInput').value.trim();
-            const fileInput = document.getElementById('postFileInput');
             const btn = document.getElementById('submitPostBtn');
             let imageUrls = [];
             let isVideo = false;
 
-            let filesToUpload = [...postCroppedBlobs];
-            if (filesToUpload.length === 0 && fileInput.files && fileInput.files.length > 0) {
-                filesToUpload = Array.from(fileInput.files);
-            }
-
-            if (!content && filesToUpload.length === 0) {
+            if (!content && postCroppedBlobs.length === 0) {
                 alert('사진이나 글 내용을 입력해 주세요.');
                 return;
             }
@@ -821,17 +797,21 @@
             btn.innerText = '공유 중...';
 
             try {
-                if (filesToUpload.length > 0) {
+                if (postCroppedBlobs.length > 0) {
                     const formData = new FormData();
-                    filesToUpload.forEach((b, idx) => {
-                        const isVid = (b.type && b.type.startsWith('video/')) || (b.name && b.name.match(/\.(mp4|mov|avi|webm)$/i));
-                        const filename = isVid ? `post_${idx}.mp4` : `post_${idx}.jpg`;
+                    postCroppedBlobs.forEach((b, idx) => {
+                        const filename = (b.type && b.type.startsWith('video/')) ? `post_${idx}.mp4` : `post_${idx}.jpg`;
                         formData.append('files', b, filename);
                     });
-                    
                     const res = await fetch('/api/upload', { method: 'POST', body: formData });
-                    const d = await res.json();
-                    
+                    const resText = await res.text();
+                    let d;
+                    try {
+                        d = JSON.parse(resText);
+                    } catch(e) {
+                        throw new Error('서버 업로드 응답 오류 (로그인 상태를 확인해 주세요)');
+                    }
+
                     if (d.status === 'success') {
                         imageUrls = d.image_urls || [d.image_url];
                         isVideo = d.is_video;
@@ -845,23 +825,30 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ content, image_urls: imageUrls, is_video: isVideo })
                 });
-                
-                const d = await res.json();
-                if (d.status === 'success') {
+                const resText2 = await res.text();
+                let d2;
+                try {
+                    d2 = JSON.parse(resText2);
+                } catch(e) {
+                    throw new Error('서버 게시글 등록 응답 오류');
+                }
+
+                if (d2.status === 'success') {
                     closeCreatePostModal();
                     loadPosts();
                 } else {
-                    alert(d.message || '게시글 등록 실패');
+                    alert(d2.message || '게시글 등록 실패');
                 }
             } catch (err) {
                 console.error(err);
-                alert(err.message || '게시글 등록 중 오류가 발생했습니다.');
+                alert('게시글 등록 중 오류: ' + (err.message || err));
             } finally {
                 btn.disabled = false;
                 btn.innerText = '공유하기';
             }
         }
 
+        // 🔍 게시글 상세 보기 모달
         function openPostDetailModal(postId) {
             fetch(`/api/posts/${postId}`)
                 .then(res => res.json())
@@ -938,6 +925,7 @@
             });
         }
 
+        // 💬 DM 모달 제어
         function openDmModal(partner = null) {
             if (!currentUser) { alert('로그인이 필요합니다.'); openAuthModal(); return; }
             document.getElementById('dmModal').classList.remove('hidden');
@@ -1028,6 +1016,7 @@
             });
         }
 
+        // 🎬 릴스 모달
         function openReelsModal() {
             fetch('/api/reels').then(res => res.json()).then(data => {
                 const container = document.getElementById('reelsContainer');
@@ -1049,6 +1038,7 @@
         }
         function closeReelsModal() { document.getElementById('reelsModal').classList.add('hidden'); }
 
+        // 💬 댓글 작성 및 로드
         function loadComments(postId) {
             fetch(`/api/comments/${postId}`).then(res => res.json()).then(data => {
                 const list = document.getElementById(`commentList-${postId}`);
@@ -1074,6 +1064,7 @@
 
         function focusComment(id) { document.getElementById(`commentInput-${id}`).focus(); }
 
+        // 🔔 알림
         function loadNotifications() {
             if (!currentUser) return;
             fetch('/api/notifications').then(res => res.json()).then(data => {
@@ -1149,135 +1140,29 @@
             if (search && !search.contains(e.target)) search.classList.add('hidden');
         }
 
-        function openAuthModal() { 
-            document.getElementById('authModal').classList.remove('hidden'); 
-            switchAuthView('login');
-        }
-        function closeAuthModal() { 
-            document.getElementById('authModal').classList.add('hidden'); 
-        }
-
-        function switchAuthView(view) {
-            currentAuthView = view;
-            const subtitle = document.getElementById('authModalSubtitle');
-            const toggleText = document.getElementById('authToggleText');
-            const toggleBtn = document.getElementById('authToggleBtn');
-
-            document.getElementById('loginFormArea').classList.add('hidden');
-            document.getElementById('signupFormArea').classList.add('hidden');
-            document.getElementById('findIdFormArea').classList.add('hidden');
-            document.getElementById('resetPwFormArea').classList.add('hidden');
-            document.getElementById('findIdResult').classList.add('hidden');
-
-            if (view === 'login') {
-                document.getElementById('loginFormArea').classList.remove('hidden');
-                subtitle.innerText = 'Woongstagram에 로그인하세요.';
-                toggleText.innerText = '계정이 없으신가요?';
-                toggleBtn.innerText = '가입하기';
-            } else if (view === 'signup') {
-                document.getElementById('signupFormArea').classList.remove('hidden');
-                subtitle.innerText = '친구들의 사진을 보려면 가입하세요.';
-                toggleText.innerText = '계정이 있으신가요?';
-                toggleBtn.innerText = '로그인';
-            } else if (view === 'findId') {
-                document.getElementById('findIdFormArea').classList.remove('hidden');
-                subtitle.innerText = '가입된 사용자 아이디 찾기';
-                toggleText.innerText = '아이디가 기억나셨나요?';
-                toggleBtn.innerText = '로그인';
-            } else if (view === 'resetPw') {
-                document.getElementById('resetPwFormArea').classList.remove('hidden');
-                subtitle.innerText = '비밀번호 재설정';
-                toggleText.innerText = '비밀번호가 기억나셨나요?';
-                toggleBtn.innerText = '로그인';
-            }
-        }
-
+        // 로그인 / 회원가입
+        function openAuthModal() { document.getElementById('authModal').classList.remove('hidden'); }
+        function closeAuthModal() { document.getElementById('authModal').classList.add('hidden'); }
         function toggleAuthMode() {
-            if (currentAuthView === 'signup') switchAuthView('login');
-            else switchAuthView('signup');
+            currentAuthView = currentAuthView === 'login' ? 'signup' : 'login';
+            document.getElementById('loginFormArea').classList.toggle('hidden', currentAuthView !== 'login');
+            document.getElementById('signupFormArea').classList.toggle('hidden', currentAuthView !== 'signup');
+            document.getElementById('authToggleBtn').innerText = currentAuthView === 'login' ? '가입하기' : '로그인';
         }
 
         function handleLoginSubmit() {
             const u = document.getElementById('loginUsername').value.trim();
             const p = document.getElementById('loginPassword').value.trim();
-            if (!u || !p) { alert('아이디와 비밀번호를 입력해 주세요.'); return; }
-
-            fetch('/api/login', { 
-                method: 'POST', 
-                headers: {'Content-Type': 'application/json'}, 
-                body: JSON.stringify({ username: u, password: p }) 
-            })
-            .then(res => res.json())
-            .then(d => { 
-                if (d.status === 'success') location.reload(); 
-                else alert(d.message || '로그인 실패'); 
-            });
+            fetch('/api/login', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ username: u, password: p }) })
+                .then(res => res.json()).then(d => { if(d.status==='success') location.reload(); else alert(d.message); });
         }
 
         function handleSignupSubmit() {
             const u = document.getElementById('signupUsername').value.trim();
             const e = document.getElementById('signupEmail').value.trim();
             const p = document.getElementById('signupPassword').value.trim();
-            if (!u || !e || !p) { alert('모든 항목을 입력해 주세요.'); return; }
-
-            fetch('/api/signup', { 
-                method: 'POST', 
-                headers: {'Content-Type': 'application/json'}, 
-                body: JSON.stringify({ username: u, email: e, password: p }) 
-            })
-            .then(res => res.json())
-            .then(d => { 
-                if (d.status === 'success') location.reload(); 
-                else alert(d.message || '회원가입 실패'); 
-            });
-        }
-
-        function handleFindIdSubmit() {
-            const email = document.getElementById('findIdEmail').value.trim();
-            if (!email) { alert('이메일을 입력해 주세요.'); return; }
-
-            fetch('/api/find-id', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email })
-            })
-            .then(res => res.json())
-            .then(data => {
-                const resBox = document.getElementById('findIdResult');
-                if (data.status === 'success') {
-                    resBox.innerText = `찾으신 아이디: ${data.usernames.map(u => '@' + u).join(', ')}`;
-                    resBox.classList.remove('hidden');
-                } else {
-                    resBox.classList.add('hidden');
-                    alert(data.message || '아이디를 찾을 수 없습니다.');
-                }
-            });
-        }
-
-        function handleResetPwSubmit() {
-            const username = document.getElementById('resetPwUsername').value.trim();
-            const email = document.getElementById('resetPwEmail').value.trim();
-            const newPassword = document.getElementById('resetPwNewPassword').value.trim();
-
-            if (!username || !email || !newPassword) {
-                alert('모든 입력 항목을 채워 주세요.');
-                return;
-            }
-
-            fetch('/api/reset-password', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ username, email, new_password: newPassword })
-            })
-            .then(res => res.json())
-            .then(data => {
-                if (data.status === 'success') {
-                    alert('비밀번호가 성공적으로 변경되었습니다! 변경된 비밀번호로 로그인해 주세요.');
-                    switchAuthView('login');
-                } else {
-                    alert(data.message || '비밀번호 재설정 실패');
-                }
-            });
+            fetch('/api/signup', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ username: u, email: e, password: p }) })
+                .then(res => res.json()).then(d => { if(d.status==='success') location.reload(); else alert(d.message); });
         }
 
         function loadHotNews() {
