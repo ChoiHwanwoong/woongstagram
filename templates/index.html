@@ -28,42 +28,35 @@
         .dark .story-viewed { background: #475569 !important; }
         @keyframes progress { from { width: 0%; } to { width: 100%; } }
         .animate-progress { animation: progress 5s linear forwards; }
-        body { -webkit-text-size-adjust: none; touch-action: manipulation; overflow-x: hidden; }
-        .pwa-install-banner { animation: slideUp 0.4s ease-out forwards; }
-        @keyframes slideUp { from { transform: translateY(100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        body { -webkit-text-size-adjust: none; touch-action: manipulation; }
     </style>
 </head>
 <body class="bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 font-sans antialiased min-h-screen flex flex-col justify-between selection:bg-pink-500 selection:text-white transition-colors duration-200 pb-16 md:pb-0" onclick="handleOutsideClicks(event)">
 
-    <!-- 🔝 상단 헤더 (PC에서는 모든 도구 표시, 모바일에서는 하트/DM만 깔끔하게 배치) -->
+    <!-- 🔝 상단 헤더 -->
     <header class="border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 sticky top-0 z-40 w-full transition-colors">
-        <div class="max-w-5xl mx-auto px-3 sm:px-4 h-14 flex items-center justify-between gap-2 sm:gap-4">
+        <div class="max-w-5xl mx-auto px-3 sm:px-4 h-14 flex items-center justify-between gap-2 sm:gap-4 relative">
             <!-- 로고 -->
             <div onclick="location.href='/'" class="text-xl sm:text-2xl font-black italic cursor-pointer font-serif text-slate-900 dark:text-white select-none shrink-0">
                 Woongstagram
             </div>
 
             <!-- 🔍 실시간 검색창 -->
-            <div class="relative flex-1 max-w-[150px] sm:max-w-xs mx-auto">
+            <div class="relative flex-1 max-w-[150px] sm:max-w-xs mx-auto" onclick="event.stopPropagation()">
                 <div class="relative">
                     <input type="text" id="searchInput" oninput="handleSearchInput(this.value)" placeholder="검색" class="w-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg pl-7 pr-2 py-1 text-xs outline-none focus:bg-white dark:focus:bg-slate-900 focus:border-slate-400 transition text-slate-900 dark:text-slate-100 placeholder:text-slate-400">
                     <i class="fa-solid fa-magnifying-glass absolute left-2.5 top-2 text-slate-400 text-[10px] sm:text-xs"></i>
                 </div>
 
-                <div id="searchResultsDropdown" class="hidden absolute top-10 -left-12 sm:left-0 w-64 sm:w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-xl max-h-80 overflow-y-auto p-2 text-xs z-50 divide-y divide-slate-100 dark:divide-slate-800">
+                <!-- 🔍 검색 결과 드롭다운 -->
+                <div id="searchResultsDropdown" class="hidden absolute top-10 -left-12 sm:left-0 w-64 sm:w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-2xl max-h-80 overflow-y-auto p-2 text-xs z-50 divide-y divide-slate-100 dark:divide-slate-800">
                     <div id="searchUserResults"></div>
                     <div id="searchPostResults"></div>
                 </div>
             </div>
 
-            <!-- 상단 우측 액션 버튼들 -->
-            <div class="flex items-center gap-3 sm:gap-4 text-base sm:text-lg text-slate-800 dark:text-slate-200 shrink-0">
-                <!-- 🖥️ PC 전용 액션 버튼들 (홈, 릴스, 새글, 다크모드) -->
-                <a href="/" class="hidden md:inline-block hover:text-slate-500" title="홈"><i class="fa-solid fa-house"></i></a>
-                <button onclick="openReelsModal()" class="hidden md:inline-block hover:text-pink-500" title="릴스"><i class="fa-solid fa-clapperboard"></i></button>
-                <button onclick="openCreatePostModal()" class="hidden md:inline-block hover:text-blue-500" title="새 게시물"><i class="fa-square-plus fa-regular"></i></button>
-                <button onclick="toggleDarkMode()" class="hidden md:inline-block hover:text-amber-500" title="테마 변경"><i id="themeIconPC" class="fa-regular fa-moon"></i></button>
-
+            <!-- 상단 우측 아이콘 (알림 & DM) -->
+            <div class="flex items-center gap-3 sm:gap-4 text-lg text-slate-800 dark:text-slate-200 shrink-0">
                 <!-- 🔔 알림 버튼 -->
                 <div class="relative">
                     <button onclick="toggleNotificationDropdown(event)" class="relative p-1.5 hover:text-slate-500 transition flex items-center" title="알림">
@@ -71,7 +64,7 @@
                         <span id="notifBadge" class="hidden absolute top-0 right-0 bg-red-500 text-white text-[8px] font-bold w-3.5 h-3.5 rounded-full flex items-center justify-center">0</span>
                     </button>
 
-                    <div id="notifDropdown" class="hidden absolute top-10 right-0 w-72 sm:w-80 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl max-h-96 overflow-y-auto p-3 text-xs z-50 divide-y divide-slate-100 dark:divide-slate-800">
+                    <div id="notifDropdown" class="hidden absolute top-10 right-0 w-72 sm:w-80 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl max-h-96 overflow-y-auto p-3 text-xs z-50 divide-y divide-slate-100 dark:divide-slate-800" onclick="event.stopPropagation()">
                         <div class="font-bold text-slate-900 dark:text-white pb-2 mb-1 flex justify-between items-center text-xs">
                             <span>알림</span>
                             <span id="unreadNotifText" class="text-[10px] text-blue-500 font-normal"></span>
@@ -90,9 +83,13 @@
                     <span id="dmBadge" class="hidden absolute top-0 right-0 bg-blue-500 text-white text-[8px] font-bold w-3.5 h-3.5 rounded-full flex items-center justify-center">0</span>
                 </button>
 
-                <!-- 🖥️ PC 전용 프로필/관리자 버튼 -->
-                <a href="/admin" id="headerAdminBtn" class="hidden text-red-500 hover:text-red-700 transition p-1" title="관리자"><i class="fa-solid fa-key"></i></a>
-                <a href="/profile" id="headerProfileBtn" class="hidden md:inline-block hover:text-slate-500 transition p-1" title="프로필"><i class="fa-regular fa-user"></i></a>
+                <!-- 👤 PC 화면 전용 상단 프로필/관리자 버튼 -->
+                <a href="/admin" id="headerAdminBtn" class="hidden md:block text-red-500 hover:text-red-700 transition p-1" title="관리자">
+                    <i class="fa-solid fa-key"></i>
+                </a>
+                <a href="/profile" id="headerProfileBtn" class="hidden md:block hover:text-slate-500 transition p-1" title="프로필">
+                    <i class="fa-regular fa-user"></i>
+                </a>
             </div>
         </div>
     </header>
@@ -153,7 +150,7 @@
         <button onclick="openReelsModal()" class="p-2 hover:text-pink-500"><i class="fa-solid fa-clapperboard"></i></button>
         <button onclick="openCreatePostModal()" class="p-2 hover:text-blue-500"><i class="fa-square-plus fa-regular text-xl"></i></button>
         <button onclick="toggleDarkMode()" class="p-2 hover:text-amber-500"><i id="themeIconMobile" class="fa-regular fa-moon"></i></button>
-        <a href="/profile" class="p-2 hover:text-blue-500"><i class="fa-regular fa-user"></i></a>
+        <a href="/profile" id="bottomProfileLink" class="p-2 hover:text-blue-500"><i class="fa-regular fa-user"></i></a>
     </nav>
 
     <!-- 💬 1:1 DM 모달 -->
@@ -210,6 +207,25 @@
         </div>
     </div>
 
+    <!-- 📸 스토리 작성 모달 (사진 파일 선택 및 9:16 크롭 완벽 연동) -->
+    <div id="createStoryModal" class="fixed inset-0 bg-black/60 z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-slate-900 w-full max-w-md rounded-2xl p-6 shadow-2xl relative border border-slate-200 dark:border-slate-800">
+            <button onclick="closeCreateStoryModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+            <h3 class="text-sm font-bold text-center border-b border-slate-100 dark:border-slate-800 pb-3 mb-4 text-slate-900 dark:text-white">내 스토리 올리기 (24시간)</h3>
+            <div class="space-y-3 text-xs">
+                <div class="border border-slate-200 dark:border-slate-700 rounded-lg p-2.5 bg-slate-50 dark:bg-slate-800 flex flex-col gap-1">
+                    <span class="text-[11px] font-semibold text-slate-600 dark:text-slate-300">스토리 사진 선택 (선택사항)</span>
+                    <input type="file" id="storyFileInput" accept="image/*" onchange="handleMultipleFileSelect(this, 'story')" class="text-xs text-slate-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:bg-pink-50 file:text-pink-600">
+                </div>
+                <div id="storyPreviewArea" class="hidden text-center py-1">
+                    <img id="storyPreviewImg" class="max-h-36 mx-auto rounded-lg border border-slate-200 dark:border-slate-700 shadow-sm">
+                </div>
+                <textarea id="storyDescInput" rows="3" placeholder="스토리에 남길 문구..." class="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-lg outline-none bg-transparent text-slate-900 dark:text-white resize-none"></textarea>
+                <button id="submitStoryBtn" onclick="submitNewStory()" class="w-full py-2.5 bg-pink-500 hover:bg-pink-600 text-white font-bold rounded-lg transition disabled:bg-pink-300">스토리 올리기</button>
+            </div>
+        </div>
+    </div>
+
     <!-- ✂️ 이미지 크로퍼 모달 -->
     <div id="cropperModal" class="fixed inset-0 bg-black/80 z-50 hidden flex items-center justify-center p-4">
         <div class="bg-white dark:bg-slate-900 w-full max-w-lg rounded-2xl overflow-hidden shadow-2xl relative flex flex-col max-h-[90vh]">
@@ -255,18 +271,7 @@
         </div>
     </div>
 
-    <!-- 3. 스토리 모달 -->
-    <div id="createStoryModal" class="fixed inset-0 bg-black/60 z-50 hidden flex items-center justify-center p-4">
-        <div class="bg-white dark:bg-slate-900 w-full max-w-md rounded-2xl p-6 shadow-2xl relative border border-slate-200 dark:border-slate-800">
-            <button onclick="closeCreateStoryModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
-            <h3 class="text-sm font-bold text-center border-b border-slate-100 dark:border-slate-800 pb-3 mb-4 text-slate-900 dark:text-white">내 스토리 올리기 (24시간)</h3>
-            <div class="space-y-3 text-xs">
-                <textarea id="storyDescInput" rows="3" placeholder="스토리에 남길 문구..." class="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-lg outline-none bg-transparent text-slate-900 dark:text-white resize-none"></textarea>
-                <button onclick="submitNewStory()" class="w-full py-2.5 bg-pink-500 hover:bg-pink-600 text-white font-bold rounded-lg transition">스토리 올리기</button>
-            </div>
-        </div>
-    </div>
-
+    <!-- 4. 스토리 뷰어 모달 -->
     <div id="storyModal" class="fixed inset-0 bg-black/90 z-50 hidden flex items-center justify-center">
         <button onclick="closeStoryModal()" class="absolute top-5 right-5 text-white text-2xl hover:text-slate-400 z-50"><i class="fa-solid fa-xmark"></i></button>
         <div class="w-full max-w-sm h-[580px] bg-slate-900 rounded-2xl overflow-hidden relative flex flex-col justify-between shadow-2xl border border-slate-800">
@@ -280,16 +285,21 @@
         </div>
     </div>
 
+    <!-- Scripts -->
     <script>
         let currentUser = null;
         let isAdminUser = false;
         let currentAuthView = 'login';
         let activeDmPartner = null;
         let searchTimer = null;
+        let storyTimer = null;
+
         let cropperInstance = null;
+        let currentCropMode = null;
         let pendingFiles = [];
         let currentFileIndex = 0;
         let postCroppedBlobs = [];
+        let storyCroppedBlob = null;
 
         function getDefaultAvatar(sizeClass = "text-base") {
             return `<div class="w-full h-full bg-slate-200 dark:bg-slate-700 text-slate-400 flex items-center justify-center"><i class="fa-solid fa-user ${sizeClass}"></i></div>`;
@@ -300,14 +310,10 @@
                 document.documentElement.classList.add('dark');
                 const tMob = document.getElementById('themeIconMobile');
                 if (tMob) tMob.className = 'fa-regular fa-sun';
-                const tPC = document.getElementById('themeIconPC');
-                if (tPC) tPC.className = 'fa-regular fa-sun';
             } else {
                 document.documentElement.classList.remove('dark');
                 const tMob = document.getElementById('themeIconMobile');
                 if (tMob) tMob.className = 'fa-regular fa-moon';
-                const tPC = document.getElementById('themeIconPC');
-                if (tPC) tPC.className = 'fa-regular fa-moon';
             }
         }
 
@@ -317,15 +323,11 @@
                 localStorage.theme = 'light';
                 const tMob = document.getElementById('themeIconMobile');
                 if (tMob) tMob.className = 'fa-regular fa-moon';
-                const tPC = document.getElementById('themeIconPC');
-                if (tPC) tPC.className = 'fa-regular fa-moon';
             } else {
                 document.documentElement.classList.add('dark');
                 localStorage.theme = 'dark';
                 const tMob = document.getElementById('themeIconMobile');
                 if (tMob) tMob.className = 'fa-regular fa-sun';
-                const tPC = document.getElementById('themeIconPC');
-                if (tPC) tPC.className = 'fa-regular fa-sun';
             }
         }
 
@@ -347,19 +349,19 @@
         function formatFormattedText(text) {
             if (!text) return '';
             let formatted = escapeHtml(text);
-            formatted = formatted.replace(/#([a-zA-Z0-9ㄱ-ㅎ가-힣_]+)/g, '<span onclick="filterByTag(\'$1\')" class="text-blue-500 font-semibold cursor-pointer hover:underline">#$1</span>');
-            formatted = formatted.replace(/@([a-zA-Z0-9_]+)/g, '<a href="/profile/$1" class="text-blue-500 font-semibold hover:underline">@$1</a>');
+            formatted = formatted.replace(/#([a-zA-Z0-9ㄱ-ㅎ가-힣_]+)/g, '<span onclick="event.stopPropagation(); filterByTag(\'$1\')" class="text-blue-500 font-semibold cursor-pointer hover:underline">#$1</span>');
+            formatted = formatted.replace(/@([a-zA-Z0-9_]+)/g, '<a href="/profile/$1" onclick="event.stopPropagation();" class="text-blue-500 font-semibold hover:underline">@$1</a>');
             return formatted;
         }
 
         function filterByTag(tag) {
-            fetch(`/api/posts/tag/${tag}`)
+            fetch(`/api/posts/tag/${encodeURIComponent(tag)}`)
                 .then(res => res.json())
                 .then(data => {
                     const feed = document.getElementById('postFeedContainer');
                     feed.innerHTML = `<div class="p-3 bg-blue-50 dark:bg-slate-800 rounded-xl text-xs font-bold text-blue-600 flex justify-between items-center">
-                        <span>#${tag} 검색 결과 (${data.posts.length}개)</span>
-                        <button onclick="loadPosts()" class="text-slate-500 hover:text-slate-800">전체 보기</button>
+                        <span>#${escapeHtml(tag)} 검색 결과 (${data.posts.length}개)</span>
+                        <button onclick="loadPosts()" class="text-slate-500 hover:text-slate-800 dark:hover:text-slate-200">전체 보기</button>
                     </div>`;
                     renderPostsToContainer(data.posts, feed);
                 });
@@ -370,11 +372,9 @@
                 .then(res => res.json())
                 .then(data => {
                     const card = document.getElementById('profileCard');
-                    const adminBtn = document.getElementById('headerAdminBtn');
                     if (data.logged_in) {
                         currentUser = data.username;
                         isAdminUser = data.is_admin;
-                        if (isAdminUser && adminBtn) adminBtn.classList.remove('hidden');
                         loadNotifications();
                         loadFollowRequests();
 
@@ -441,10 +441,10 @@
                     <div class="p-3 text-xs">
                         <div class="flex items-center justify-between text-xl mb-2.5 text-slate-800 dark:text-slate-200">
                             <div class="flex items-center gap-4">
-                                <i onclick="toggleLike(${post.id})" id="likeIcon-${post.id}" class="${post.is_liked ? 'fa-solid fa-heart text-red-500' : 'fa-regular fa-heart'} cursor-pointer"></i>
+                                <i onclick="toggleLike(event, ${post.id})" id="likeIcon-${post.id}" class="${post.is_liked ? 'fa-solid fa-heart text-red-500' : 'fa-regular fa-heart'} cursor-pointer"></i>
                                 <i onclick="focusComment(${post.id})" class="fa-regular fa-comment cursor-pointer"></i>
                             </div>
-                            <i onclick="toggleBookmark(${post.id}, this)" class="${post.is_bookmarked ? 'fa-solid fa-bookmark text-slate-900 dark:text-white' : 'fa-regular fa-bookmark'} cursor-pointer hover:text-blue-500" title="저장하기"></i>
+                            <i onclick="toggleBookmark(event, ${post.id}, this)" class="${post.is_bookmarked ? 'fa-solid fa-bookmark text-slate-900 dark:text-white' : 'fa-regular fa-bookmark'} cursor-pointer hover:text-blue-500" title="저장하기"></i>
                         </div>
                         <p class="font-semibold mb-1" id="likeCount-${post.id}">좋아요 ${post.likes}개</p>
                         <p class="leading-relaxed mb-3">
@@ -453,7 +453,7 @@
                         </p>
                         <div id="commentList-${post.id}" class="space-y-1 text-[11px] mb-3"></div>
                         <div class="pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
-                            <input type="text" id="commentInput-${post.id}" placeholder="댓글 달기..." onkeypress="if(event.key==='Enter') addComment(${post.id})" class="w-full text-xs outline-none bg-transparent placeholder-slate-400">
+                            <input type="text" id="commentInput-${post.id}" placeholder="댓글 달기..." onkeypress="if(event.key==='Enter') addComment(${post.id})" class="flex-1 text-xs outline-none bg-transparent placeholder-slate-400">
                             <button onclick="addComment(${post.id})" class="text-blue-500 font-semibold text-xs ml-2 hover:text-blue-700">게시</button>
                         </div>
                     </div>
@@ -463,7 +463,25 @@
             });
         }
 
-        function toggleBookmark(postId, icon) {
+        // ❤️ 실시간 좋아요 (페이지 새로고침 없이 즉시 반영)
+        function toggleLike(e, postId) {
+            e.stopPropagation();
+            if (!currentUser) { openAuthModal(); return; }
+            fetch(`/api/posts/${postId}/like`, { method: 'POST' })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        const icon = document.getElementById(`likeIcon-${postId}`);
+                        const count = document.getElementById(`likeCount-${postId}`);
+                        if (icon) icon.className = data.is_liked ? 'fa-solid fa-heart text-red-500 cursor-pointer' : 'fa-regular fa-heart cursor-pointer';
+                        if (count) count.innerText = `좋아요 ${data.likes}개`;
+                    }
+                });
+        }
+
+        // 🔖 북마크 토글
+        function toggleBookmark(e, postId, icon) {
+            e.stopPropagation();
             if (!currentUser) { alert('로그인이 필요합니다.'); openAuthModal(); return; }
             fetch(`/api/posts/${postId}/bookmark`, { method: 'POST' })
                 .then(res => res.json())
@@ -474,201 +492,129 @@
                 });
         }
 
-        function openReelsModal() {
-            fetch('/api/reels')
-                .then(res => res.json())
-                .then(data => {
-                    const container = document.getElementById('reelsContainer');
-                    container.innerHTML = '';
-                    if (data.status === 'success' && data.reels.length > 0) {
-                        const reel = data.reels[0];
-                        container.innerHTML = `
-                            <video src="${reel.video_url}" autoplay loop playsinline class="w-full h-full object-cover"></video>
-                            <div class="absolute bottom-4 left-4 right-4 text-white text-xs drop-shadow z-10">
-                                <p class="font-bold mb-1">@${escapeHtml(reel.username)}</p>
-                                <p>${formatFormattedText(reel.content)}</p>
-                            </div>
-                        `;
-                        document.getElementById('reelsModal').classList.remove('hidden');
-                    } else {
-                        alert('등록된 릴스 동영상이 없습니다.');
-                    }
-                });
-        }
-        function closeReelsModal() { document.getElementById('reelsModal').classList.add('hidden'); }
+        // 🔍 실시간 검색창 로직 (유저 + 게시글/해시태그 결과 완벽 연동)
+        function handleSearchInput(v) {
+            clearTimeout(searchTimer);
+            const drop = document.getElementById('searchResultsDropdown');
+            const uBox = document.getElementById('searchUserResults');
+            const pBox = document.getElementById('searchPostResults');
 
-        function openDmModal(partner = null) {
-            if (!currentUser) { alert('로그인이 필요합니다.'); openAuthModal(); return; }
-            document.getElementById('dmModal').classList.remove('hidden');
-            if (partner && partner !== currentUser) {
-                loadDmMessages(partner);
-            } else {
-                showDmList();
+            if (!v.trim()) {
+                drop.classList.add('hidden');
+                return;
+            }
+
+            searchTimer = setTimeout(() => {
+                fetch(`/api/search?q=${encodeURIComponent(v.trim())}`)
+                    .then(res => res.json())
+                    .then(data => {
+                        uBox.innerHTML = ''; 
+                        pBox.innerHTML = '';
+
+                        let hasResults = false;
+
+                        if (data.users && data.users.length > 0) {
+                            hasResults = true;
+                            const uTitle = document.createElement('div');
+                            uTitle.className = "text-[10px] font-bold text-slate-400 px-2 py-1";
+                            uTitle.innerText = "사용자";
+                            uBox.appendChild(uTitle);
+
+                            data.users.forEach(u => {
+                                const a = document.createElement('a');
+                                a.href = `/profile/${u.username}`;
+                                a.className = "flex items-center gap-2 p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded font-bold";
+                                const uAvatar = u.profile_img ? `<img src="${u.profile_img}" class="w-6 h-6 rounded-full object-cover">` : getDefaultAvatar("text-[9px]");
+                                a.innerHTML = `<div class="w-6 h-6 rounded-full overflow-hidden shrink-0">${uAvatar}</div><span>@${escapeHtml(u.username)}</span>`;
+                                uBox.appendChild(a);
+                            });
+                        }
+
+                        if (data.posts && data.posts.length > 0) {
+                            hasResults = true;
+                            const pTitle = document.createElement('div');
+                            pTitle.className = "text-[10px] font-bold text-slate-400 px-2 py-1 mt-1";
+                            pTitle.innerText = "게시물 / 태그";
+                            pBox.appendChild(pTitle);
+
+                            data.posts.forEach(p => {
+                                const div = document.createElement('div');
+                                div.className = "p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded cursor-pointer truncate";
+                                div.onclick = () => {
+                                    drop.classList.add('hidden');
+                                    renderPostsToContainer([p], document.getElementById('postFeedContainer'));
+                                };
+                                div.innerHTML = `<p class="font-semibold truncate">${escapeHtml(p.content)}</p><span class="text-[9px] text-slate-400">@${escapeHtml(p.username)}</span>`;
+                                pBox.appendChild(div);
+                            });
+                        }
+
+                        if (hasResults) {
+                            drop.classList.remove('hidden');
+                        } else {
+                            uBox.innerHTML = '<div class="p-3 text-center text-slate-400 text-xs">검색 결과가 없습니다.</div>';
+                            drop.classList.remove('hidden');
+                        }
+                    });
+            }, 200);
+        }
+
+        // 📸 스토리 모달 및 사진 업로드 연동
+        function openCreateStoryModal() { 
+            if (!currentUser) { openAuthModal(); return; } 
+            document.getElementById('createStoryModal').classList.remove('hidden'); 
+        }
+        function closeCreateStoryModal() { 
+            document.getElementById('createStoryModal').classList.add('hidden'); 
+            storyCroppedBlob = null;
+            document.getElementById('storyPreviewArea').classList.add('hidden');
+            document.getElementById('storyFileInput').value = '';
+            document.getElementById('storyDescInput').value = '';
+        }
+
+        async function submitNewStory() {
+            const desc = document.getElementById('storyDescInput').value.trim();
+            const btn = document.getElementById('submitStoryBtn');
+            let imageUrl = '';
+
+            if (!desc && !storyCroppedBlob) {
+                alert('스토리 사진이나 문구를 입력해 주세요.');
+                return;
+            }
+
+            btn.disabled = true;
+            btn.innerText = '올리는 중...';
+
+            try {
+                if (storyCroppedBlob) {
+                    const formData = new FormData();
+                    formData.append('file', storyCroppedBlob, 'story.jpg');
+                    const uploadRes = await fetch('/api/upload', { method: 'POST', body: formData });
+                    const uploadData = await uploadRes.json();
+                    if (uploadData.status === 'success') {
+                        imageUrl = uploadData.image_url;
+                    }
+                }
+
+                const res = await fetch('/api/stories', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ desc: desc, image_url: imageUrl })
+                });
+                const d = await res.json();
+                if (d.status === 'success') {
+                    closeCreateStoryModal();
+                    loadStories();
+                } else {
+                    alert(d.message || '스토리 등록 실패');
+                }
+            } catch (err) {
+                alert('업로드 중 오류가 발생했습니다.');
+            } finally {
+                btn.disabled = false;
+                btn.innerText = '스토리 올리기';
             }
         }
-
-        function closeDmModal() {
-            document.getElementById('dmModal').classList.add('hidden');
-            activeDmPartner = null;
-        }
-
-        function showDmList() {
-            activeDmPartner = null;
-            document.getElementById('dmTitle').innerText = '메시지';
-            document.getElementById('dmBackBtn').classList.add('hidden');
-            document.getElementById('dmListView').classList.remove('hidden');
-            document.getElementById('dmChatView').classList.add('hidden');
-            loadDmConversations();
-        }
-
-        function loadDmConversations() {
-            fetch('/api/dm/conversations')
-                .then(res => res.json())
-                .then(data => {
-                    const container = document.getElementById('dmConvContainer');
-                    container.innerHTML = '';
-                    if (!data.conversations || data.conversations.length === 0) {
-                        container.innerHTML = '<p class="text-slate-400 text-xs py-10 text-center">대화 내역이 없습니다.<br><span class="text-[11px]">프로필에서 [메시지]를 눌러 대화를 시작해 보세요!</span></p>';
-                        return;
-                    }
-                    data.conversations.forEach(c => {
-                        const avatar = c.profile_img ? `<img src="${c.profile_img}" class="w-full h-full object-cover">` : getDefaultAvatar("text-xs");
-                        const item = document.createElement('div');
-                        item.className = "p-2.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer flex items-center justify-between gap-2.5 transition";
-                        item.onclick = () => loadDmMessages(c.partner);
-                        item.innerHTML = `
-                            <div class="flex items-center gap-3 truncate">
-                                <div class="w-9 h-9 rounded-full overflow-hidden border border-slate-200 dark:border-slate-700 shrink-0">${avatar}</div>
-                                <div class="truncate">
-                                    <p class="font-bold text-xs text-slate-900 dark:text-white">@${escapeHtml(c.partner)}</p>
-                                    <p class="text-[11px] text-slate-400 truncate">${escapeHtml(c.last_message)}</p>
-                                </div>
-                            </div>
-                            ${c.unread_count > 0 ? `<span class="bg-blue-500 text-white text-[9px] px-1.5 py-0.5 rounded-full font-bold">${c.unread_count}</span>` : ''}
-                        `;
-                        container.appendChild(item);
-                    });
-                });
-        }
-
-        function loadDmMessages(partner) {
-            activeDmPartner = partner;
-            document.getElementById('dmTitle').innerText = `@${partner}`;
-            document.getElementById('dmBackBtn').classList.remove('hidden');
-            document.getElementById('dmListView').classList.add('hidden');
-            document.getElementById('dmChatView').classList.remove('hidden');
-
-            fetch(`/api/dm/${partner}`)
-                .then(res => res.json())
-                .then(data => {
-                    const container = document.getElementById('dmMessagesContainer');
-                    container.innerHTML = '';
-                    if (!data.messages || data.messages.length === 0) {
-                        container.innerHTML = `<p class="text-center text-slate-400 text-[11px] py-6">@${escapeHtml(partner)} 님과 대화를 시작해 보세요!</p>`;
-                    } else {
-                        data.messages.forEach(m => {
-                            const isMe = m.sender === currentUser;
-                            const msgDiv = document.createElement('div');
-                            msgDiv.className = `flex ${isMe ? 'justify-end' : 'justify-start'}`;
-                            msgDiv.innerHTML = `
-                                <div class="max-w-[75%] px-3 py-1.5 rounded-2xl ${isMe ? 'bg-blue-500 text-white rounded-br-none' : 'bg-slate-200 dark:bg-slate-800 text-slate-900 dark:text-white rounded-bl-none'}">
-                                    <p class="leading-relaxed">${escapeHtml(m.message)}</p>
-                                    <span class="text-[8px] opacity-70 block text-right mt-0.5">${m.created_at}</span>
-                                </div>
-                            `;
-                            container.appendChild(msgDiv);
-                        });
-                    }
-                    container.scrollTop = container.scrollHeight;
-                });
-        }
-
-        function sendDmMessage() {
-            if (!activeDmPartner) return;
-            const input = document.getElementById('dmMessageInput');
-            const msg = input.value.trim();
-            if (!msg) return;
-
-            fetch(`/api/dm/${activeDmPartner}`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ message: msg })
-            }).then(() => {
-                input.value = '';
-                loadDmMessages(activeDmPartner);
-            });
-        }
-
-        function loadFollowRequests() {
-            fetch('/api/follow-requests')
-                .then(res => res.json())
-                .then(data => {
-                    const sec = document.getElementById('followRequestsSection');
-                    const list = document.getElementById('followRequestsList');
-                    if (data.status === 'success' && data.requests.length > 0) {
-                        sec.classList.remove('hidden');
-                        list.innerHTML = '';
-                        data.requests.forEach(r => {
-                            const item = document.createElement('div');
-                            item.className = "flex items-center justify-between text-[11px] py-1";
-                            item.innerHTML = `
-                                <span><strong>@${escapeHtml(r.requester)}</strong> 님의 요청</span>
-                                <div class="flex gap-1.5">
-                                    <button onclick="handleReq('${r.requester}', 'accept')" class="px-2 py-0.5 bg-blue-500 text-white rounded font-bold">승인</button>
-                                    <button onclick="handleReq('${r.requester}', 'reject')" class="px-2 py-0.5 bg-slate-200 dark:bg-slate-700 rounded">삭제</button>
-                                </div>
-                            `;
-                            list.appendChild(item);
-                        });
-                    } else {
-                        sec.classList.add('hidden');
-                    }
-                });
-        }
-
-        function handleReq(requester, action) {
-            fetch(`/api/follow-requests/${requester}/${action}`, { method: 'POST' })
-                .then(() => loadFollowRequests());
-        }
-
-        function toggleLike(postId) {
-            if (!currentUser) { openAuthModal(); return; }
-            fetch(`/api/posts/${postId}/like`, { method: 'POST' })
-                .then(res => res.json())
-                .then(data => {
-                    if (data.status === 'success') {
-                        document.getElementById(`likeIcon-${postId}`).className = data.is_liked ? 'fa-solid fa-heart text-red-500' : 'fa-regular fa-heart';
-                        document.getElementById(`likeCount-${postId}`).innerText = `좋아요 ${data.likes}개`;
-                    }
-                });
-        }
-
-        function loadComments(postId) {
-            fetch(`/api/comments/${postId}`)
-                .then(res => res.json())
-                .then(data => {
-                    const list = document.getElementById(`commentList-${postId}`);
-                    list.innerHTML = '';
-                    data.comments.forEach(c => {
-                        const p = document.createElement('p');
-                        p.innerHTML = `<a href="/profile/${c.username}" class="font-semibold mr-1">@${escapeHtml(c.username)}</a> ${formatFormattedText(c.content)}`;
-                        list.appendChild(p);
-                    });
-                });
-        }
-
-        function addComment(postId) {
-            if (!currentUser) { openAuthModal(); return; }
-            const input = document.getElementById(`commentInput-${postId}`);
-            if (!input.value.trim()) return;
-            fetch('/api/comments', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ post_id: postId, content: input.value.trim() })
-            }).then(() => { input.value = ''; loadComments(postId); });
-        }
-
-        function focusComment(id) { document.getElementById(`commentInput-${id}`).focus(); }
 
         function loadStories() {
             fetch('/api/stories').then(res => res.json()).then(data => {
@@ -676,16 +622,19 @@
                 c.innerHTML = '';
                 if (data.status === 'success') {
                     data.stories.forEach(s => {
-                        const d = document.createElement('div');
-                        d.className = "flex flex-col items-center gap-1 min-w-[56px] cursor-pointer shrink-0";
-                        d.onclick = () => showStory(s);
-                        d.innerHTML = `
-                            <div class="w-12 h-12 rounded-full p-[2px] ${s.is_viewed ? 'story-viewed' : 'story-ring'}">
-                                <div class="w-full h-full rounded-full bg-white dark:bg-slate-900 border-2 border-white dark:border-slate-900 overflow-hidden flex items-center justify-center text-[10px]">@${s.username[0]}</div>
+                        const avatar = s.profile_img ? `<img src="${s.profile_img}" class="w-full h-full object-cover">` : getDefaultAvatar("text-xs");
+                        const item = document.createElement('div');
+                        item.className = "flex flex-col items-center gap-1 min-w-[56px] sm:min-w-[64px] cursor-pointer group shrink-0";
+                        item.onclick = () => showStory(s);
+                        
+                        const ringClass = s.is_viewed ? 'story-viewed' : 'story-ring';
+                        item.innerHTML = `
+                            <div class="w-12 h-12 sm:w-14 sm:h-14 rounded-full p-[2px] ${ringClass} transition group-hover:scale-105">
+                                <div class="w-full h-full rounded-full bg-white dark:bg-slate-900 flex items-center justify-center border-2 border-white dark:border-slate-900 overflow-hidden text-[10px]">${avatar}</div>
                             </div>
-                            <span class="text-[10px] truncate w-12 text-center">@${s.username}</span>
+                            <span class="text-[10px] sm:text-[11px] text-slate-600 dark:text-slate-400 truncate w-12 sm:w-14 text-center">@${escapeHtml(s.username)}</span>
                         `;
-                        c.appendChild(d);
+                        c.appendChild(item);
                     });
                 }
             });
@@ -695,35 +644,40 @@
             document.getElementById('storyUser').innerText = `@${s.username}`;
             document.getElementById('storyDesc').innerText = s.desc || '';
             const bg = document.getElementById('storyBg');
-            if (s.image_url) bg.style.backgroundImage = `url('${s.image_url}')`;
-            else bg.className = "absolute inset-0 flex flex-col items-center justify-center text-white p-8 text-center bg-gradient-to-br from-pink-500 to-rose-600";
+            if (s.image_url) {
+                bg.style.backgroundImage = `url('${s.image_url}')`;
+                bg.className = "absolute inset-0 flex flex-col items-center justify-end text-white p-6 pb-16 text-center bg-cover bg-center";
+            } else {
+                bg.style.backgroundImage = 'none';
+                bg.className = "absolute inset-0 flex flex-col items-center justify-center text-white p-8 text-center bg-gradient-to-br from-pink-500 to-rose-600";
+            }
             document.getElementById('storyModal').classList.remove('hidden');
-            setTimeout(() => closeStoryModal(), 5000);
+            clearTimeout(storyTimer);
+            storyTimer = setTimeout(() => closeStoryModal(), 5000);
         }
-        function closeStoryModal() { document.getElementById('storyModal').classList.add('hidden'); }
-
-        function openCreateStoryModal() { if(!currentUser){openAuthModal();return;} document.getElementById('createStoryModal').classList.remove('hidden'); }
-        function closeCreateStoryModal() { document.getElementById('createStoryModal').classList.add('hidden'); }
-        function submitNewStory() {
-            const desc = document.getElementById('storyDescInput').value.trim();
-            fetch('/api/stories', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ desc }) })
-                .then(() => { closeCreateStoryModal(); loadStories(); });
+        function closeStoryModal() { 
+            document.getElementById('storyModal').classList.add('hidden'); 
+            clearTimeout(storyTimer);
         }
 
-        function openCreatePostModal() { if(!currentUser){openAuthModal();return;} document.getElementById('createPostModal').classList.remove('hidden'); }
-        function closeCreatePostModal() { document.getElementById('createPostModal').classList.add('hidden'); }
-
+        // ✂️ 크롭 및 파일 선택 공통 처리
         function handleMultipleFileSelect(input, mode) {
             if (!input.files || input.files.length === 0) return;
+            currentCropMode = mode;
             pendingFiles = Array.from(input.files);
             currentFileIndex = 0;
-            postCroppedBlobs = [];
+            if (mode === 'post') postCroppedBlobs = [];
+            else storyCroppedBlob = null;
             processNextFile();
         }
 
         function processNextFile() {
             if (currentFileIndex >= pendingFiles.length) {
                 closeCropperModal();
+                if (currentCropMode === 'story' && storyCroppedBlob) {
+                    document.getElementById('storyPreviewImg').src = URL.createObjectURL(storyCroppedBlob);
+                    document.getElementById('storyPreviewArea').classList.remove('hidden');
+                }
                 return;
             }
             const file = pendingFiles[currentFileIndex];
@@ -739,42 +693,215 @@
                 img.src = e.target.result;
                 document.getElementById('cropperModal').classList.remove('hidden');
                 if (cropperInstance) cropperInstance.destroy();
-                cropperInstance = new Cropper(img, { aspectRatio: 1, viewMode: 1 });
+                const ratio = currentCropMode === 'story' ? 9/16 : 1;
+                cropperInstance = new Cropper(img, { aspectRatio: ratio, viewMode: 1 });
             };
             reader.readAsDataURL(file);
         }
 
-        function closeCropperModal() { document.getElementById('cropperModal').classList.add('hidden'); }
+        function closeCropperModal() { 
+            document.getElementById('cropperModal').classList.add('hidden'); 
+            if (cropperInstance) { cropperInstance.destroy(); cropperInstance = null; }
+        }
+
         function applyCroppedImage() {
             if (!cropperInstance) return;
             cropperInstance.getCroppedCanvas({ maxWidth: 1080 }).toBlob(b => {
-                postCroppedBlobs.push(b);
+                if (currentCropMode === 'post') postCroppedBlobs.push(b);
+                else storyCroppedBlob = b;
                 currentFileIndex++;
                 processNextFile();
             }, 'image/jpeg', 0.9);
         }
 
+        // 📝 게시물 작성
+        function openCreatePostModal() { if(!currentUser){openAuthModal();return;} document.getElementById('createPostModal').classList.remove('hidden'); }
+        function closeCreatePostModal() { 
+            document.getElementById('createPostModal').classList.add('hidden'); 
+            postCroppedBlobs = [];
+            document.getElementById('postFileInput').value = '';
+            document.getElementById('postContentInput').value = '';
+        }
+
         async function submitNewPost() {
             const content = document.getElementById('postContentInput').value.trim();
+            const btn = document.getElementById('submitPostBtn');
             let imageUrls = [];
             let isVideo = false;
 
-            if (postCroppedBlobs.length > 0) {
-                const formData = new FormData();
-                postCroppedBlobs.forEach(b => formData.append('files', b));
-                const res = await fetch('/api/upload', { method: 'POST', body: formData });
-                const d = await res.json();
-                imageUrls = d.image_urls || [d.image_url];
-                isVideo = d.is_video;
-            }
+            btn.disabled = true;
+            btn.innerText = '공유 중...';
 
-            fetch('/api/posts', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ content, image_urls: imageUrls, is_video: isVideo })
-            }).then(() => { closeCreatePostModal(); loadPosts(); });
+            try {
+                if (postCroppedBlobs.length > 0) {
+                    const formData = new FormData();
+                    postCroppedBlobs.forEach(b => formData.append('files', b));
+                    const res = await fetch('/api/upload', { method: 'POST', body: formData });
+                    const d = await res.json();
+                    imageUrls = d.image_urls || [d.image_url];
+                    isVideo = d.is_video;
+                }
+
+                const res = await fetch('/api/posts', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ content, image_urls: imageUrls, is_video: isVideo })
+                });
+                const d = await res.json();
+                if (d.status === 'success') {
+                    closeCreatePostModal();
+                    loadPosts();
+                } else {
+                    alert(d.message || '게시글 등록 실패');
+                }
+            } catch (err) {
+                alert('업로드 중 오류 발생');
+            } finally {
+                btn.disabled = false;
+                btn.innerText = '공유하기';
+            }
         }
 
+        // 💬 DM 모달 제어
+        function openDmModal(partner = null) {
+            if (!currentUser) { alert('로그인이 필요합니다.'); openAuthModal(); return; }
+            document.getElementById('dmModal').classList.remove('hidden');
+            if (partner && partner !== currentUser) loadDmMessages(partner);
+            else showDmList();
+        }
+        function closeDmModal() { document.getElementById('dmModal').classList.add('hidden'); activeDmPartner = null; }
+        function showDmList() {
+            activeDmPartner = null;
+            document.getElementById('dmTitle').innerText = '메시지';
+            document.getElementById('dmBackBtn').classList.add('hidden');
+            document.getElementById('dmListView').classList.remove('hidden');
+            document.getElementById('dmChatView').classList.add('hidden');
+            loadDmConversations();
+        }
+
+        function loadDmConversations() {
+            fetch('/api/dm/conversations').then(res => res.json()).then(data => {
+                const container = document.getElementById('dmConvContainer');
+                container.innerHTML = '';
+                if (!data.conversations || data.conversations.length === 0) {
+                    container.innerHTML = '<p class="text-slate-400 text-xs py-10 text-center">대화 내역이 없습니다.</p>';
+                    return;
+                }
+                data.conversations.forEach(c => {
+                    const avatar = c.profile_img ? `<img src="${c.profile_img}" class="w-full h-full object-cover">` : getDefaultAvatar("text-xs");
+                    const item = document.createElement('div');
+                    item.className = "p-2.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer flex items-center justify-between gap-2.5 transition";
+                    item.onclick = () => loadDmMessages(c.partner);
+                    item.innerHTML = `
+                        <div class="flex items-center gap-3 truncate">
+                            <div class="w-9 h-9 rounded-full overflow-hidden border border-slate-200 dark:border-slate-700 shrink-0">${avatar}</div>
+                            <div class="truncate">
+                                <p class="font-bold text-xs text-slate-900 dark:text-white">@${escapeHtml(c.partner)}</p>
+                                <p class="text-[11px] text-slate-400 truncate">${escapeHtml(c.last_message)}</p>
+                            </div>
+                        </div>
+                        ${c.unread_count > 0 ? `<span class="bg-blue-500 text-white text-[9px] px-1.5 py-0.5 rounded-full font-bold">${c.unread_count}</span>` : ''}
+                    `;
+                    container.appendChild(item);
+                });
+            });
+        }
+
+        function loadDmMessages(partner) {
+            activeDmPartner = partner;
+            document.getElementById('dmTitle').innerText = `@${partner}`;
+            document.getElementById('dmBackBtn').classList.remove('hidden');
+            document.getElementById('dmListView').classList.add('hidden');
+            document.getElementById('dmChatView').classList.remove('hidden');
+
+            fetch(`/api/dm/${encodeURIComponent(partner)}`).then(res => res.json()).then(data => {
+                const container = document.getElementById('dmMessagesContainer');
+                container.innerHTML = '';
+                if (!data.messages || data.messages.length === 0) {
+                    container.innerHTML = `<p class="text-center text-slate-400 text-[11px] py-6">@${escapeHtml(partner)} 님과 대화를 시작해 보세요!</p>`;
+                } else {
+                    data.messages.forEach(m => {
+                        const isMe = m.sender === currentUser;
+                        const msgDiv = document.createElement('div');
+                        msgDiv.className = `flex ${isMe ? 'justify-end' : 'justify-start'}`;
+                        msgDiv.innerHTML = `
+                            <div class="max-w-[75%] px-3 py-1.5 rounded-2xl ${isMe ? 'bg-blue-500 text-white rounded-br-none' : 'bg-slate-200 dark:bg-slate-800 text-slate-900 dark:text-white rounded-bl-none'}">
+                                <p class="leading-relaxed">${escapeHtml(m.message)}</p>
+                                <span class="text-[8px] opacity-70 block text-right mt-0.5">${m.created_at}</span>
+                            </div>
+                        `;
+                        container.appendChild(msgDiv);
+                    });
+                }
+                container.scrollTop = container.scrollHeight;
+            });
+        }
+
+        function sendDmMessage() {
+            if (!activeDmPartner) return;
+            const input = document.getElementById('dmMessageInput');
+            const msg = input.value.trim();
+            if (!msg) return;
+
+            fetch(`/api/dm/${encodeURIComponent(activeDmPartner)}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ message: msg })
+            }).then(() => {
+                input.value = '';
+                loadDmMessages(activeDmPartner);
+            });
+        }
+
+        // 🎬 릴스 모달
+        function openReelsModal() {
+            fetch('/api/reels').then(res => res.json()).then(data => {
+                const container = document.getElementById('reelsContainer');
+                container.innerHTML = '';
+                if (data.status === 'success' && data.reels.length > 0) {
+                    const reel = data.reels[0];
+                    container.innerHTML = `
+                        <video src="${reel.video_url}" autoplay loop playsinline class="w-full h-full object-cover"></video>
+                        <div class="absolute bottom-4 left-4 right-4 text-white text-xs drop-shadow z-10">
+                            <p class="font-bold mb-1">@${escapeHtml(reel.username)}</p>
+                            <p>${formatFormattedText(reel.content)}</p>
+                        </div>
+                    `;
+                    document.getElementById('reelsModal').classList.remove('hidden');
+                } else {
+                    alert('등록된 릴스 동영상이 없습니다.');
+                }
+            });
+        }
+        function closeReelsModal() { document.getElementById('reelsModal').classList.add('hidden'); }
+
+        // 💬 댓글 작성 및 로드
+        function loadComments(postId) {
+            fetch(`/api/comments/${postId}`).then(res => res.json()).then(data => {
+                const list = document.getElementById(`commentList-${postId}`);
+                list.innerHTML = '';
+                data.comments.forEach(c => {
+                    const p = document.createElement('p');
+                    p.innerHTML = `<a href="/profile/${c.username}" class="font-semibold mr-1">@${escapeHtml(c.username)}</a> ${formatFormattedText(c.content)}`;
+                    list.appendChild(p);
+                });
+            });
+        }
+
+        function addComment(postId) {
+            if (!currentUser) { openAuthModal(); return; }
+            const input = document.getElementById(`commentInput-${postId}`);
+            if (!input.value.trim()) return;
+            fetch('/api/comments', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ post_id: postId, content: input.value.trim() })
+            }).then(() => { input.value = ''; loadComments(postId); });
+        }
+
+        function focusComment(id) { document.getElementById(`commentInput-${id}`).focus(); }
+
+        // 🔔 알림
         function loadNotifications() {
             if (!currentUser) return;
             fetch('/api/notifications').then(res => res.json()).then(data => {
@@ -815,6 +942,34 @@
             }
         }
 
+        function loadFollowRequests() {
+            fetch('/api/follow-requests').then(res => res.json()).then(data => {
+                const sec = document.getElementById('followRequestsSection');
+                const list = document.getElementById('followRequestsList');
+                if (data.status === 'success' && data.requests.length > 0) {
+                    sec.classList.remove('hidden');
+                    list.innerHTML = '';
+                    data.requests.forEach(r => {
+                        const item = document.createElement('div');
+                        item.className = "flex items-center justify-between text-[11px] py-1";
+                        item.innerHTML = `
+                            <span><strong>@${escapeHtml(r.requester)}</strong> 님의 요청</span>
+                            <div class="flex gap-1.5">
+                                <button onclick="handleReq('${r.requester}', 'accept')" class="px-2 py-0.5 bg-blue-500 text-white rounded font-bold">승인</button>
+                                <button onclick="handleReq('${r.requester}', 'reject')" class="px-2 py-0.5 bg-slate-200 dark:bg-slate-700 rounded">삭제</button>
+                            </div>
+                        `;
+                        list.appendChild(item);
+                    });
+                } else sec.classList.add('hidden');
+            });
+        }
+
+        function handleReq(requester, action) {
+            fetch(`/api/follow-requests/${encodeURIComponent(requester)}/${action}`, { method: 'POST' })
+                .then(() => loadFollowRequests());
+        }
+
         function handleOutsideClicks(e) {
             const notif = document.getElementById('notifDropdown');
             if (notif && !notif.contains(e.target)) notif.classList.add('hidden');
@@ -822,30 +977,7 @@
             if (search && !search.contains(e.target)) search.classList.add('hidden');
         }
 
-        function handleSearchInput(v) {
-            clearTimeout(searchTimer);
-            if (!v.trim()) { document.getElementById('searchResultsDropdown').classList.add('hidden'); return; }
-            searchTimer = setTimeout(() => {
-                fetch(`/api/search?q=${encodeURIComponent(v.trim())}`)
-                    .then(res => res.json())
-                    .then(data => {
-                        const drop = document.getElementById('searchResultsDropdown');
-                        const uBox = document.getElementById('searchUserResults');
-                        const pBox = document.getElementById('searchPostResults');
-                        uBox.innerHTML = ''; pBox.innerHTML = '';
-
-                        data.users.forEach(u => {
-                            const a = document.createElement('a');
-                            a.href = `/profile/${u.username}`;
-                            a.className = "block p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 font-bold";
-                            a.innerText = `@${u.username}`;
-                            uBox.appendChild(a);
-                        });
-                        drop.classList.remove('hidden');
-                    });
-            }, 250);
-        }
-
+        // 로그인 / 회원가입
         function openAuthModal() { document.getElementById('authModal').classList.remove('hidden'); }
         function closeAuthModal() { document.getElementById('authModal').classList.add('hidden'); }
         function toggleAuthMode() {
