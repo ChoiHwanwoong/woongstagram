@@ -53,12 +53,12 @@
                 </div>
             </div>
 
-            <!-- 상단 우측 아이콘 (게시물 만들기, 릴스, 알림, DM, 관리자, 프로필) -->
+            <!-- 상단 우측 아이콘 (모바일에서는 하트, DM만 표시 / 웹에서는 전부 표시) -->
             <div class="flex items-center gap-4 sm:gap-5 text-lg text-slate-800 dark:text-slate-200 shrink-0">
-                <button onclick="openCreatePostModal()" class="hover:text-blue-500 transition" title="새 게시물 만들기">
+                <button onclick="openCreatePostModal()" class="hidden md:inline-block hover:text-blue-500 transition" title="새 게시물 만들기">
                     <i class="fa-regular fa-square-plus"></i>
                 </button>
-                <button onclick="openReelsModal()" class="hover:text-pink-500 transition" title="릴스 동영상 보기">
+                <button onclick="openReelsModal()" class="hidden md:inline-block hover:text-pink-500 transition" title="릴스 동영상 보기">
                     <i class="fa-solid fa-clapperboard"></i>
                 </button>
                 <div class="relative">
@@ -85,7 +85,7 @@
                 <a href="/admin" id="headerAdminBtn" class="hidden text-slate-600 dark:text-slate-300 hover:text-red-500 transition" title="관리자 페이지">
                     <i class="fa-solid fa-key"></i>
                 </a>
-                <a href="/profile" class="hover:text-slate-500 transition" title="프로필">
+                <a href="/profile" class="hidden md:inline-block hover:text-slate-500 transition" title="프로필">
                     <i class="fa-regular fa-user"></i>
                 </a>
             </div>
