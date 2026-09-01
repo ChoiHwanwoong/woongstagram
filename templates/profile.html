@@ -257,6 +257,13 @@
             document.getElementById('followingCount').innerText = u.following_count;
             document.getElementById('profileBio').innerText = u.bio || '';
 
+            // 📌 순수 게시물 개수를 별도로 불러와 고정
+            fetch(`/api/posts/user/${encodeURIComponent(targetUser)}`)
+                .then(r => r.json())
+                .then(d => {
+                    document.getElementById('postCount').innerText = d.posts ? d.posts.length : 0;
+                });
+
             const avatarBox = document.getElementById('profileAvatarBox');
             if (u.profile_img) {
                 avatarBox.innerHTML = `<img src="${u.profile_img}" class="w-full h-full object-cover">`;
@@ -452,7 +459,10 @@
 
             if (tab === 'posts') {
                 pBtn.className = "flex items-center gap-2 py-3 border-t-2 border-slate-900 dark:border-white font-bold text-xs tracking-wider text-slate-900 dark:text-white";
-                fetch(`/api/posts/user/${encodeURIComponent(currentProfileUser)}`).then(r => r.json()).then(d => renderGrid(d.posts));
+                fetch(`/api/posts/user/${encodeURIComponent(currentProfileUser)}`).then(r => r.json()).then(d => {
+                    document.getElementById('postCount').innerText = d.posts ? d.posts.length : 0;
+                    renderGrid(d.posts);
+                });
             } else if (tab === 'likes') {
                 lBtn.className = "flex items-center gap-2 py-3 border-t-2 border-slate-900 dark:border-white font-bold text-xs tracking-wider text-slate-900 dark:text-white";
                 fetch(`/api/users/${encodeURIComponent(currentProfileUser)}/liked-posts`).then(r => r.json()).then(d => renderGrid(d.posts));
@@ -465,7 +475,6 @@
         function renderGrid(posts) {
             const grid = document.getElementById('myPostsGrid');
             grid.innerHTML = '';
-            document.getElementById('postCount').innerText = posts ? posts.length : 0;
 
             if (!posts || posts.length === 0) {
                 grid.innerHTML = '<div class="col-span-3 text-center py-16 text-slate-400 text-xs">게시물이 없습니다.</div>';
