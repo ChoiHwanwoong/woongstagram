@@ -146,23 +146,6 @@
         <a href="/profile" id="bottomProfileLink" class="p-2 hover:text-blue-500"><i class="fa-regular fa-user"></i></a>
     </nav>
 
-    <!-- 📲 PWA 앱 설치 유도 배너 (설치되지 않은 브라우저 접속 시 노출) -->
-    <div id="pwaInstallBanner" class="fixed bottom-14 md:bottom-4 left-4 right-4 md:left-auto md:right-4 md:max-w-sm bg-slate-900/95 dark:bg-slate-800/95 text-white backdrop-blur-md p-3.5 rounded-2xl shadow-2xl z-50 border border-slate-700/60 hidden flex items-center justify-between gap-3 animate-fade-in">
-        <div class="flex items-center gap-3 min-w-0">
-            <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-yellow-400 via-pink-500 to-purple-600 flex items-center justify-center shrink-0 shadow-sm">
-                <i class="fa-solid fa-mobile-screen-button text-white text-lg"></i>
-            </div>
-            <div class="truncate">
-                <p class="font-bold text-xs text-white truncate">Woongstagram 앱 설치</p>
-                <p class="text-[11px] text-slate-300 truncate">홈 화면에 추가하고 더 빠르게 사용해보세요</p>
-            </div>
-        </div>
-        <div class="flex items-center gap-2 shrink-0">
-            <button id="pwaInstallBtn" class="px-3 py-1.5 bg-blue-500 hover:bg-blue-600 active:scale-95 text-white font-bold text-xs rounded-lg transition shadow-sm">설치</button>
-            <button onclick="dismissPwaBanner()" class="text-slate-400 hover:text-white p-1 text-sm"><i class="fa-solid fa-xmark"></i></button>
-        </div>
-    </div>
-
     <!-- 🔍 게시글 상세 보기 모달 -->
     <div id="postDetailModal" class="fixed inset-0 bg-black/70 z-50 hidden flex items-center justify-center p-3 sm:p-4">
         <div class="bg-white dark:bg-slate-900 w-full max-w-2xl max-h-[85vh] rounded-2xl overflow-hidden shadow-2xl relative flex flex-col sm:flex-row border border-slate-200 dark:border-slate-800">
@@ -341,32 +324,6 @@
         let activeDmPartner = null;
         let searchTimer = null;
         let storyTimer = null;
-        let deferredPrompt = null;
-
-        // 📲 PWA 설치 프롬프트 및 배너 이벤트 리스너 등록
-        window.addEventListener('beforeinstallprompt', (e) => {
-            e.preventDefault();
-            deferredPrompt = e;
-            const banner = document.getElementById('pwaInstallBanner');
-            if (banner && !sessionStorage.getItem('pwaBannerDismissed')) {
-                banner.classList.remove('hidden');
-            }
-        });
-
-        document.getElementById('pwaInstallBtn')?.addEventListener('click', async () => {
-            if (deferredPrompt) {
-                deferredPrompt.prompt();
-                const { outcome } = await deferredPrompt.userChoice;
-                deferredPrompt = null;
-                dismissPwaBanner();
-            }
-        });
-
-        function dismissPwaBanner() {
-            const banner = document.getElementById('pwaInstallBanner');
-            if (banner) banner.classList.add('hidden');
-            sessionStorage.setItem('pwaBannerDismissed', 'true');
-        }
 
         let cropperInstance = null;
         let currentCropMode = null;
@@ -994,7 +951,7 @@
                         const post = data.post;
                         const avatarBox = document.getElementById('modalUserAvatar');
                         if (post.profile_img) {
-                            avatarBox.innerHTML = `<img src="${post.profile_img}" class="w-full h-full object-cover">` : getDefaultAvatar("text-xs");
+                            avatarBox.innerHTML = `<img src="${post.profile_img}" class="w-full h-full object-cover">`;
                         } else {
                             avatarBox.innerHTML = getDefaultAvatar("text-xs");
                         }
