@@ -138,6 +138,16 @@
         </div>
     </div>
 
+    <!-- ✏️ 게시글 수정 모달 -->
+    <div id="editPostModal" class="fixed inset-0 bg-black/60 z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-slate-900 w-full max-w-sm rounded-2xl p-5 shadow-2xl relative border border-slate-200 dark:border-slate-800 text-xs">
+            <button onclick="closeEditPostModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+            <h3 class="font-bold text-sm mb-3">게시글 내용 수정</h3>
+            <textarea id="editPostContentInput" rows="4" placeholder="수정할 문구를 입력하세요..." class="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-lg outline-none bg-transparent mb-3 resize-none text-slate-900 dark:text-white"></textarea>
+            <button id="saveEditPostBtn" class="w-full py-2.5 bg-blue-500 hover:bg-blue-600 text-white font-bold rounded-lg transition">수정 완료</button>
+        </div>
+    </div>
+
     <!-- 🔍 프로필 전용 게시글 상세 보기 모달 -->
     <div id="profilePostDetailModal" class="fixed inset-0 bg-black/70 z-50 hidden flex items-center justify-center p-3 sm:p-4">
         <div class="bg-white dark:bg-slate-900 w-full max-w-2xl max-h-[85vh] rounded-2xl overflow-hidden shadow-2xl relative flex flex-col sm:flex-row border border-slate-200 dark:border-slate-800">
@@ -150,7 +160,10 @@
                             <span id="profileModalUserAvatar" class="w-7 h-7 rounded-full bg-slate-200 dark:bg-slate-700 overflow-hidden shrink-0"></span>
                             <span id="profileModalUsername" class="font-bold text-slate-900 dark:text-white"></span>
                         </div>
-                        <button id="profileModalDeletePostBtn" class="hidden text-slate-400 hover:text-red-500" title="게시글 삭제"><i class="fa-solid fa-trash-can"></i></button>
+                        <div class="flex items-center gap-2">
+                            <button id="profileModalEditPostBtn" class="hidden text-slate-400 hover:text-blue-500" title="게시글 수정"><i class="fa-solid fa-pen-to-square"></i></button>
+                            <button id="profileModalDeletePostBtn" class="hidden text-slate-400 hover:text-red-500" title="게시글 삭제"><i class="fa-solid fa-trash-can"></i></button>
+                        </div>
                     </div>
                     <p id="profileModalContent" class="text-slate-700 dark:text-slate-300 leading-relaxed mb-4 pb-3 border-b border-slate-100 dark:border-slate-800 break-words"></p>
                     <div id="profileModalCommentsList" class="space-y-2 text-[11px] mb-4"></div>
@@ -519,7 +532,17 @@
                         document.getElementById('profileModalUsername').innerText = `@${post.username}`;
                         document.getElementById('profileModalContent').innerText = post.content;
 
+                        const editBtn = document.getElementById('profileModalEditPostBtn');
                         const delBtn = document.getElementById('profileModalDeletePostBtn');
+                        
+                        // 작성자 본인일 경우 수정 버튼 노출
+                        if (loggedInUser && loggedInUser === post.username) {
+                            editBtn.classList.remove('hidden');
+                            editBtn.onclick = () => openEditPostModal(post.id, post.content);
+                        } else {
+                            editBtn.classList.add('hidden');
+                        }
+
                         if (loggedInUser && (loggedInUser === post.username || loggedInUser === 'admin')) {
                             delBtn.classList.remove('hidden');
                             delBtn.onclick = () => deletePostFromProfile(post.id);
@@ -549,6 +572,45 @@
 
         function closeProfilePostDetailModal() {
             document.getElementById('profilePostDetailModal').classList.add('hidden');
+        }
+
+        // ✏️ 게시글 수정 모달 열기/닫기 및 저장
+        function openEditPostModal(postId, currentContent) {
+            document.getElementById('editPostContentInput').value = currentContent;
+            document.getElementById('saveEditPostBtn').onclick = () => submitEditPost(postId);
+            document.getElementById('editPostModal').classList.remove('hidden');
+        }
+
+        function closeEditPostModal() {
+            document.getElementById('editPostModal').classList.add('hidden');
+        }
+
+        function submitEditPost(postId) {
+            const content = document.getElementById('editPostContentInput').value.trim();
+            const btn = document.getElementById('saveEditPostBtn');
+            btn.disabled = true;
+            btn.innerText = '수정 중...';
+
+            fetch(`/api/posts/${postId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ content })
+            })
+            .then(res => res.json())
+            .then(d => {
+                if (d.status === 'success') {
+                    document.getElementById('profileModalContent').innerText = d.content;
+                    closeEditPostModal();
+                    switchTab('posts');
+                } else {
+                    alert(d.message || '수정 실패');
+                }
+            })
+            .catch(err => alert('게시글 수정 중 오류 발생'))
+            .finally(() => {
+                btn.disabled = false;
+                btn.innerText = '수정 완료';
+            });
         }
 
         function deletePostFromProfile(postId) {

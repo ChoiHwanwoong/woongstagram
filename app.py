@@ -1496,6 +1496,38 @@ def delete_post(post_id):
     conn.close()
     return jsonify({'status': 'success'})
 
+@app.route('/api/posts/<int:post_id>', methods=['PUT'])
+def update_post(post_id):
+    if 'username' not in session:
+        return jsonify({'status': 'error', 'message': '로그인이 필요합니다.'}), 401
+    
+    username = session['username']
+    data = request.json or {}
+    new_content = data.get('content', '').strip()
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute('SELECT username FROM posts WHERE id = %s;', (post_id,))
+    row = cursor.fetchone()
+
+    if not row:
+        cursor.close()
+        conn.close()
+        return jsonify({'status': 'error', 'message': '게시글을 찾을 수 없습니다.'}), 404
+    
+    if row[0] != username and username != 'admin':
+        cursor.close()
+        conn.close()
+        return jsonify({'status': 'error', 'message': '수정 권한이 없습니다.'}), 403
+
+    cursor.execute('UPDATE posts SET content = %s WHERE id = %s;', (new_content, post_id))
+    parse_and_notify_mentions(cursor, new_content, username, post_id)
+    conn.commit()
+    cursor.close()
+    conn.close()
+
+    return jsonify({'status': 'success', 'content': new_content})
+
 @app.route('/api/posts', methods=['POST'])
 def create_post():
     if 'username' not in session:
