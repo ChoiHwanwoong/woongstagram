@@ -785,7 +785,7 @@
                         const avatar = s.profile_img ? `<img src="${s.profile_img}" class="w-full h-full object-cover">` : getDefaultAvatar("text-xs");
                         const item = document.createElement('div');
                         item.className = "flex flex-col items-center gap-1 min-w-[56px] sm:min-w-[64px] cursor-pointer group shrink-0";
-                        item.onclick = () => showStoryModal(item, s.id, s.username, s.desc, s.image_url, s.profile_img);
+                        item.onclick = () => showStoryModal(item, s.id, s.username, s.desc, s.image_url, s.profile_img, s.created_at);
                         
                         const ringClass = s.is_viewed ? 'story-viewed' : 'story-ring';
                         item.innerHTML = `
@@ -800,7 +800,7 @@
             });
         }
 
-        function showStoryModal(el, storyId, username, desc, imageUrl, profileImg) {
+        function showStoryModal(el, storyId, username, desc, imageUrl, profileImg, createdAt) {
             if (currentUser) {
                 fetch(`/api/stories/${storyId}/view`, { method: 'POST' });
             }
@@ -813,6 +813,12 @@
 
             document.getElementById('storyUser').innerText = `@${username}`;
             document.getElementById('storyDesc').innerText = desc || '';
+            
+            const timeEl = document.getElementById('storyTimeAgo');
+            if (timeEl) {
+                timeEl.innerText = timeAgo(createdAt);
+            }
+
             const bg = document.getElementById('storyBg');
             if (imageUrl) {
                 bg.style.backgroundImage = `url('${imageUrl}')`;
