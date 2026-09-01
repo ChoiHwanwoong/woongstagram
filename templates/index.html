@@ -286,25 +286,54 @@
         </div>
     </div>
 
-    <!-- 로그인 모달 -->
+    <!-- 🔑 로그인 / 회원가입 / 아이디 찾기 / 비밀번호 재설정 통합 모달 -->
     <div id="authModal" class="fixed inset-0 bg-black/60 z-50 hidden flex items-center justify-center p-4">
         <div class="bg-white dark:bg-slate-900 w-full max-w-sm rounded-2xl p-6 shadow-2xl relative border border-slate-200 dark:border-slate-800">
             <button onclick="closeAuthModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
-            <div class="text-center mb-6">
+            <div class="text-center mb-5">
                 <h2 class="text-3xl font-black font-serif italic mb-1 tracking-tight text-slate-900 dark:text-white">Woongstagram</h2>
                 <p class="text-xs text-slate-500" id="authModalSubtitle">Woongstagram에 로그인하세요.</p>
             </div>
+
+            <!-- 1) 로그인 폼 -->
             <div id="loginFormArea" class="space-y-2.5 text-xs">
                 <input type="text" id="loginUsername" placeholder="사용자 이름 (아이디)" class="w-full px-3 py-2.5 border border-slate-200 dark:border-slate-700 rounded-lg outline-none bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white">
                 <input type="password" id="loginPassword" placeholder="비밀번호" class="w-full px-3 py-2.5 border border-slate-200 dark:border-slate-700 rounded-lg outline-none bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white">
                 <button onclick="handleLoginSubmit()" class="w-full py-2.5 bg-blue-500 hover:bg-blue-600 text-white font-bold rounded-lg transition shadow-sm mt-2">로그인</button>
+                
+                <!-- 🔍 아이디/비밀번호 찾기 링크 -->
+                <div class="flex items-center justify-center gap-3 pt-2 text-[11px] text-slate-400">
+                    <button onclick="setAuthView('find_username')" class="hover:text-blue-500 hover:underline">아이디 찾기</button>
+                    <span>•</span>
+                    <button onclick="setAuthView('reset_password')" class="hover:text-blue-500 hover:underline">비밀번호 찾기</button>
+                </div>
             </div>
+
+            <!-- 2) 회원가입 폼 -->
             <div id="signupFormArea" class="space-y-2.5 text-xs hidden">
                 <input type="text" id="signupUsername" placeholder="사용자 이름 (아이디)" class="w-full px-3 py-2.5 border border-slate-200 dark:border-slate-700 rounded-lg outline-none bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white">
                 <input type="email" id="signupEmail" placeholder="이메일 주소" class="w-full px-3 py-2.5 border border-slate-200 dark:border-slate-700 rounded-lg outline-none bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white">
                 <input type="password" id="signupPassword" placeholder="비밀번호" class="w-full px-3 py-2.5 border border-slate-200 dark:border-slate-700 rounded-lg outline-none bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white">
                 <button onclick="handleSignupSubmit()" class="w-full py-2.5 bg-blue-500 hover:bg-blue-600 text-white font-bold rounded-lg transition shadow-sm mt-2">가입하기</button>
             </div>
+
+            <!-- 3) 아이디 찾기 폼 -->
+            <div id="findUsernameFormArea" class="space-y-2.5 text-xs hidden">
+                <p class="text-[11px] text-slate-400 mb-2 leading-relaxed">가입 시 등록하신 이메일 주소를 입력하시면 아이디를 확인해 드립니다.</p>
+                <input type="email" id="findUsernameEmail" placeholder="가입 이메일 주소" class="w-full px-3 py-2.5 border border-slate-200 dark:border-slate-700 rounded-lg outline-none bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white">
+                <button onclick="handleFindUsernameSubmit()" class="w-full py-2.5 bg-blue-500 hover:bg-blue-600 text-white font-bold rounded-lg transition shadow-sm mt-2">아이디 찾기</button>
+            </div>
+
+            <!-- 4) 비밀번호 재설정 폼 -->
+            <div id="resetPasswordFormArea" class="space-y-2.5 text-xs hidden">
+                <p class="text-[11px] text-slate-400 mb-2 leading-relaxed">아이디와 등록된 이메일을 인증 후 새 비밀번호를 설정하세요.</p>
+                <input type="text" id="resetPasswordUsername" placeholder="사용자 이름 (아이디)" class="w-full px-3 py-2.5 border border-slate-200 dark:border-slate-700 rounded-lg outline-none bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white">
+                <input type="email" id="resetPasswordEmail" placeholder="가입 이메일 주소" class="w-full px-3 py-2.5 border border-slate-200 dark:border-slate-700 rounded-lg outline-none bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white">
+                <input type="password" id="resetPasswordNewPass" placeholder="새로운 비밀번호" class="w-full px-3 py-2.5 border border-slate-200 dark:border-slate-700 rounded-lg outline-none bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white">
+                <button onclick="handleResetPasswordSubmit()" class="w-full py-2.5 bg-blue-500 hover:bg-blue-600 text-white font-bold rounded-lg transition shadow-sm mt-2">비밀번호 변경</button>
+            </div>
+
+            <!-- 하단 뷰 전환 안내 -->
             <div class="mt-5 pt-4 border-t border-slate-100 dark:border-slate-800 text-center text-xs text-slate-500">
                 <span id="authToggleText">계정이 없으신가요?</span>
                 <button onclick="toggleAuthMode()" id="authToggleBtn" class="text-blue-500 font-bold ml-1 hover:underline">가입하기</button>
@@ -1275,13 +1304,53 @@
             if (search && !search.contains(e.target)) search.classList.add('hidden');
         }
 
-        function openAuthModal() { document.getElementById('authModal').classList.remove('hidden'); }
+        function openAuthModal() { 
+            setAuthView('login');
+            document.getElementById('authModal').classList.remove('hidden'); 
+        }
         function closeAuthModal() { document.getElementById('authModal').classList.add('hidden'); }
+
+        function setAuthView(view) {
+            currentAuthView = view;
+            const subtitle = document.getElementById('authModalSubtitle');
+            const loginForm = document.getElementById('loginFormArea');
+            const signupForm = document.getElementById('signupFormArea');
+            const findUserForm = document.getElementById('findUsernameFormArea');
+            const resetPassForm = document.getElementById('resetPasswordFormArea');
+            const toggleText = document.getElementById('authToggleText');
+            const toggleBtn = document.getElementById('authToggleBtn');
+
+            loginForm.classList.toggle('hidden', view !== 'login');
+            signupForm.classList.toggle('hidden', view !== 'signup');
+            findUserForm.classList.toggle('hidden', view !== 'find_username');
+            resetPassForm.classList.toggle('hidden', view !== 'reset_password');
+
+            if (view === 'login') {
+                subtitle.innerText = 'Woongstagram에 로그인하세요.';
+                toggleText.innerText = '계정이 없으신가요?';
+                toggleBtn.innerText = '가입하기';
+                toggleBtn.onclick = () => setAuthView('signup');
+            } else if (view === 'signup') {
+                subtitle.innerText = '친구들의 사진과 동영상을 보려면 가입하세요.';
+                toggleText.innerText = '계정이 있으신가요?';
+                toggleBtn.innerText = '로그인';
+                toggleBtn.onclick = () => setAuthView('login');
+            } else if (view === 'find_username') {
+                subtitle.innerText = '아이디를 잊으셨나요?';
+                toggleText.innerText = '로그인 화면으로 돌아가기';
+                toggleBtn.innerText = '로그인';
+                toggleBtn.onclick = () => setAuthView('login');
+            } else if (view === 'reset_password') {
+                subtitle.innerText = '비밀번호를 재설정하세요.';
+                toggleText.innerText = '로그인 화면으로 돌아가기';
+                toggleBtn.innerText = '로그인';
+                toggleBtn.onclick = () => setAuthView('login');
+            }
+        }
+
         function toggleAuthMode() {
-            currentAuthView = currentAuthView === 'login' ? 'signup' : 'login';
-            document.getElementById('loginFormArea').classList.toggle('hidden', currentAuthView !== 'login');
-            document.getElementById('signupFormArea').classList.toggle('hidden', currentAuthView !== 'signup');
-            document.getElementById('authToggleBtn').innerText = currentAuthView === 'login' ? '가입하기' : '로그인';
+            if (currentAuthView === 'login') setAuthView('signup');
+            else setAuthView('login');
         }
 
         function handleLoginSubmit() {
@@ -1297,6 +1366,52 @@
             const p = document.getElementById('signupPassword').value.trim();
             fetch('/api/signup', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ username: u, email: e, password: p }) })
                 .then(res => res.json()).then(d => { if(d.status==='success') location.reload(); else alert(d.message); });
+        }
+
+        function handleFindUsernameSubmit() {
+            const email = document.getElementById('findUsernameEmail').value.trim();
+            if (!email) { alert('가입 시 사용한 이메일을 입력해 주세요.'); return; }
+            fetch('/api/find-username', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email })
+            })
+            .then(res => res.json())
+            .then(d => {
+                if (d.status === 'success') {
+                    alert(`회원님의 아이디는 [ ${d.username} ] 입니다.`);
+                    document.getElementById('loginUsername').value = d.username;
+                    setAuthView('login');
+                } else {
+                    alert(d.message);
+                }
+            });
+        }
+
+        function handleResetPasswordSubmit() {
+            const username = document.getElementById('resetPasswordUsername').value.trim();
+            const email = document.getElementById('resetPasswordEmail').value.trim();
+            const new_password = document.getElementById('resetPasswordNewPass').value.trim();
+
+            if (!username || !email || !new_password) {
+                alert('아이디, 이메일, 새 비밀번호를 모두 입력해 주세요.');
+                return;
+            }
+
+            fetch('/api/reset-password', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, email, new_password })
+            })
+            .then(res => res.json())
+            .then(d => {
+                if (d.status === 'success') {
+                    alert('비밀번호가 변경되었습니다! 새로운 비밀번호로 로그인해 주세요.');
+                    setAuthView('login');
+                } else {
+                    alert(d.message);
+                }
+            });
         }
 
         function loadHotNews() {

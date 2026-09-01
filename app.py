@@ -1049,6 +1049,53 @@ def login():
         return jsonify({'status': 'success', 'username': user['username']})
     return jsonify({'status': 'error', 'message': '아이디 또는 비밀번호가 올바르지 않습니다.'}), 400
 
+# --- 🔍 아이디 찾기 API ---
+@app.route('/api/find-username', methods=['POST'])
+def find_username():
+    data = request.json or {}
+    email = data.get('email', '').strip()
+    if not email:
+        return jsonify({'status': 'error', 'message': '가입 시 등록한 이메일을 입력해 주세요.'}), 400
+    
+    conn = get_db_connection()
+    cursor = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+    cursor.execute('SELECT username FROM users WHERE email = %s;', (email,))
+    user = cursor.fetchone()
+    cursor.close()
+    conn.close()
+
+    if user:
+        return jsonify({'status': 'success', 'username': user['username']})
+    return jsonify({'status': 'error', 'message': '해당 이메일로 등록된 계정을 찾을 수 없습니다.'}), 404
+
+# --- 🔑 비밀번호 재설정 API ---
+@app.route('/api/reset-password', methods=['POST'])
+def reset_password():
+    data = request.json or {}
+    username = data.get('username', '').strip()
+    email = data.get('email', '').strip()
+    new_password = data.get('new_password', '').strip()
+
+    if not username or not email or not new_password:
+        return jsonify({'status': 'error', 'message': '모든 항목을 입력해 주세요.'}), 400
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute('SELECT id FROM users WHERE username = %s AND email = %s;', (username, email))
+    user = cursor.fetchone()
+
+    if not user:
+        cursor.close()
+        conn.close()
+        return jsonify({'status': 'error', 'message': '아이디와 이메일 정보가 일치하는 회원이 없습니다.'}), 404
+
+    cursor.execute('UPDATE users SET password = %s WHERE id = %s;', (new_password, user[0]))
+    conn.commit()
+    cursor.close()
+    conn.close()
+
+    return jsonify({'status': 'success', 'message': '비밀번호가 성공적으로 재설정되었습니다.'})
+
 @app.route('/api/change-password', methods=['POST'])
 def change_password():
     if 'username' not in session:
@@ -1409,7 +1456,7 @@ def get_posts():
             'image_urls': image_urls,
             'is_video': r['is_video'],
             'likes': r['likes'],
-            'created_at': r['created_at'].strftime('%Y-%m-%d %H:%M:%S') if r['created_at'] else '',
+            'created_at': r['created_at'].strftime('%Y-%m-%d %H:%M:%S') if r['created_at'] else ''
             'profile_img': r['profile_img'] or '',
             'is_liked': liked,
             'is_bookmarked': bookmarked
