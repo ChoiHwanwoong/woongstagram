@@ -270,6 +270,114 @@ def admin_page():
         return "<script>alert('관리자 권한이 필요합니다.'); location.href='/';</script>"
     return render_template('admin.html')
 
+# --- 👑 Admin APIs ---
+@app.route('/api/admin/stats', methods=['GET'])
+def get_admin_stats():
+    if not is_admin():
+        return jsonify({'status': 'error', 'message': '권한이 없습니다.'}), 403
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    cursor.execute('SELECT COUNT(*) FROM users;')
+    user_cnt = cursor.fetchone()[0]
+
+    cursor.execute('SELECT COUNT(*) FROM posts;')
+    post_cnt = cursor.fetchone()[0]
+
+    cursor.execute('SELECT COUNT(*) FROM comments;')
+    comment_cnt = cursor.fetchone()[0]
+
+    cutoff_time = get_kst_now() - timedelta(hours=24)
+    cursor.execute('SELECT COUNT(*) FROM stories WHERE created_at >= %s;', (cutoff_time,))
+    story_cnt = cursor.fetchone()[0]
+
+    cursor.close()
+    conn.close()
+    return jsonify({
+        'status': 'success',
+        'stats': {
+            'users': user_cnt,
+            'posts': post_cnt,
+            'comments': comment_cnt,
+            'stories': story_cnt
+        }
+    })
+
+@app.route('/api/admin/users', methods=['GET'])
+def get_admin_users():
+    if not is_admin():
+        return jsonify({'status': 'error', 'message': '권한이 없습니다.'}), 403
+
+    conn = get_db_connection()
+    cursor = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+    cursor.execute('SELECT id, username, email, profile_img FROM users ORDER BY id DESC;')
+    rows = cursor.fetchall()
+    cursor.close()
+    conn.close()
+
+    users = [{'id': r['id'], 'username': r['username'], 'email': r['email'], 'profile_img': r['profile_img'] or ''} for r in rows]
+    return jsonify({'status': 'success', 'users': users})
+
+@app.route('/api/admin/users/<username>', methods=['DELETE'])
+def delete_admin_user(username):
+    if not is_admin():
+        return jsonify({'status': 'error', 'message': '권한이 없습니다.'}), 403
+
+    if username == 'admin':
+        return jsonify({'status': 'error', 'message': '관리자 계정은 삭제할 수 없습니다.'}), 400
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute('DELETE FROM users WHERE username = %s;', (username,))
+    cursor.execute('DELETE FROM posts WHERE username = %s;', (username,))
+    cursor.execute('DELETE FROM comments WHERE username = %s;', (username,))
+    cursor.execute('DELETE FROM stories WHERE username = %s;', (username,))
+    cursor.execute('DELETE FROM follows WHERE follower = %s OR following = %s;', (username, username))
+    cursor.execute('DELETE FROM follow_requests WHERE requester = %s OR target = %s;', (username, username))
+    cursor.execute('DELETE FROM post_likes WHERE username = %s;', (username,))
+    cursor.execute('DELETE FROM bookmarks WHERE username = %s;', (username,))
+    cursor.execute('DELETE FROM direct_messages WHERE sender = %s OR receiver = %s;', (username, username))
+    cursor.execute('DELETE FROM notifications WHERE recipient = %s OR actor = %s;', (username, username))
+    conn.commit()
+    cursor.close()
+    conn.close()
+
+    return jsonify({'status': 'success'})
+
+@app.route('/api/admin/posts/<int:post_id>', methods=['DELETE'])
+def delete_admin_post(post_id):
+    if not is_admin():
+        return jsonify({'status': 'error', 'message': '권한이 없습니다.'}), 403
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute('DELETE FROM posts WHERE id = %s;', (post_id,))
+    cursor.execute('DELETE FROM comments WHERE post_id = %s;', (post_id,))
+    cursor.execute('DELETE FROM post_likes WHERE post_id = %s;', (post_id,))
+    cursor.execute('DELETE FROM bookmarks WHERE post_id = %s;', (post_id,))
+    cursor.execute('DELETE FROM notifications WHERE post_id = %s;', (post_id,))
+    conn.commit()
+    cursor.close()
+    conn.close()
+
+    return jsonify({'status': 'success'})
+
+@app.route('/api/admin/stories/<int:story_id>', methods=['DELETE'])
+def delete_admin_story(story_id):
+    if not is_admin():
+        return jsonify({'status': 'error', 'message': '권한이 없습니다.'}), 403
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute('DELETE FROM stories WHERE id = %s;', (story_id,))
+    cursor.execute('DELETE FROM story_views WHERE story_id = %s;', (story_id,))
+    conn.commit()
+    cursor.close()
+    conn.close()
+
+    return jsonify({'status': 'success'})
+
 # --- ☁️ Media Upload API ---
 @app.route('/api/upload', methods=['POST'])
 def upload_file():
@@ -1176,12 +1284,13 @@ def get_recommendations():
     conn.close()
     return jsonify({'status': 'success', 'recommendations': recommendations})
 
-# --- 📸 Story APIs ---
+# --- 📸 Story APIs (24시간 지난 스토리 자동 삭제 및 시간 포맷 전달) ---
 @app.route('/api/stories', methods=['GET'])
 def get_stories():
     conn = get_db_connection()
     cursor = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
 
+    # ⏰ 24시간이 지난 스토리 삭제
     cutoff_time = get_kst_now() - timedelta(hours=24)
     cursor.execute('DELETE FROM stories WHERE created_at < %s;', (cutoff_time,))
     conn.commit()
