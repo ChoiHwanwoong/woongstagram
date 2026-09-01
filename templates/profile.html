@@ -19,7 +19,7 @@
         .cropper-view-box, .cropper-face { border-radius: 50%; }
     </style>
 </head>
-<body class="bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 font-sans antialiased min-h-screen flex flex-col justify-between transition-colors pb-16 md:pb-0">
+<body class="bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 font-sans antialiased min-h-screen flex flex-col justify-between transition-colors pb-16 md:pb-0" onclick="handleOutsideClicks(event)">
 
     <!-- Header Navigation -->
     <header class="border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 sticky top-0 z-40">
@@ -80,12 +80,12 @@
             <p class="text-xs text-slate-500 mt-1">사진과 동영상을 보려면 팔로우 요청을 보내세요.</p>
         </div>
 
-        <!-- 탭 메뉴 (게시물 / 좋아요 / 저장됨: 저장됨은 본인에게만 표시) -->
+        <!-- 탭 메뉴 (게시물 / 좋아요 / 저장됨) -->
         <div id="profileTabsArea" class="flex justify-center border-t border-slate-200 dark:border-slate-800 -mt-[1px] gap-6 sm:gap-12">
             <button onclick="switchTab('posts')" id="tabPostsBtn" class="flex items-center gap-2 py-3 border-t-2 border-slate-900 dark:border-white font-bold text-xs tracking-wider">
                 <i class="fa-solid fa-table-cells text-sm"></i> 게시물
             </button>
-            <button onclick="switchTab('likes')" id="tabLikesBtn" class="hidden items-center gap-2 py-3 border-t-2 border-transparent font-semibold text-xs text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 tracking-wider">
+            <button onclick="switchTab('likes')" id="tabLikesBtn" class="flex items-center gap-2 py-3 border-t-2 border-transparent font-semibold text-xs text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 tracking-wider">
                 <i class="fa-solid fa-heart text-sm"></i> 좋아요
             </button>
             <button onclick="switchTab('bookmarks')" id="tabBookmarksBtn" class="hidden items-center gap-2 py-3 border-t-2 border-transparent font-semibold text-xs text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 tracking-wider">
@@ -287,10 +287,12 @@
             const isMyProfile = meData.logged_in && (meData.username === u.username);
             const actionArea = document.getElementById('profileActionArea');
 
+            // 🌟 좋아요 탭은 본인 및 타인 모두 볼 수 있도록 항상 표시
+            document.getElementById('tabLikesBtn').classList.remove('hidden');
+
             if (isMyProfile) {
                 document.getElementById('profileEmail').innerText = u.email;
-                document.getElementById('tabLikesBtn').classList.remove('hidden');
-                document.getElementById('tabBookmarksBtn').classList.remove('hidden'); // 🔒 오직 본인에게만 '저장됨' 탭 표시
+                document.getElementById('tabBookmarksBtn').classList.remove('hidden'); // 🔒 본인에게만 '저장됨' 탭 표시
                 document.getElementById('privateAccountSwitch').checked = u.is_private;
                 document.getElementById('avatarEditBadge').classList.remove('hidden');
                 document.getElementById('editBioBtn').classList.remove('hidden');

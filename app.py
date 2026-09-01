@@ -756,6 +756,7 @@ def get_tag_posts(tag):
             'title': r['title'] or '',
             'content': r['content'],
             'image_url': image_urls[0] if image_urls else '',
+            'image_urls': image_urls,
             'is_video': r['is_video'],
             'likes': r['likes'],
             'created_at': r['created_at'].strftime('%Y-%m-%d %H:%M:%S') if r['created_at'] else ''
@@ -850,7 +851,6 @@ def search_all():
             'username': r['username'],
             'content': r['content'],
             'image_url': image_urls[0] if image_urls else '',
-            'is_video': r['is_video'],
             'profile_img': r['profile_img'] or ''
         })
 
@@ -1710,11 +1710,9 @@ def get_user_posts(username):
         })
     return jsonify({'status': 'success', 'posts': posts})
 
+# 🌟 다른 사람도 해당 사용자의 좋아요 목록을 볼 수 있도록 권한 완화
 @app.route('/api/users/<username>/liked-posts', methods=['GET'])
 def get_user_liked_posts(username):
-    if session.get('username') != username and not is_admin():
-        return jsonify({'status': 'error', 'message': '비공개 정보입니다.'}), 403
-
     conn = get_db_connection()
     cursor = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
     query = '''
