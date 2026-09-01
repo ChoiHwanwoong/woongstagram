@@ -30,6 +30,9 @@
         @keyframes progress { from { width: 0%; } to { width: 100%; } }
         .animate-progress { animation: progress 5s linear forwards; }
         body { -webkit-text-size-adjust: none; touch-action: manipulation; }
+        /* 스크롤바 숨김 */
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
     </style>
 </head>
 <body class="bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 font-sans antialiased min-h-screen flex flex-col justify-between selection:bg-pink-500 selection:text-white transition-colors duration-200 pb-16 md:pb-0" onclick="handleOutsideClicks(event)">
@@ -201,11 +204,14 @@
             <h3 class="text-sm font-bold text-center border-b border-slate-100 dark:border-slate-800 pb-3 mb-4">새 게시물 만들기</h3>
             <div class="space-y-3 text-xs">
                 <div class="border border-slate-200 dark:border-slate-700 rounded-lg p-2.5 bg-slate-50 dark:bg-slate-800 flex flex-col gap-1">
-                    <span class="text-[11px] font-semibold text-slate-600 dark:text-slate-300">사진 / 동영상 선택</span>
+                    <div class="flex justify-between items-center">
+                        <span class="text-[11px] font-semibold text-slate-600 dark:text-slate-300">사진 / 동영상 선택</span>
+                        <span class="text-[10px] text-blue-500 font-bold">최대 5장</span>
+                    </div>
                     <input type="file" id="postFileInput" accept="image/*,video/*" multiple onchange="handleMultipleFileSelect(this, 'post')" class="text-xs text-slate-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-600 hover:file:bg-blue-100">
                 </div>
                 <div id="postCroppedPreviewArea" class="hidden py-2">
-                    <div id="postPreviewList" class="flex gap-2 overflow-x-auto pb-2"></div>
+                    <div id="postPreviewList" class="flex gap-2 overflow-x-auto pb-2 no-scrollbar"></div>
                 </div>
                 <textarea id="postContentInput" rows="4" placeholder="문구 입력... #해시태그 @멘션 지원" class="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-lg outline-none focus:border-slate-400 bg-transparent text-slate-900 dark:text-white resize-none"></textarea>
                 <button id="submitPostBtn" onclick="submitNewPost()" class="w-full py-2.5 bg-blue-500 hover:bg-blue-600 text-white font-bold rounded-lg transition disabled:bg-blue-300">공유하기</button>
@@ -479,8 +485,21 @@
 
                 if (post.is_video && images.length > 0) {
                     mediaHtml = `<video src="${escapeHtml(images[0])}" controls playsinline class="w-full max-h-[450px] bg-black"></video>`;
-                } else if (images.length > 0) {
+                } else if (images.length === 1) {
                     mediaHtml = `<img src="${escapeHtml(images[0])}" class="w-full max-h-[450px] object-cover border-y border-slate-100 dark:border-slate-800">`;
+                } else if (images.length > 1) {
+                    // 다중 사진 (최대 5장) 슬라이더 구현
+                    const items = images.map(img => `<div class="min-w-full w-full shrink-0"><img src="${escapeHtml(img)}" class="w-full max-h-[450px] object-cover"></div>`).join('');
+                    mediaHtml = `
+                        <div class="relative border-y border-slate-100 dark:border-slate-800 group">
+                            <div class="flex overflow-x-auto snap-x snap-mandatory no-scrollbar" onscroll="updateSlideIndicator(this, ${post.id})">
+                                ${items}
+                            </div>
+                            <div class="absolute top-3 right-3 bg-black/60 text-white text-[10px] font-bold px-2 py-0.5 rounded-full z-10">
+                                <span id="slideIndex-${post.id}">1</span> / ${images.length}
+                            </div>
+                        </div>
+                    `;
                 }
 
                 const avatar = post.profile_img ? `<img src="${post.profile_img}" class="w-full h-full object-cover">` : getDefaultAvatar("text-xs");
@@ -517,6 +536,12 @@
                 container.appendChild(article);
                 loadComments(post.id);
             });
+        }
+
+        function updateSlideIndicator(el, postId) {
+            const index = Math.round(el.scrollLeft / el.clientWidth) + 1;
+            const indicator = document.getElementById(`slideIndex-${postId}`);
+            if (indicator) indicator.innerText = index;
         }
 
         function toggleLike(e, postId) {
@@ -630,7 +655,16 @@
         function handleMultipleFileSelect(input, mode) {
             if (!input.files || input.files.length === 0) return;
             currentCropMode = mode;
-            pendingFiles = Array.from(input.files);
+            
+            let filesArr = Array.from(input.files);
+            
+            // 📸 최대 5장 제한
+            if (mode === 'post' && filesArr.length > 5) {
+                alert('사진 및 동영상은 최대 5장까지만 선택할 수 있습니다. (첫 5장만 적용됩니다)');
+                filesArr = filesArr.slice(0, 5);
+            }
+
+            pendingFiles = filesArr;
             currentFileIndex = 0;
             isFlippedX = false;
             
@@ -708,12 +742,16 @@
         function updatePostPreviewArea() {
             const list = document.getElementById('postPreviewList');
             list.innerHTML = '';
-            postCroppedBlobs.forEach(blob => {
+            postCroppedBlobs.forEach((blob, idx) => {
                 const url = URL.createObjectURL(blob);
-                const el = document.createElement(blob.type && blob.type.startsWith('video/') ? 'video' : 'img');
-                el.src = url;
-                el.className = "w-16 h-16 object-cover rounded-lg border border-slate-200 dark:border-slate-700 shrink-0";
-                list.appendChild(el);
+                const isVid = blob.type && blob.type.startsWith('video/');
+                const div = document.createElement('div');
+                div.className = "relative shrink-0";
+                div.innerHTML = `
+                    <${isVid ? 'video' : 'img'} src="${url}" class="w-16 h-16 object-cover rounded-lg border border-slate-200 dark:border-slate-700"></${isVid ? 'video' : 'img'}>
+                    <span class="absolute bottom-1 right-1 bg-black/70 text-white text-[9px] px-1 rounded font-bold">${idx + 1}</span>
+                `;
+                list.appendChild(div);
             });
             document.getElementById('postCroppedPreviewArea').classList.remove('hidden');
         }
@@ -928,7 +966,11 @@
                         if (post.is_video && images.length > 0) {
                             imgArea.innerHTML = `<video src="${escapeHtml(images[0])}" controls autoplay playsinline class="w-full max-h-[350px]"></video>`;
                         } else if (images.length > 0) {
-                            imgArea.innerHTML = `<img src="${escapeHtml(images[0])}" class="w-full max-h-[350px] object-contain">`;
+                            imgArea.innerHTML = `
+                                <div class="flex overflow-x-auto snap-x snap-mandatory no-scrollbar w-full max-h-[350px]">
+                                    ${images.map(img => `<div class="min-w-full w-full shrink-0 flex items-center justify-center bg-black"><img src="${escapeHtml(img)}" class="max-h-[350px] object-contain"></div>`).join('')}
+                                </div>
+                            `;
                         } else {
                             imgArea.innerHTML = `<div class="text-white text-xs p-6 text-center">${escapeHtml(post.content)}</div>`;
                         }
