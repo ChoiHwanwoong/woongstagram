@@ -1456,7 +1456,7 @@ def get_posts():
             'image_urls': image_urls,
             'is_video': r['is_video'],
             'likes': r['likes'],
-            'created_at': r['created_at'].strftime('%Y-%m-%d %H:%M:%S') if r['created_at'] else ''
+            'created_at': r['created_at'].strftime('%Y-%m-%d %H:%M:%S') if r['created_at'] else '',
             'profile_img': r['profile_img'] or '',
             'is_liked': liked,
             'is_bookmarked': bookmarked
